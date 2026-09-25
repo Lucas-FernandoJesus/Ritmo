@@ -1,0 +1,52 @@
+FINANCAS PESSOAIS E CONTROLE DO DELIVERY
+
+SITUACAO ATUAL
+Não há controle consistente dos gastos. Primeiro objetivo:
+registrar o que entra e sai por 30 dias, antes de criar metas ambiciosas.
+
+QUARTA-FEIRA: 20h10-20h25
+[ ] Conferir saldo e faturas.
+[ ] Registrar gastos da semana.
+[ ] Verificar contas próximas do vencimento.
+[ ] Observar gastos evitáveis sem culpa ou radicalismo.
+[ ] Conferir quanto resta do orçamento do mês.
+
+CATEGORIAS
+Moradia: água, luz, internet e outras contas da casa.
+Alimentação: mercado, refeições e delivery de comida.
+Transporte: combustível, moto e manutenção.
+Saúde: consultas, medicamentos etc.
+Lazer: jogos, assinaturas e passeios.
+Desenvolvimento: cursos, livros e material de estudo.
+Outros: despesas não classificadas.
+
+CONTROLE DE CADA TURNO DE ENTREGA
+Data:
+Dia/horário:
+Horas em turno:
+Quilômetros rodados:
+Receita bruta recebida (R$):
+Combustível gasto/estimado (R$):
+Reserva de manutenção e desgaste (R$):
+Outras despesas, taxas e tributos aplicáveis (R$):
+Resultado após despesas registradas (R$):
+Resultado por hora em turno (R$/h):
+Resultado por quilômetro (R$/km):
+Como foi o cansaço e o braço após o turno:
+
+FORMULAS
+Resultado estimado = receita bruta - todas as despesas informadas.
+Resultado por hora = resultado estimado / horas em turno.
+Resultado por km = resultado estimado / quilômetros rodados.
+Se faltarem custos, não chamar o resultado de lucro líquido definitivo.
+
+AVALIAR DEPOIS DE 4 SEMANAS
+- Quais turnos tiveram melhor resultado por hora, já descontados os custos?
+- Sexta e domingo compensaram o esforço extra?
+- O delivery atrapalhou sono, segurança, estudos ou treino?
+- A moto teve custos ou manutenção não previstos?
+- Qual parte da renda extra será reservada para emergências/manutenção?
+
+ESCALA ESCOLHIDA DE SABADO
+11h00-14h00 e 18h00-21h30, com descanso no meio.
+Ver arquivo 05_escala_delivery_escolhida.txt.

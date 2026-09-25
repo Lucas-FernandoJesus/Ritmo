@@ -1,0 +1,29 @@
+GUIA DOS ARQUIVOS DA ROTINA
+
+Este conjunto organiza a rotina de vida, os treinos, os estudos, a casa e o delivery.
+Os horários são referências ajustáveis. Não é preciso fazer tudo perfeitamente.
+
+ARQUIVOS
+01_perfil_e_objetivos.txt: situação atual, prioridades e metas.
+02_rotina_segunda_a_sexta.txt: horários normais dos dias úteis.
+03_treino_muay_thai_matinal.txt: treino técnico e aeróbico da manhã.
+04_fortalecimento_e_cuidados_com_braco.txt: força, limitações e sinais de atenção.
+05_escala_delivery_escolhida.txt: sexta, sábado em dois turnos e domingo opcional.
+06_rotina_sabado_e_domingo.txt: atividades domésticas, refeições, descanso e jogos.
+07_alimentacao_e_marmitas.txt: compras, refeições e preparo de comida.
+08_estudos_e_leitura.txt: inglês, programação e livros.
+09_financas_e_controle_delivery.txt: contas, despesas e avaliação da renda extra.
+10_limpeza_e_organizacao_da_casa.txt: tarefas diárias e semanais.
+11_sono_jogos_e_celular.txt: horários de descanso, lazer e limites de tela.
+12_plano_30_dias_e_checklist.txt: implantação e revisão da rotina.
+
+PRIORIDADES
+1. Dormir o suficiente e pilotar em condições seguras.
+2. Respeitar os sintomas e as orientações profissionais para o braço esquerdo.
+3. Alimentação, atividade física e trabalho principal.
+4. Casa, estudos e finanças em blocos sustentáveis.
+5. Delivery extra sem eliminar descanso e lazer.
+
+SE UM DIA DER ERRADO
+Faça o essencial: alimentação, higiene, organização mínima e sono.
+No dia seguinte, retome a programação normal, sem tentar compensar tudo.

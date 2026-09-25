@@ -1,0 +1,50 @@
+ESCALA DE DELIVERY ESCOLHIDA: SABADO EM DOIS TURNOS
+
+OBJETIVO
+Testar renda extra de moto nos horários informados de maior movimento,
+sem eliminar toda a tarde de descanso e sem prejudicar o sono de domingo.
+
+SEXTA-FEIRA (OPCIONAL)
+18h20        Chegar do emprego.
+18h20-19h00  Comer e descansar.
+19h00-19h15  Conferir moto e equipamentos.
+19h15-21h30  Delivery: 2h15.
+21h30-22h00  Retorno e banho (ajuste ao deslocamento real).
+22h00-22h45  Descanso e dormir quando estiver pronto.
+Se sair esgotado do expediente, cancelar as entregas.
+
+SABADO (OPÇÃO ESCOLHIDA: ALMOÇO + NOITE)
+08h00        Acordar e tomar café.
+08h30-09h30  Limpeza essencial da casa.
+09h30-10h15  Mercado ou pendências.
+10h15-10h45  Lanche/refeição e preparação.
+11h00-14h00  DELIVERY - primeiro turno (3h).
+14h00-17h00  Almoço, descanso e jogos.
+17h00-18h00  Comer, hidratar e preparar moto.
+18h00-21h30  DELIVERY - segundo turno (3h30).
+21h30-22h00  Volta para casa, conforme deslocamento.
+22h00-22h45  Banho e descanso; dormir quando estiver pronto.
+Total de sábado: 6h30 de delivery, com 4h de intervalo entre os turnos.
+
+DOMINGO (OPCIONAL)
+10h00-12h00  Preparar marmitas antes de sair, se for fazer delivery.
+12h00-12h45  Almoço.
+13h00-16h00  Delivery opcional: 3h.
+16h00 em diante  Descanso, lazer e organização leve.
+22h15        Dormir para trabalhar segunda às 08h00.
+Não estender regularmente o delivery de domingo até as 23h.
+
+CARGA TOTAL DOS TURNOS
+Sábado sozinho: 6h30/semana.
+Sexta + sábado: 8h45/semana.
+Sábado + domingo: 9h30/semana.
+Sexta + sábado + domingo: 11h45/semana.
+São tempos em turno; não são garantias de tempo com pedidos nem de renda.
+
+REGRAS DE SEGURANÇA E RECUPERAÇÃO
+- Só iniciar quando estiver em condições de pilotar e o braço tolerar o esforço.
+- Fazer pausas e mudar de posição para evitar desconforto no antebraço.
+- Não insistir com sono, fadiga, dor ou perda de controle da moto.
+- Tempo livre de tarde NÃO é convite para adicionar outra jornada automática.
+- Começar testando poucos turnos e medir ganhos líquidos e cansaço.
+- Sexta e domingo podem ser cancelados sem "compensação".
