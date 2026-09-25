@@ -64,7 +64,7 @@ for (const [index, tab] of tabs.entries()) {
 
 await evaluate("document.querySelectorAll('.bottom-nav button')[1].click()")
 await evaluate("document.querySelectorAll('.week-selector button')[1].click()")
-await evaluate("(() => { const button = [...document.querySelectorAll('.week-item')].find((item) => item.textContent.includes('Fortalecimento leve de membros inferiores')); button.focus(); button.click(); })()")
+await evaluate("(() => { const button = [...document.querySelectorAll('.week-item')].find((item) => item.textContent.includes('Fortalecimento de corpo inteiro')); button.focus(); button.click(); })()")
 await sleep(150)
 const guideMetrics = await evaluate('({ open: document.querySelector(".activity-dialog").open, steps: document.querySelectorAll(".activity-dialog .guide-steps li").length, width: innerWidth, contentWidth: document.documentElement.scrollWidth, title: document.querySelector("#activity-dialog-title")?.textContent, focusInDialog: document.querySelector(".activity-dialog").contains(document.activeElement) })')
 const guideShot = await send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false })
@@ -93,7 +93,7 @@ console.log(JSON.stringify({ tab: 'hoje-320', path: smallPath, ...smallMetrics }
 
 await evaluate("document.querySelectorAll('.bottom-nav button')[1].click()")
 await evaluate("document.querySelectorAll('.week-selector button')[1].click()")
-await evaluate("[...document.querySelectorAll('.week-item')].find((button) => button.textContent.includes('Fortalecimento leve de membros inferiores')).click()")
+await evaluate("[...document.querySelectorAll('.week-item')].find((button) => button.textContent.includes('Fortalecimento de corpo inteiro')).click()")
 await sleep(100)
 const smallGuideMetrics = await evaluate('({ width: innerWidth, contentWidth: document.documentElement.scrollWidth, dialogRight: document.querySelector(".activity-dialog").getBoundingClientRect().right, footerBottom: document.querySelector(".activity-dialog-footer").getBoundingClientRect().bottom })')
 const smallGuideShot = await send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false })
@@ -103,7 +103,7 @@ console.log(JSON.stringify({ tab: 'fortalecimento-320', path: smallGuidePath, ..
 await evaluate('document.querySelector(".activity-dialog").close()')
 
 await send('Emulation.setDeviceMetricsOverride', { width: 812, height: 375, deviceScaleFactor: 1, mobile: true })
-await evaluate("[...document.querySelectorAll('.week-item')].find((button) => button.textContent.includes('Fortalecimento leve de membros inferiores')).click()")
+await evaluate("[...document.querySelectorAll('.week-item')].find((button) => button.textContent.includes('Fortalecimento de corpo inteiro')).click()")
 await sleep(100)
 const landscapeMetrics = await evaluate('({ width: innerWidth, height: innerHeight, contentWidth: document.documentElement.scrollWidth, dialogTop: document.querySelector(".activity-dialog").getBoundingClientRect().top, footerBottom: document.querySelector(".activity-dialog-footer").getBoundingClientRect().bottom })')
 const landscapeShot = await send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false })

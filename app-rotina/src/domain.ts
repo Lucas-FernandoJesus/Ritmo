@@ -1,4 +1,4 @@
-import type { AppSettings, BackupData, DailyCheckIn, DailyCompletion, DeliveryShift, Expense, RoutineItem, RoutineMode, StudyLog, ThirtyDayProgress } from './types'
+import type { AppSettings, BackupData, DailyCheckIn, DailyCompletion, DailyPlanSnapshot, DailyProgressSummary, DeliveryShift, Expense, RoutineItem, RoutineMode, StudyLog, ThirtyDayProgress, WeeklyProgressSummary } from './types'
 
 export const SCHEMA_VERSION = 1
 export const MAX_BACKUP_BYTES = 10 * 1024 * 1024
@@ -10,6 +10,8 @@ const studyAreas = ['Inglês', 'Programação', 'Leitura', 'Outro'] as const
 const armConditions = ['habitual', 'alterado', 'dor'] as const
 const completionStates = ['done', 'skipped'] as const
 const progressStates = ['pending', 'done'] as const
+const routineAreas = ['sono', 'saude', 'trabalho', 'treino', 'alimentacao', 'casa', 'estudos', 'financas', 'delivery', 'lazer'] as const
+const routineNatures = ['fixa', 'flexivel', 'opcional'] as const
 
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -95,6 +97,106 @@ export function filterRoutineForDay(items: RoutineItem[], day: number, mode: Rou
     .sort((a, b) => (a.startTime ?? '99:99').localeCompare(b.startTime ?? '99:99'))
 }
 
+function parseLocalDate(localDate: string): Date {
+  const [year, month, day] = localDate.split('-').map(Number)
+  return new Date(year, month - 1, day, 12)
+}
+
+function addLocalDays(localDate: string, amount: number): string {
+  const date = parseLocalDate(localDate)
+  date.setDate(date.getDate() + amount)
+  return localDateKey(date)
+}
+
+export function weekBounds(localDate: string): { weekStart: string, weekEnd: string } {
+  const day = parseLocalDate(localDate).getDay()
+  const daysSinceMonday = (day + 6) % 7
+  const weekStart = addLocalDays(localDate, -daysSinceMonday)
+  return { weekStart, weekEnd: addLocalDays(weekStart, 6) }
+}
+
+export function createDailyPlanSnapshot(localDate: string, mode: RoutineMode, items: RoutineItem[], settings: AppSettings, capturedAt = new Date().toISOString()): DailyPlanSnapshot {
+  const day = parseLocalDate(localDate).getDay()
+  const activities = filterRoutineForDay(items, day, mode, settings).map((item) => ({
+    routineItemId: item.id,
+    title: item.title,
+    area: item.area,
+    nature: item.nature,
+    ...(item.startTime ? { startTime: item.startTime } : {}),
+    ...(item.endTime ? { endTime: item.endTime } : {}),
+  }))
+  return { id: localDate, localDate, mode, activities, capturedAt }
+}
+
+export function summarizeDailyProgress(snapshot: DailyPlanSnapshot, completions: DailyCompletion[]): DailyProgressSummary {
+  const requiredIds = new Set(snapshot.activities.filter((activity) => activity.nature !== 'opcional').map((activity) => activity.routineItemId))
+  const completedIds = new Set(completions
+    .filter((completion) => completion.localDate === snapshot.localDate && completion.state === 'done' && requiredIds.has(completion.routineItemId))
+    .map((completion) => completion.routineItemId))
+  const requiredCount = requiredIds.size
+  const completedRequiredCount = completedIds.size
+  return {
+    planned: requiredCount > 0,
+    completed: requiredCount > 0 && completedRequiredCount === requiredCount,
+    requiredCount,
+    completedRequiredCount,
+  }
+}
+
+export function summarizeWeeklyProgress(localDate: string, snapshots: DailyPlanSnapshot[], completions: DailyCompletion[]): WeeklyProgressSummary {
+  const { weekStart, weekEnd } = weekBounds(localDate)
+  const daily = snapshots
+    .filter((snapshot) => snapshot.localDate >= weekStart && snapshot.localDate <= weekEnd)
+    .map((snapshot) => summarizeDailyProgress(snapshot, completions))
+    .filter((summary) => summary.planned)
+  const requiredActivities = daily.reduce((total, summary) => total + summary.requiredCount, 0)
+  const completedRequiredActivities = daily.reduce((total, summary) => total + summary.completedRequiredCount, 0)
+  return {
+    weekStart,
+    weekEnd,
+    plannedDays: daily.length,
+    completedDays: daily.filter((summary) => summary.completed).length,
+    requiredActivities,
+    completedRequiredActivities,
+    activityPercentage: requiredActivities ? Math.round(completedRequiredActivities / requiredActivities * 100) : 0,
+  }
+}
+
+type LinkableRecord =
+  | { kind: 'study', area: StudyLog['area'] }
+  | { kind: 'delivery', startTime: string, endTime: string }
+  | { kind: 'expense' }
+
+const studyActivityIds: Partial<Record<StudyLog['area'], string>> = {
+  'Inglês': 'english',
+  'Programação': 'programming',
+  'Leitura': 'short-study',
+}
+
+function timeRangesOverlap(firstStart: string, firstEnd: string, secondStart: string, secondEnd: string): boolean {
+  return firstStart < secondEnd && firstEnd > secondStart
+}
+
+export function findLinkedActivityId(snapshot: DailyPlanSnapshot, record: LinkableRecord): string | null {
+  if (record.kind === 'study') {
+    const expectedId = studyActivityIds[record.area]
+    if (!expectedId) return null
+    const candidates = snapshot.activities.filter((activity) => activity.routineItemId === expectedId)
+    return candidates.length === 1 ? candidates[0].routineItemId : null
+  }
+
+  if (record.kind === 'expense') {
+    const candidates = snapshot.activities.filter((activity) => activity.area === 'financas')
+    return candidates.length === 1 ? candidates[0].routineItemId : null
+  }
+
+  const candidates = snapshot.activities.filter((activity) => activity.area === 'delivery')
+  if (candidates.length === 1) return candidates[0].routineItemId
+  const matching = candidates.filter((activity) => activity.startTime && activity.endTime
+    && timeRangesOverlap(record.startTime, record.endTime, activity.startTime, activity.endTime))
+  return matching.length === 1 ? matching[0].routineItemId : null
+}
+
 export function rideSafety(checkIn: DailyCheckIn | null): { allowed: boolean; reason: string } {
   if (!checkIn || [checkIn.enoughSleep, checkIn.fatigueLevel, checkIn.armCondition, checkIn.safeToRide].some((value) => value === null)) {
     return { allowed: false, reason: 'Complete a checagem antes de decidir pilotar.' }
@@ -128,7 +230,7 @@ export function calculateDelivery(input: Pick<DeliveryShift, 'grossRevenue' | 'f
 }
 
 export function defaultSettings(): AppSettings {
-  return { id: 'settings', scheduleOverrides: {}, disabledActivities: [], preferredMode: 'normal', theme: 'dark', appearanceVersion: 2, schemaVersion: SCHEMA_VERSION }
+  return { id: 'settings', scheduleOverrides: {}, disabledActivities: [], preferredMode: 'normal', trainingWeek: 1, theme: 'dark', appearanceVersion: 2, schemaVersion: SCHEMA_VERSION }
 }
 
 export function upgradeAppearance(settings: AppSettings): AppSettings {
@@ -162,6 +264,7 @@ export function isValidSettings(value: unknown): value is AppSettings {
     || value.id !== 'settings'
     || value.schemaVersion !== SCHEMA_VERSION
     || !isOneOf(value.preferredMode, routineModes)
+    || (value.trainingWeek !== undefined && (!Number.isInteger(value.trainingWeek) || !isFiniteNumber(value.trainingWeek) || value.trainingWeek < 1 || value.trainingWeek > 24))
     || (value.theme !== undefined && !isOneOf(value.theme, ['system', 'light', 'dark'] as const))
     || (value.appearanceVersion !== undefined && value.appearanceVersion !== 2)
     || !Array.isArray(value.disabledActivities)
@@ -185,6 +288,28 @@ export function isValidCompletion(value: unknown): value is DailyCompletion {
     || !isDateTime(value.changedAt)
     || !isOptionalString(value.note)) return false
   return value.id === `${value.localDate}:${value.routineItemId}`
+}
+
+export function isValidDailyPlanSnapshot(value: unknown): value is DailyPlanSnapshot {
+  if (!isObject(value)
+    || !isSafeId(value.id)
+    || !isLocalDate(value.localDate)
+    || value.id !== value.localDate
+    || !isOneOf(value.mode, routineModes)
+    || !isDateTime(value.capturedAt)
+    || !Array.isArray(value.activities)
+    || value.activities.length > 1_000) return false
+
+  const activities = value.activities
+  if (!activities.every((activity) => isObject(activity)
+    && isSafeId(activity.routineItemId)
+    && isNonEmptyString(activity.title)
+    && isOneOf(activity.area, routineAreas)
+    && isOneOf(activity.nature, routineNatures)
+    && (activity.startTime === undefined || isTime(activity.startTime))
+    && (activity.endTime === undefined || isTime(activity.endTime)))) return false
+
+  return hasUnique(activities, (activity) => activity.routineItemId as string)
 }
 
 export function isValidCheckIn(value: unknown): value is DailyCheckIn {
@@ -266,11 +391,14 @@ export function validateBackup(value: unknown): value is BackupData {
     || !Array.isArray(value.expenses)
     || !Array.isArray(value.studyLogs)
     || !Array.isArray(value.progress)
+    || (value.dailySnapshots !== undefined && !Array.isArray(value.dailySnapshots))
     || !isValidSettings(value.settings)) return false
 
-  const groups = [value.completions, value.checkIns, value.deliveryShifts, value.expenses, value.studyLogs, value.progress]
+  const dailySnapshots = value.dailySnapshots ?? []
+  const groups = [value.completions, dailySnapshots, value.checkIns, value.deliveryShifts, value.expenses, value.studyLogs, value.progress]
   if (groups.some((items) => items.length > MAX_RECORDS_PER_STORE)) return false
   if (!value.completions.every(isValidCompletion)
+    || !dailySnapshots.every(isValidDailyPlanSnapshot)
     || !value.checkIns.every(isValidCheckIn)
     || !value.deliveryShifts.every(isValidDeliveryShift)
     || !value.expenses.every(isValidExpense)
@@ -278,6 +406,7 @@ export function validateBackup(value: unknown): value is BackupData {
     || !value.progress.every(isValidProgress)) return false
 
   return hasUnique(value.completions, (item) => item.id)
+    && hasUnique(dailySnapshots, (item) => item.id)
     && hasUnique(value.checkIns, (item) => item.localDate)
     && hasUnique(value.deliveryShifts, (item) => item.id)
     && hasUnique(value.expenses, (item) => item.id)

@@ -31,7 +31,15 @@ Os dados ficam no IndexedDB do navegador de cada aparelho: não são enviados ao
 
 ## Backup
 
-Em **Ajustes**, selecione **Exportar backup JSON**. Guarde o arquivo fora do aparelho. Para restaurar, use **Importar backup JSON**; o formato e a versão são validados antes da confirmação.
+Em **Ajustes**, selecione **Exportar backup JSON**. Guarde o arquivo fora do aparelho. Para restaurar, use **Importar backup JSON**; o formato e a versão são validados antes da confirmação. Backups novos incluem os snapshots diários usados no progresso semanal, enquanto backups antigos sem esse campo continuam aceitos.
+
+## Progresso automático
+
+Ao abrir a aplicação, o Ritmo salva no IndexedDB um snapshot das atividades previstas de segunda a domingo e do modo aplicável. Mudanças de modo atualizam somente o dia atual e os dias seguintes; dias anteriores permanecem associados ao planejamento que estava registrado.
+
+Atividades fixas e flexíveis contam como obrigatórias. Um dia é concluído quando todas elas estão marcadas como concluídas; atividades opcionais não bloqueiam e atividades puladas não contam. O indicador semanal soma os dias e as atividades obrigatórias usando a semana de segunda-feira a domingo. O plano inicial de 30 dias e a semana do treino continuam manuais.
+
+Registros de estudo, delivery e despesa podem oferecer a conclusão da atividade correspondente quando há um único vínculo aplicável. A confirmação é sempre explícita e uma atividade já concluída não é oferecida novamente.
 
 ## Fontes e destinos
 
@@ -53,4 +61,4 @@ Em **Ajustes**, selecione **Exportar backup JSON**. Guarde o arquivo fora do apa
 
 Cada atividade padrão conserva `sourceFile`. A camada `repository.ts` concentra o acesso local para permitir uma implementação futura de sincronização sem reescrever as telas.
 
-As instruções exibidas ao tocar em uma atividade ficam em `src/activity-guides.ts`, incorporadas ao aplicativo para funcionar offline. Elas resumem os arquivos de planejamento sem alterar a rotina ou os registros. As descrições gerais dos movimentos do fortalecimento foram conferidas com orientações de [exercícios de força do NHS](https://www.nhs.uk/live-well/exercise/strength-exercises/), [exercícios em pé do University Hospitals Sussex NHS Foundation Trust](https://www.uhsussex.nhs.uk/resources/standing-exercises-2/) e [fortalecimento do quadril do Cambridge University Hospitals NHS Foundation Trust](https://www.cuh.nhs.uk/patient-information/hip-strengthening-exercises/); séries e repetições continuam as do arquivo `04_fortalecimento_e_cuidados_com_braco.txt`.
+As instruções exibidas ao tocar em uma atividade ficam em `src/activity-guides.ts`, incorporadas ao aplicativo para funcionar offline. A evolução dos exercícios durante 24 semanas fica estruturada em `src/training-plan.ts`; a semana atual é uma preferência local incluída no backup, sem substituir o checklist inicial de 30 dias. As descrições gerais dos movimentos do fortalecimento foram conferidas com orientações de [exercícios de força do NHS](https://www.nhs.uk/live-well/exercise/strength-exercises/), [exercícios em pé do University Hospitals Sussex NHS Foundation Trust](https://www.uhsussex.nhs.uk/resources/standing-exercises-2/), [fortalecimento do quadril do Cambridge University Hospitals NHS Foundation Trust](https://www.cuh.nhs.uk/patient-information/hip-strengthening-exercises/), [atividade física para adultos do CDC](https://www.cdc.gov/physical-activity-basics/guidelines/adults.html) e [recuperação de fraturas do antebraço da AAOS](https://orthoinfo.aaos.org/en/diseases--conditions/adult-forearm-fractures/); séries, progressões e critérios de segurança continuam alinhados ao arquivo `04_fortalecimento_e_cuidados_com_braco.txt`.

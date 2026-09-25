@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
+import * as domain from './domain'
 import { calculateDelivery, defaultSettings, filterRoutineForDay, localDateKey, recentRecords, rideSafety, rideSafetyForDate, summarizePlanProgress, upgradeAppearance, validateBackup, withScheduleStart } from './domain'
 import { progressPlan, routineItems } from './data'
-import type { BackupData } from './types'
+import type { BackupData, DailyPlanSnapshot } from './types'
 
 function validBackup(): BackupData {
   return {
@@ -18,6 +19,51 @@ function validBackup(): BackupData {
 }
 
 const cloneBackup = () => structuredClone(validBackup())
+
+const progressDomain = domain as unknown as {
+  createDailyPlanSnapshot: (...args: unknown[]) => {
+    id: string
+    localDate: string
+    mode: string
+    activities: Array<{ routineItemId: string, title: string, area: string, nature: string, startTime?: string, endTime?: string }>
+    capturedAt: string
+  }
+  summarizeDailyProgress: (...args: unknown[]) => {
+    planned: boolean
+    completed: boolean
+    requiredCount: number
+    completedRequiredCount: number
+  }
+  summarizeWeeklyProgress: (...args: unknown[]) => {
+    weekStart: string
+    weekEnd: string
+    plannedDays: number
+    completedDays: number
+    requiredActivities: number
+    completedRequiredActivities: number
+    activityPercentage: number
+  }
+  findLinkedActivityId: (...args: unknown[]) => string | null
+}
+
+const mondaySnapshot: DailyPlanSnapshot = {
+  id: '2026-09-21',
+  localDate: '2026-09-21',
+  mode: 'normal',
+  capturedAt: '2026-09-21T09:00:00.000Z',
+  activities: [
+    { routineItemId: 'required-a', title: 'Obrigatória A', area: 'trabalho', nature: 'fixa', startTime: '08:00', endTime: '09:00' },
+    { routineItemId: 'optional-a', title: 'Opcional A', area: 'lazer', nature: 'opcional' },
+  ],
+}
+
+const done = (localDate: string, routineItemId: string, state: 'done' | 'skipped' = 'done') => ({
+  id: `${localDate}:${routineItemId}`,
+  localDate,
+  routineItemId,
+  state,
+  changedAt: `${localDate}T18:00:00.000Z`,
+})
 
 describe('regras críticas', () => {
   it('calcula resultado estimado e índices', () => {
@@ -123,6 +169,7 @@ describe('regras críticas', () => {
   it('mantém backups antigos compatíveis e valida a preferência de aparência', () => {
     const oldBackup = cloneBackup()
     delete oldBackup.settings.theme
+    delete oldBackup.settings.trainingWeek
     expect(validateBackup(oldBackup)).toBe(true)
 
     const darkBackup = cloneBackup()
@@ -132,6 +179,132 @@ describe('regras críticas', () => {
     const invalidTheme = cloneBackup()
     invalidTheme.settings.theme = 'neon' as 'light'
     expect(validateBackup(invalidTheme)).toBe(false)
+  })
+
+  it('aceita snapshots em backups novos sem exigi-los em backups antigos', () => {
+    const oldBackup = cloneBackup()
+    expect(validateBackup(oldBackup)).toBe(true)
+
+    const newBackup = cloneBackup()
+    newBackup.dailySnapshots = [mondaySnapshot]
+    expect(validateBackup(newBackup)).toBe(true)
+  })
+
+  it('rejeita snapshots adulterados ou duplicados no backup', () => {
+    const invalidMode = cloneBackup()
+    invalidMode.dailySnapshots = [{ ...mondaySnapshot, mode: 'turbo' } as unknown as DailyPlanSnapshot]
+    expect(validateBackup(invalidMode)).toBe(false)
+
+    const duplicate = cloneBackup()
+    duplicate.dailySnapshots = [mondaySnapshot, { ...mondaySnapshot }]
+    expect(validateBackup(duplicate)).toBe(false)
+  })
+
+  it('cria um snapshot datado com o modo e somente as atividades aplicáveis', () => {
+    const snapshot = progressDomain.createDailyPlanSnapshot(
+      '2026-09-22',
+      'normal',
+      routineItems,
+      defaultSettings(),
+      '2026-09-22T10:00:00.000Z',
+    )
+
+    expect(snapshot).toMatchObject({
+      id: '2026-09-22',
+      localDate: '2026-09-22',
+      mode: 'normal',
+      capturedAt: '2026-09-22T10:00:00.000Z',
+    })
+    expect(snapshot.activities).toContainEqual(expect.objectContaining({ routineItemId: 'strength', nature: 'flexivel' }))
+    expect(snapshot.activities).toContainEqual(expect.objectContaining({ routineItemId: 'programming', nature: 'flexivel' }))
+    expect(snapshot.activities.some((item) => item.routineItemId === 'short-study')).toBe(false)
+  })
+
+  it('fecha o dia quando todas as obrigatórias estão concluídas mesmo com opcional pendente', () => {
+    expect(progressDomain.summarizeDailyProgress(mondaySnapshot, [done('2026-09-21', 'required-a')])).toEqual({
+      planned: true,
+      completed: true,
+      requiredCount: 1,
+      completedRequiredCount: 1,
+    })
+  })
+
+  it('não fecha o dia quando uma atividade obrigatória foi pulada', () => {
+    expect(progressDomain.summarizeDailyProgress(mondaySnapshot, [done('2026-09-21', 'required-a', 'skipped')])).toEqual({
+      planned: true,
+      completed: false,
+      requiredCount: 1,
+      completedRequiredCount: 0,
+    })
+  })
+
+  it('resume de segunda a domingo apenas os snapshots da semana solicitada', () => {
+    const tuesdaySnapshot = {
+      ...mondaySnapshot,
+      id: '2026-09-22',
+      localDate: '2026-09-22',
+      activities: [{ routineItemId: 'required-b', title: 'Obrigatória B', area: 'casa', nature: 'flexivel' }],
+    }
+    const sundaySnapshot = {
+      ...mondaySnapshot,
+      id: '2026-09-27',
+      localDate: '2026-09-27',
+      activities: [{ routineItemId: 'required-c', title: 'Obrigatória C', area: 'casa', nature: 'fixa' }],
+    }
+    const outsideSnapshot = { ...mondaySnapshot, id: '2026-09-28', localDate: '2026-09-28' }
+
+    expect(progressDomain.summarizeWeeklyProgress(
+      '2026-09-24',
+      [mondaySnapshot, tuesdaySnapshot, sundaySnapshot, outsideSnapshot],
+      [done('2026-09-21', 'required-a'), done('2026-09-22', 'required-b'), done('2026-09-27', 'required-c', 'skipped')],
+    )).toEqual({
+      weekStart: '2026-09-21',
+      weekEnd: '2026-09-27',
+      plannedDays: 3,
+      completedDays: 2,
+      requiredActivities: 3,
+      completedRequiredActivities: 2,
+      activityPercentage: 67,
+    })
+  })
+
+  it('vincula registros somente quando uma atividade correspondente é inequívoca', () => {
+    const snapshot = {
+      ...mondaySnapshot,
+      activities: [
+        { routineItemId: 'programming', title: 'Programação', area: 'estudos', nature: 'flexivel' },
+        { routineItemId: 'finances', title: 'Finanças', area: 'financas', nature: 'flexivel' },
+        { routineItemId: 'sat-delivery-lunch', title: 'Delivery almoço', area: 'delivery', nature: 'opcional', startTime: '11:00', endTime: '14:00' },
+        { routineItemId: 'sat-delivery-night', title: 'Delivery noite', area: 'delivery', nature: 'opcional', startTime: '18:00', endTime: '21:30' },
+      ],
+    }
+
+    expect(progressDomain.findLinkedActivityId(snapshot, { kind: 'study', area: 'Programação' })).toBe('programming')
+    expect(progressDomain.findLinkedActivityId(snapshot, { kind: 'expense' })).toBe('finances')
+    expect(progressDomain.findLinkedActivityId(snapshot, { kind: 'delivery', startTime: '18:30', endTime: '20:00' })).toBe('sat-delivery-night')
+    expect(progressDomain.findLinkedActivityId(snapshot, { kind: 'delivery', startTime: '15:00', endTime: '16:00' })).toBeNull()
+
+    const ambiguous = { ...snapshot, activities: [...snapshot.activities, { routineItemId: 'finances-2', title: 'Outra finança', area: 'financas', nature: 'flexivel' }] }
+    expect(progressDomain.findLinkedActivityId(ambiguous, { kind: 'expense' })).toBeNull()
+    expect(progressDomain.findLinkedActivityId(snapshot, { kind: 'study', area: 'Outro' })).toBeNull()
+  })
+
+  it('valida a semana opcional do treino sem exigir migração de backups antigos', () => {
+    const firstWeek = cloneBackup()
+    firstWeek.settings.trainingWeek = 1
+    expect(validateBackup(firstWeek)).toBe(true)
+
+    const lastWeek = cloneBackup()
+    lastWeek.settings.trainingWeek = 24
+    expect(validateBackup(lastWeek)).toBe(true)
+
+    const invalidWeek = cloneBackup()
+    invalidWeek.settings.trainingWeek = 25
+    expect(validateBackup(invalidWeek)).toBe(false)
+
+    const fractionalWeek = cloneBackup()
+    fractionalWeek.settings.trainingWeek = 3.5
+    expect(validateBackup(fractionalWeek)).toBe(false)
   })
 
   it('ativa o novo tema escuro apenas na primeira migração de aparência', () => {

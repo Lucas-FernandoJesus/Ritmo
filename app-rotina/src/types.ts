@@ -14,6 +14,18 @@ export type RoutineArea =
 
 export type WeekDay = 0 | 1 | 2 | 3 | 4 | 5 | 6
 
+export interface GuideStep {
+  title: string
+  amount?: string
+  description: string
+}
+
+export interface ActivityGuide {
+  introduction: string
+  steps: readonly GuideStep[]
+  closing?: string
+}
+
 export interface RoutineItem {
   id: string
   title: string
@@ -35,6 +47,40 @@ export interface DailyCompletion {
   state: 'done' | 'skipped'
   changedAt: string
   note?: string
+}
+
+export interface DailyPlanActivity {
+  routineItemId: string
+  title: string
+  area: RoutineArea
+  nature: RoutineNature
+  startTime?: string
+  endTime?: string
+}
+
+export interface DailyPlanSnapshot {
+  id: string
+  localDate: string
+  mode: RoutineMode
+  activities: DailyPlanActivity[]
+  capturedAt: string
+}
+
+export interface DailyProgressSummary {
+  planned: boolean
+  completed: boolean
+  requiredCount: number
+  completedRequiredCount: number
+}
+
+export interface WeeklyProgressSummary {
+  weekStart: string
+  weekEnd: string
+  plannedDays: number
+  completedDays: number
+  requiredActivities: number
+  completedRequiredActivities: number
+  activityPercentage: number
 }
 
 export interface DailyCheckIn {
@@ -107,6 +153,7 @@ export interface AppSettings {
   scheduleOverrides: Record<string, { startTime?: string; endTime?: string }>
   disabledActivities: string[]
   preferredMode: RoutineMode
+  trainingWeek?: number
   theme?: 'system' | 'light' | 'dark'
   appearanceVersion?: 2
   schemaVersion: number
@@ -116,6 +163,7 @@ export interface BackupData {
   schemaVersion: number
   exportedAt: string
   completions: DailyCompletion[]
+  dailySnapshots?: DailyPlanSnapshot[]
   checkIns: DailyCheckIn[]
   deliveryShifts: DeliveryShift[]
   expenses: Expense[]

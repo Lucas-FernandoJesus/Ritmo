@@ -13,15 +13,17 @@ describe('orientações das atividades', () => {
     }
   })
 
-  it('mantém os quatro movimentos e quantidades do plano de fortalecimento', () => {
+  it('mantém a visão geral da fase inicial do fortalecimento', () => {
     const strength = activityGuides.strength
-    expect(strength.steps.map((step) => [step.title, step.amount])).toEqual([
-      ['Sentar e levantar de uma cadeira', '8–12 repetições'],
-      ['Elevação de panturrilhas', '10–15 repetições'],
-      ['Elevação de quadril', '8–12 repetições'],
-      ['Elevação alternada de joelhos em pé', '30–45 segundos'],
+    expect(strength.steps.map((step) => step.title)).toEqual([
+      'Treino A — terça',
+      'Treino B — quinta',
+      'Progressão da semana',
     ])
-    expect(strength.introduction).toContain('Comece com 1 série')
-    expect(strength.closing).toContain('sintomas novos ou piores')
+    expect(strength.introduction).toContain('Semana 1')
+    expect(strength.introduction).toContain('Terça é treino A e quinta é treino B')
+    expect(strength.steps[0].description).toContain('Sentar e levantar')
+    expect(strength.steps[1].description).toContain('Passo para trás assistido')
+    expect(strength.closing).toContain('dia seguinte')
   })
 })

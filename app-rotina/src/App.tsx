@@ -1,12 +1,15 @@
 import { useEffect, useMemo, useRef, useState, type Dispatch, type FormEvent, type SetStateAction } from 'react'
 import { activityGuides } from './activity-guides'
 import { dayNames, expenseCategories, homeChecklist, mealPrepChecklist, progressPlan, routineItems } from './data'
-import { calculateDelivery, defaultSettings, filterRoutineForDay, formatMoney, localDateKey, MAX_BACKUP_BYTES, recentRecords, rideSafetyForDate, summarizePlanProgress, upgradeAppearance, validateBackup, withScheduleStart } from './domain'
+import { calculateDelivery, createDailyPlanSnapshot, defaultSettings, filterRoutineForDay, findLinkedActivityId, formatMoney, localDateKey, MAX_BACKUP_BYTES, recentRecords, rideSafetyForDate, summarizeDailyProgress, summarizePlanProgress, summarizeWeeklyProgress, upgradeAppearance, validateBackup, weekBounds, withScheduleStart } from './domain'
 import { repository } from './repository'
-import type { AppSettings, DailyCheckIn, DailyCompletion, DeliveryShift, Expense, RoutineArea, RoutineItem, RoutineMode, StoragePersistence, StudyLog, ThirtyDayProgress } from './types'
+import { clampTrainingWeek, getTrainingActivityGuide, getTrainingPlanWeek, trainingBlocks, type TrainingDay } from './training-plan'
+import type { AppSettings, DailyCheckIn, DailyCompletion, DailyPlanSnapshot, DailyProgressSummary, DeliveryShift, Expense, RoutineArea, RoutineItem, RoutineMode, StoragePersistence, StudyLog, ThirtyDayProgress, WeeklyProgressSummary } from './types'
 
 type Tab = 'hoje' | 'semana' | 'registros' | 'progresso' | 'ajustes'
 type RecordKind = 'delivery' | 'despesa' | 'estudo' | 'checklists'
+type ActivitySelection = { item: RoutineItem; day: number }
+type LinkableRecord = { kind: 'study', area: StudyLog['area'] } | { kind: 'delivery', startTime: string, endTime: string } | { kind: 'expense' }
 
 const areaLabels: Record<RoutineArea, string> = {
   sono: 'Sono', saude: 'Bem-estar', trabalho: 'Trabalho', treino: 'Treino', alimentacao: 'Alimentação', casa: 'Casa', estudos: 'Estudos', financas: 'Finanças', delivery: 'Delivery', lazer: 'Tempo livre',
@@ -40,6 +43,28 @@ function Icon({ name }: { name: Tab }) {
 const uid = () => globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(16).slice(2)}`
 const readableError = (error: unknown, fallback: string) => error instanceof Error ? error.message : fallback
 
+function weekDateKeys(localDate: string): string[] {
+  const { weekStart } = weekBounds(localDate)
+  const start = new Date(`${weekStart}T12:00:00`)
+  return Array.from({ length: 7 }, (_, index) => {
+    const date = new Date(start)
+    date.setDate(start.getDate() + index)
+    return localDateKey(date)
+  })
+}
+
+function prepareWeekSnapshots(existing: DailyPlanSnapshot[], localDate: string, mode: RoutineMode, settings: AppSettings, replaceFrom?: string) {
+  const byDate = new Map(existing.map((snapshot) => [snapshot.localDate, snapshot]))
+  const changed: DailyPlanSnapshot[] = []
+  for (const date of weekDateKeys(localDate)) {
+    if (byDate.has(date) && (!replaceFrom || date < replaceFrom)) continue
+    const snapshot = createDailyPlanSnapshot(date, mode, routineItems, settings)
+    byDate.set(date, snapshot)
+    changed.push(snapshot)
+  }
+  return { all: [...byDate.values()], changed }
+}
+
 function useRecordDate<T extends { localDate: string }>(dateKey: string, setForm: Dispatch<SetStateAction<T>>) {
   const previousDate = useRef(dateKey)
   useEffect(() => {
@@ -54,11 +79,12 @@ function App() {
   const [now, setNow] = useState(() => new Date())
   const dateKey = localDateKey(now)
   const [tab, setTab] = useState<Tab>('hoje')
-  const [detailItem, setDetailItem] = useState<RoutineItem | null>(null)
+  const [detailActivity, setDetailActivity] = useState<ActivitySelection | null>(null)
   const [mode, setMode] = useState<RoutineMode>('normal')
   const [modeSaving, setModeSaving] = useState(false)
   const [settings, setSettings] = useState<AppSettings>(defaultSettings())
   const [completions, setCompletions] = useState<DailyCompletion[]>([])
+  const [dailySnapshots, setDailySnapshots] = useState<DailyPlanSnapshot[]>([])
   const [checkIn, setCheckIn] = useState<DailyCheckIn | null>(null)
   const [deliveryShifts, setDeliveryShifts] = useState<DeliveryShift[]>([])
   const [expenses, setExpenses] = useState<Expense[]>([])
@@ -94,8 +120,8 @@ function App() {
     async function load() {
       try {
         await repository.initialize()
-        const [loadedSettings, loadedCompletions, loadedCheckIn, shifts, loadedExpenses, logs, loadedProgress] = await Promise.all([
-          repository.getSettings(), repository.getCompletions(), repository.getCheckIn(dateKey), repository.getDeliveryShifts(), repository.getExpenses(), repository.getStudyLogs(), repository.getProgress(),
+        const [loadedSettings, loadedCompletions, loadedSnapshots, loadedCheckIn, shifts, loadedExpenses, logs, loadedProgress] = await Promise.all([
+          repository.getSettings(), repository.getCompletions(), repository.getDailySnapshots(), repository.getCheckIn(dateKey), repository.getDeliveryShifts(), repository.getExpenses(), repository.getStudyLogs(), repository.getProgress(),
         ])
         if (!active) return
         const nextSettings = upgradeAppearance(loadedSettings)
@@ -104,9 +130,13 @@ function App() {
           catch { if (active) setMessage('A nova aparência está ativa, mas não foi possível salvar a preferência.') }
         }
         if (!active) return
+        const snapshotPlan = prepareWeekSnapshots(loadedSnapshots, dateKey, nextSettings.preferredMode, nextSettings)
+        await Promise.all(snapshotPlan.changed.map((snapshot) => repository.saveDailySnapshot(snapshot)))
+        if (!active) return
         setSettings(nextSettings)
         setMode(nextSettings.preferredMode)
         setCompletions(loadedCompletions)
+        setDailySnapshots(snapshotPlan.all)
         setCheckIn(loadedCheckIn ?? null)
         setDeliveryShifts(shifts)
         setExpenses(loadedExpenses)
@@ -153,9 +183,14 @@ function App() {
   const todayCompleted = new Set([...todayStates].filter(([, state]) => state === 'done').map(([id]) => id))
   const todayCheckIn = checkIn?.localDate === dateKey ? checkIn : null
   const safety = rideSafetyForDate(checkIn, dateKey)
+  const weeklySummary = useMemo(() => summarizeWeeklyProgress(dateKey, dailySnapshots, completions), [dateKey, dailySnapshots, completions])
+  const todaySnapshot = dailySnapshots.find((snapshot) => snapshot.localDate === dateKey)
+  const todaySummary = useMemo<DailyProgressSummary>(() => todaySnapshot
+    ? summarizeDailyProgress(todaySnapshot, completions)
+    : { planned: false, completed: false, requiredCount: 0, completedRequiredCount: 0 }, [todaySnapshot, completions])
 
-  async function setCompletion(itemId: string, nextState: 'done' | 'skipped' | null) {
-    const id = `${dateKey}:${itemId}`
+  async function setCompletionForDate(localDate: string, itemId: string, nextState: 'done' | 'skipped' | null) {
+    const id = `${localDate}:${itemId}`
     if (savingIds.includes(id)) return
     setSavingIds((current) => [...current, id])
     try {
@@ -163,7 +198,7 @@ function App() {
         await repository.deleteCompletion(id)
         setCompletions((current) => current.filter((item) => item.id !== id))
       } else {
-        const completion: DailyCompletion = { id, localDate: dateKey, routineItemId: itemId, state: nextState, changedAt: new Date().toISOString() }
+        const completion: DailyCompletion = { id, localDate, routineItemId: itemId, state: nextState, changedAt: new Date().toISOString() }
         await repository.saveCompletion(completion)
         setCompletions((current) => [...current.filter((item) => item.id !== id), completion])
       }
@@ -171,16 +206,78 @@ function App() {
     finally { setSavingIds((current) => current.filter((value) => value !== id)) }
   }
 
-  function toggleCompletion(itemId: string) { return setCompletion(itemId, todayCompleted.has(itemId) ? null : 'done') }
-  function toggleSkipped(itemId: string) { return setCompletion(itemId, todayStates.get(itemId) === 'skipped' ? null : 'skipped') }
+  function toggleCompletion(itemId: string) { return setCompletionForDate(dateKey, itemId, todayCompleted.has(itemId) ? null : 'done') }
+  function toggleSkipped(itemId: string) { return setCompletionForDate(dateKey, itemId, todayStates.get(itemId) === 'skipped' ? null : 'skipped') }
+
+  async function ensureSnapshot(localDate: string): Promise<DailyPlanSnapshot> {
+    const existing = dailySnapshots.find((snapshot) => snapshot.localDate === localDate)
+    if (existing) return existing
+    const snapshot = createDailyPlanSnapshot(localDate, mode, routineItems, settings)
+    await repository.saveDailySnapshot(snapshot)
+    setDailySnapshots((current) => [...current.filter((item) => item.id !== snapshot.id), snapshot])
+    return snapshot
+  }
+
+  async function offerLinkedCompletion(localDate: string, record: LinkableRecord) {
+    const snapshot = await ensureSnapshot(localDate)
+    const routineItemId = findLinkedActivityId(snapshot, record)
+    if (!routineItemId || completions.some((item) => item.id === `${localDate}:${routineItemId}` && item.state === 'done')) return
+    const activity = snapshot.activities.find((item) => item.routineItemId === routineItemId)
+    if (!activity) return
+    const formattedDate = new Date(`${localDate}T12:00:00`).toLocaleDateString('pt-BR')
+    if (window.confirm(`Registro salvo. Marcar “${activity.title}” como concluída em ${formattedDate}?`)) {
+      await setCompletionForDate(localDate, routineItemId, 'done')
+    }
+  }
+
+  async function saveLinkedStudy(item: StudyLog) {
+    try {
+      await repository.saveStudyLog(item)
+      setStudyLogs((current) => [item, ...current])
+      setMessage('Estudo registrado.')
+      await offerLinkedCompletion(item.localDate, { kind: 'study', area: item.area })
+      return true
+    } catch (error) { setMessage(readableError(error, 'Não foi possível salvar o estudo.')); return false }
+  }
+
+  async function saveLinkedExpense(item: Expense) {
+    try {
+      await repository.saveExpense(item)
+      setExpenses((current) => [item, ...current])
+      setMessage('Despesa salva.')
+      await offerLinkedCompletion(item.localDate, { kind: 'expense' })
+      return true
+    } catch (error) { setMessage(readableError(error, 'Não foi possível salvar a despesa.')); return false }
+  }
+
+  async function saveLinkedShift(item: DeliveryShift) {
+    try {
+      await repository.saveDeliveryShift(item)
+      setDeliveryShifts((current) => [item, ...current])
+      setMessage('Turno salvo. O resultado é estimado com os custos informados.')
+      await offerLinkedCompletion(item.localDate, { kind: 'delivery', startTime: item.startTime, endTime: item.endTime })
+      return true
+    } catch (error) { setMessage(readableError(error, 'Não foi possível salvar o turno.')); return false }
+  }
 
   async function changeMode(next: RoutineMode) {
     if (modeSaving || next === mode) return
     setModeSaving(true)
     const nextSettings = { ...settings, preferredMode: next }
-    try { await repository.saveSettings(nextSettings); setSettings(nextSettings); setMode(next) }
+    const snapshotPlan = prepareWeekSnapshots(dailySnapshots, dateKey, next, nextSettings, dateKey)
+    try { await repository.saveSettingsAndDailySnapshots(nextSettings, snapshotPlan.changed); setSettings(nextSettings); setMode(next); setDailySnapshots(snapshotPlan.all) }
     catch { setMessage('Não foi possível salvar o modo. Tente novamente.') }
     finally { setModeSaving(false) }
+  }
+
+  async function changeTrainingWeek(next: number, successMessage: string) {
+    const trainingWeek = clampTrainingWeek(next)
+    const nextSettings = { ...settings, trainingWeek }
+    try {
+      await repository.saveSettings(nextSettings)
+      setSettings(nextSettings)
+      setMessage(successMessage)
+    } catch { setMessage('Não foi possível salvar a semana do treino. Tente novamente.') }
   }
 
   async function saveCheckIn(next: DailyCheckIn) {
@@ -201,23 +298,23 @@ function App() {
       </header>
 
       <main className="content" id="main-content" tabIndex={-1}>
-        {tab === 'hoje' && <TodayView key={dateKey} now={now} items={todayItems} mode={mode} modeSaving={modeSaving} onMode={changeMode} states={todayStates} savingIds={savingIds} dateKey={dateKey} checkIn={todayCheckIn} safety={safety} onCheckIn={saveCheckIn} onToggle={toggleCompletion} onSkip={toggleSkipped} onOpen={setDetailItem} />}
-        {tab === 'semana' && <WeekView settings={settings} onOpen={setDetailItem} />}
-        <div hidden={tab !== 'registros'}><RecordsView dateKey={dateKey} shifts={deliveryShifts} expenses={expenses} studyLogs={studyLogs} completed={todayCompleted} onToggle={toggleCompletion} onShift={async (item) => { try { await repository.saveDeliveryShift(item); setDeliveryShifts((v) => [item, ...v]); setMessage('Turno salvo. O resultado é estimado com os custos informados.'); return true } catch (error) { setMessage(readableError(error, 'Não foi possível salvar o turno.')); return false } }} onExpense={async (item) => { try { await repository.saveExpense(item); setExpenses((v) => [item, ...v]); setMessage('Despesa salva.'); return true } catch (error) { setMessage(readableError(error, 'Não foi possível salvar a despesa.')); return false } }} onStudy={async (item) => { try { await repository.saveStudyLog(item); setStudyLogs((v) => [item, ...v]); setMessage('Estudo registrado.'); return true } catch (error) { setMessage(readableError(error, 'Não foi possível salvar o estudo.')); return false } }} /></div>
-        {tab === 'progresso' && <ProgressView progress={progress} onToggle={async (item) => { try { await repository.saveProgress(item); setProgress((v) => [...v.filter((p) => p.id !== item.id), item]) } catch (error) { setMessage(readableError(error, 'Não foi possível salvar o progresso.')) } }} />}
-        {tab === 'ajustes' && <SettingsView settings={settings} persistence={storagePersistence} onSettings={async (next) => { try { await repository.saveSettings(next); setSettings(next); setMode(next.preferredMode); setMessage('Ajustes salvos.') } catch (error) { setMessage(readableError(error, 'Não foi possível salvar os ajustes.')) } }} onMessage={setMessage} onImported={() => window.location.reload()} onCleared={() => window.location.reload()} />}
+        {tab === 'hoje' && <TodayView key={dateKey} now={now} items={todayItems} mode={mode} modeSaving={modeSaving} onMode={changeMode} states={todayStates} savingIds={savingIds} dateKey={dateKey} checkIn={todayCheckIn} safety={safety} weeklySummary={weeklySummary} todaySummary={todaySummary} onCheckIn={saveCheckIn} onToggle={toggleCompletion} onSkip={toggleSkipped} onOpen={(item) => setDetailActivity({ item, day: now.getDay() })} />}
+        {tab === 'semana' && <WeekView settings={settings} onOpen={(item, day) => setDetailActivity({ item, day })} />}
+        <div hidden={tab !== 'registros'}><RecordsView dateKey={dateKey} shifts={deliveryShifts} expenses={expenses} studyLogs={studyLogs} completed={todayCompleted} onToggle={toggleCompletion} onShift={saveLinkedShift} onExpense={saveLinkedExpense} onStudy={saveLinkedStudy} /></div>
+        {tab === 'progresso' && <ProgressView progress={progress} weeklySummary={weeklySummary} trainingWeek={clampTrainingWeek(settings.trainingWeek)} mode={mode} onTrainingWeek={changeTrainingWeek} onOpenTraining={(day) => { const item = routineItems.find((candidate) => candidate.id === 'strength'); if (item) setDetailActivity({ item, day: day === 'A' ? 2 : 4 }) }} onToggle={async (item) => { try { await repository.saveProgress(item); setProgress((v) => [...v.filter((p) => p.id !== item.id), item]) } catch (error) { setMessage(readableError(error, 'Não foi possível salvar o progresso.')) } }} />}
+        {tab === 'ajustes' && <SettingsView settings={settings} persistence={storagePersistence} onSettings={async (next) => { const snapshotPlan = prepareWeekSnapshots(dailySnapshots, dateKey, next.preferredMode, next, dateKey); try { await repository.saveSettingsAndDailySnapshots(next, snapshotPlan.changed); setSettings(next); setMode(next.preferredMode); setDailySnapshots(snapshotPlan.all); setMessage('Ajustes salvos.') } catch (error) { setMessage(readableError(error, 'Não foi possível salvar os ajustes.')) } }} onMessage={setMessage} onImported={() => window.location.reload()} onCleared={() => window.location.reload()} />}
       </main>
 
       <nav className="bottom-nav" aria-label="Navegação principal">
         {navItems.map((item) => <button key={item.id} className={tab === item.id ? 'active' : ''} onClick={() => { setTab(item.id); window.scrollTo({ top: 0, behavior: 'instant' }); window.requestAnimationFrame(() => document.getElementById('main-content')?.focus()) }} aria-current={tab === item.id ? 'page' : undefined}><Icon name={item.id} /><span>{item.label}</span></button>)}
       </nav>
       {message && <div className="toast" role="status">{message}</div>}
-      <ActivityDetailsDialog item={detailItem} onClose={() => setDetailItem(null)} />
+      <ActivityDetailsDialog selection={detailActivity} trainingWeek={clampTrainingWeek(settings.trainingWeek)} mode={mode} onClose={() => setDetailActivity(null)} />
     </div>
   )
 }
 
-function TodayView({ now, items, mode, modeSaving, onMode, states, savingIds, dateKey, checkIn, safety, onCheckIn, onToggle, onSkip, onOpen }: { now: Date; items: RoutineItem[]; mode: RoutineMode; modeSaving: boolean; onMode: (mode: RoutineMode) => void; states: Map<string, DailyCompletion['state']>; savingIds: string[]; dateKey: string; checkIn: DailyCheckIn | null; safety: { allowed: boolean; reason: string }; onCheckIn: (item: DailyCheckIn) => Promise<boolean>; onToggle: (id: string) => void; onSkip: (id: string) => void; onOpen: (item: RoutineItem) => void }) {
+function TodayView({ now, items, mode, modeSaving, onMode, states, savingIds, dateKey, checkIn, safety, weeklySummary, todaySummary, onCheckIn, onToggle, onSkip, onOpen }: { now: Date; items: RoutineItem[]; mode: RoutineMode; modeSaving: boolean; onMode: (mode: RoutineMode) => void; states: Map<string, DailyCompletion['state']>; savingIds: string[]; dateKey: string; checkIn: DailyCheckIn | null; safety: { allowed: boolean; reason: string }; weeklySummary: WeeklyProgressSummary; todaySummary: DailyProgressSummary; onCheckIn: (item: DailyCheckIn) => Promise<boolean>; onToggle: (id: string) => void; onSkip: (id: string) => void; onOpen: (item: RoutineItem) => void }) {
   const [checkInDirty, setCheckInDirty] = useState(false)
   const effectiveSafety = checkInDirty ? { allowed: false, reason: 'Salve a checagem atualizada antes de decidir pilotar.' } : safety
   const formattedDate = new Intl.DateTimeFormat('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' }).format(now)
@@ -243,6 +340,8 @@ function TodayView({ now, items, mode, modeSaving, onMode, states, savingIds, da
         {(Object.keys(modeCopy) as RoutineMode[]).map((key) => <button key={key} type="button" onClick={() => onMode(key)} disabled={modeSaving} aria-pressed={mode === key} className={mode === key ? 'selected' : ''}><strong>{modeCopy[key].label}</strong><span>{modeCopy[key].detail}</span></button>)}
       </div>
     </section>
+
+    <WeeklyProgressCard summary={weeklySummary} today={todaySummary} />
 
     <section className="focus-section" aria-labelledby="focus-heading">
       <div className="section-heading"><h2 id="focus-heading">{focus ? focusIsNow ? 'Agora' : focusIsPast ? 'Ainda em aberto' : focus.startTime ? 'Seu próximo compromisso' : 'Para quando couber' : 'Por enquanto, tudo certo'}</h2><span className="quiet-note">{done} de {items.length} concluídas</span></div>
@@ -270,15 +369,16 @@ function ActivityItem({ item, state, saving, blocked, safetyReason, onToggle, on
   </article>
 }
 
-function ActivityDetailsDialog({ item, onClose }: { item: RoutineItem | null; onClose: () => void }) {
+function ActivityDetailsDialog({ selection, trainingWeek, mode, onClose }: { selection: ActivitySelection | null; trainingWeek: number; mode: RoutineMode; onClose: () => void }) {
   const dialogRef = useRef<HTMLDialogElement>(null)
+  const item = selection?.item ?? null
   useEffect(() => {
     const dialog = dialogRef.current
     if (!dialog) return
     if (item && !dialog.open) dialog.showModal()
     if (!item && dialog.open) dialog.close()
   }, [item])
-  const guide = item ? activityGuides[item.id] : null
+  const guide = item ? getTrainingActivityGuide(item.id, trainingWeek, selection?.day ?? new Date().getDay(), mode) ?? activityGuides[item.id] : null
   return <dialog ref={dialogRef} className="activity-dialog" aria-labelledby="activity-dialog-title" aria-describedby="activity-dialog-intro" onClose={onClose} onClick={(event) => { if (event.target === event.currentTarget) event.currentTarget.close() }}>
     {item && guide && <>
       <div className="activity-dialog-main">
@@ -319,14 +419,14 @@ function CheckInCard({ dateKey, value, safety, deliveryToday, onSave, onDirtyCha
 
 function Choice({ active, onClick, children }: { active: boolean; onClick: () => void; children: string }) { return <button type="button" className={active ? 'choice active' : 'choice'} aria-pressed={active} onClick={onClick}>{children}</button> }
 
-function WeekView({ settings, onOpen }: { settings: AppSettings; onOpen: (item: RoutineItem) => void }) {
+function WeekView({ settings, onOpen }: { settings: AppSettings; onOpen: (item: RoutineItem, day: number) => void }) {
   const [selectedDay, setSelectedDay] = useState(() => new Date().getDay())
   const days = [1, 2, 3, 4, 5, 6, 0] as const
   const items = routineItems.filter((item) => item.days.includes(selectedDay as 0 | 1 | 2 | 3 | 4 | 5 | 6) && item.active && !settings.disabledActivities.includes(item.id)).map((item) => ({ ...item, ...settings.scheduleOverrides[item.id] })).sort((a, b) => (a.startTime ?? '').localeCompare(b.startTime ?? ''))
   return <>
     <PageTitle eyebrow="Visão geral" title="Sua semana" subtitle="Veja como os compromissos se distribuem. Ajuste os horários em Ajustes." />
     <div className="week-selector" role="group" aria-label="Escolher dia da semana">{days.map((day) => <button key={day} type="button" className={selectedDay === day ? 'selected' : ''} aria-pressed={selectedDay === day} onClick={() => setSelectedDay(day)}><span>{dayNames[day].slice(0, 3)}</span><i aria-hidden="true" /></button>)}</div>
-    <section className="week-panel" aria-live="polite"><div className="section-heading"><div><h2>{dayNames[selectedDay]}</h2><p className="section-description">{items.length} atividades previstas</p></div></div>{items.length ? <div className="week-list">{items.map((item) => <button type="button" className={`week-item nature-${item.nature}`} key={item.id} onClick={() => onOpen(item)} aria-label={`Ver orientações: ${item.title}`}><time>{item.startTime ?? 'Livre'}</time><span className="week-copy"><strong>{item.title}</strong><span className="week-meta">{areaLabels[item.area]} · {item.nature === 'fixa' ? 'Fixa' : item.nature === 'flexivel' ? 'Flexível' : 'Opcional'}</span><span className="week-hint">Ver orientações</span></span></button>)}</div> : <div className="empty-state"><strong>Dia sem atividades.</strong><p>Aproveite o espaço livre.</p></div>}</section>
+    <section className="week-panel" aria-live="polite"><div className="section-heading"><div><h2>{dayNames[selectedDay]}</h2><p className="section-description">{items.length} atividades previstas</p></div></div>{items.length ? <div className="week-list">{items.map((item) => <button type="button" className={`week-item nature-${item.nature}`} key={item.id} onClick={() => onOpen(item, selectedDay)} aria-label={`Ver orientações: ${item.title}`}><time>{item.startTime ?? 'Livre'}</time><span className="week-copy"><strong>{item.title}</strong><span className="week-meta">{areaLabels[item.area]} · {item.nature === 'fixa' ? 'Fixa' : item.nature === 'flexivel' ? 'Flexível' : 'Opcional'}</span><span className="week-hint">Ver orientações</span></span></button>)}</div> : <div className="empty-state"><strong>Dia sem atividades.</strong><p>Aproveite o espaço livre.</p></div>}</section>
     <p className="week-footnote">Os turnos opcionais dependem da checagem de segurança no dia.</p>
   </>
 }
@@ -396,9 +496,41 @@ function ChecklistRecord({ completed, onToggle }: { completed: Set<string>; onTo
   return <div className="checklist-columns"><section className="form-card"><p className="eyebrow">Domingo</p><h2>Preparo de marmitas</h2>{render('meal-check', mealPrepChecklist)}</section><section className="form-card"><p className="eyebrow">Sábado</p><h2>Manutenção da casa</h2>{render('home-check', homeChecklist)}</section></div>
 }
 
-function ProgressView({ progress, onToggle }: { progress: ThirtyDayProgress[]; onToggle: (item: ThirtyDayProgress) => Promise<void> }) {
+function ProgressView({ progress, weeklySummary, trainingWeek, mode, onTrainingWeek, onOpenTraining, onToggle }: { progress: ThirtyDayProgress[]; weeklySummary: WeeklyProgressSummary; trainingWeek: number; mode: RoutineMode; onTrainingWeek: (week: number, message: string) => Promise<void>; onOpenTraining: (day: TrainingDay) => void; onToggle: (item: ThirtyDayProgress) => Promise<void> }) {
   const { completedIds: completed, total, completedCount, percentage } = summarizePlanProgress(progress, progressPlan)
-  return <><PageTitle eyebrow="Plano de 30 dias" title="Seu progresso continua" subtitle="Marque o que aconteceu. Uma pausa não apaga o que você já construiu." /><section className="progress-summary"><div><strong>{completedCount} de {total} passos registrados</strong><span>Continue de onde fizer sentido.</span></div><div className="progress-track" role="progressbar" aria-label="Passos do plano concluídos" aria-valuenow={completedCount} aria-valuemin={0} aria-valuemax={total}><span style={{ width: `${percentage}%` }} /></div></section><div className="progress-weeks">{progressPlan.map((week) => { const weekDone = week.items.filter((_, index) => completed.has(`week-${week.week}-${index}`)).length; return <section className="progress-card" key={week.week}><header><span>Etapa {week.week}</span><strong>{week.title}</strong><small>{weekDone} de {week.items.length}</small></header>{week.items.map((text, index) => { const id = `week-${week.week}-${index}`; const done = completed.has(id); return <label className="checklist-row" key={id}><input type="checkbox" checked={done} onChange={() => onToggle({ id, week: week.week, item: text, state: done ? 'pending' : 'done', completedAt: done ? undefined : new Date().toISOString() })} /><span>{text}</span></label> })}</section> })}</div><div className="info-card"><strong>Uma leitura honesta</strong><p>Dados incompletos não permitem concluir que uma mudança de saúde ou renda ocorreu. Observe tendências e leve decisões clínicas ou financeiras importantes a profissionais habilitados.</p></div></>
+  const { block, week } = getTrainingPlanWeek(trainingWeek)
+  return <>
+    <PageTitle eyebrow="Evolução" title="Seu progresso continua" subtitle="A semana do treino pode avançar, repetir ou voltar sem apagar registros anteriores." />
+
+    <WeeklyProgressCard summary={weeklySummary} />
+
+    <section className="training-plan-card" aria-labelledby="training-plan-title">
+      <header className="training-plan-header">
+        <div><p className="eyebrow">Semana {week.week} de 24 · {block.range}</p><h2 id="training-plan-title">{block.title}</h2></div>
+        <span className="count-chip">{modeCopy[mode].label}</span>
+      </header>
+      <p className="training-objective">{block.objective}</p>
+      <div className="training-week-focus"><strong>{week.title}</strong><p>{week.focus}</p><span>{week.circuits} circuito{week.circuits === 1 ? '' : 's'} · descanso {week.rest}</span><small>{week.progression}</small></div>
+      <div className="training-workout-actions" aria-label="Treinos da semana"><button type="button" className="secondary-button" onClick={() => onOpenTraining('A')}>Ver treino A · terça</button><button type="button" className="secondary-button" onClick={() => onOpenTraining('B')}>Ver treino B · quinta</button></div>
+      <details className="training-criteria"><summary>Critérios para avançar, repetir ou regredir</summary><dl><div><dt>Avançar</dt><dd>{block.criteria.advance}</dd></div><div><dt>Repetir</dt><dd>{block.criteria.repeat}</dd></div><div><dt>Regredir ou interromper</dt><dd>{block.criteria.regress}</dd></div></dl></details>
+      <div className="training-week-actions"><button type="button" className="text-button" disabled={week.week === 1} onClick={() => onTrainingWeek(week.week - 1, `Retorno para a semana ${week.week - 1} salvo.`)}>Semana anterior</button><button type="button" className="secondary-button" onClick={() => onTrainingWeek(week.week, `Semana ${week.week} mantida para repetição.`)}>Repetir semana</button><button type="button" className="primary-button" disabled={week.week === 24} onClick={() => onTrainingWeek(week.week + 1, `Semana ${week.week + 1} iniciada.`)}>Avançar semana</button></div>
+    </section>
+
+    <details className="training-roadmap"><summary>Ver os seis blocos do plano</summary><ol>{trainingBlocks.map((item) => <li key={item.id} className={item.id === block.id ? 'current' : ''}><span>{item.range}</span><strong>{item.title}</strong><p>{item.objective}</p></li>)}</ol></details>
+
+    <div className="section-heading progress-plan-heading"><div><h2>Plano inicial de 30 dias</h2><p className="section-description">O checklist original permanece separado e com todos os registros preservados.</p></div></div>
+    <section className="progress-summary"><div><strong>{completedCount} de {total} passos registrados</strong><span>Continue de onde fizer sentido.</span></div><div className="progress-track" role="progressbar" aria-label="Passos do plano concluídos" aria-valuenow={completedCount} aria-valuemin={0} aria-valuemax={total}><span style={{ width: `${percentage}%` }} /></div></section>
+    <div className="progress-weeks">{progressPlan.map((planWeek) => { const weekDone = planWeek.items.filter((_, index) => completed.has(`week-${planWeek.week}-${index}`)).length; return <section className="progress-card" key={planWeek.week}><header><span>Etapa {planWeek.week}</span><strong>{planWeek.title}</strong><small>{weekDone} de {planWeek.items.length}</small></header>{planWeek.items.map((text, index) => { const id = `week-${planWeek.week}-${index}`; const done = completed.has(id); return <label className="checklist-row" key={id}><input type="checkbox" checked={done} onChange={() => onToggle({ id, week: planWeek.week, item: text, state: done ? 'pending' : 'done', completedAt: done ? undefined : new Date().toISOString() })} /><span>{text}</span></label> })}</section> })}</div>
+    <div className="info-card"><strong>Uma leitura honesta</strong><p>Dados incompletos não permitem concluir que uma mudança de saúde ou renda ocorreu. Observe tendências e leve decisões clínicas ou financeiras importantes a profissionais habilitados.</p></div>
+  </>
+}
+
+function WeeklyProgressCard({ summary, today }: { summary: WeeklyProgressSummary; today?: DailyProgressSummary }) {
+  return <section className="progress-summary" role="region" aria-labelledby="weekly-progress-title" aria-live="polite">
+    <div><h2 id="weekly-progress-title">Progresso desta semana</h2><strong>{summary.completedDays} de {summary.plannedDays} dias concluídos</strong><span>{summary.completedRequiredActivities} de {summary.requiredActivities} atividades obrigatórias · {summary.activityPercentage}%</span></div>
+    {today && <p>{today.completed ? 'Dia concluído' : `${today.completedRequiredCount} de ${today.requiredCount} obrigatórias concluídas hoje`}</p>}
+    <div className="progress-track" role="progressbar" aria-label="Atividades obrigatórias concluídas na semana" aria-valuenow={summary.completedRequiredActivities} aria-valuemin={0} aria-valuemax={summary.requiredActivities}><span style={{ width: `${summary.activityPercentage}%` }} /></div>
+  </section>
 }
 
 function SettingsView({ settings, persistence, onSettings, onMessage, onImported, onCleared }: { settings: AppSettings; persistence: StoragePersistence; onSettings: (settings: AppSettings) => Promise<void>; onMessage: (message: string) => void; onImported: () => void; onCleared: () => void }) {
@@ -411,7 +543,7 @@ function SettingsView({ settings, persistence, onSettings, onMessage, onImported
   const storageText = persistence === 'granted' ? 'Proteção persistente concedida' : persistence === 'checking' ? 'Verificando…' : persistence === 'unsupported' ? 'O navegador não informa proteção persistente' : 'Sujeito a limpeza pelo navegador — faça backups periódicos'
   return <><PageTitle eyebrow="Preferências e dados" title="Ajustes" subtitle="Sua rotina pode mudar junto com você." />
     <section className="settings-section"><h2>Aparência</h2><p className="section-description">Escolha como o Ritmo aparece neste aparelho.</p><div className="appearance-options" role="group" aria-label="Aparência">{([['system', 'Do aparelho'], ['light', 'Clara'], ['dark', 'Escura']] as const).map(([value, label]) => <button key={value} type="button" aria-pressed={(draft.theme ?? 'system') === value} className={(draft.theme ?? 'system') === value ? 'selected' : ''} onClick={() => setDraft({ ...draft, theme: value })}>{label}</button>)}</div></section>
-    <section className="settings-section"><div className="section-heading"><div><h2>Atividades e horários</h2><p className="section-description">Mostre o que importa e ajuste o início de cada atividade.</p></div></div><details className="settings-disclosure"><summary>Personalizar rotina <span>{routineItems.length} atividades</span></summary><div className="settings-list">{routineItems.map((item) => { const enabled = !draft.disabledActivities.includes(item.id); return <div className="setting-row" key={item.id}><button className={`toggle ${enabled ? 'on' : ''}`} role="switch" aria-checked={enabled} aria-label={`${enabled ? 'Desativar' : 'Ativar'} ${item.title}`} onClick={() => toggleActive(item.id)}><span /></button><div><strong>{item.title}</strong><small>{areaLabels[item.area]}</small></div><input aria-label={`Horário inicial de ${item.title}`} type="time" value={draft.scheduleOverrides[item.id]?.startTime ?? item.startTime ?? ''} onChange={(e) => updateTime(item, e.target.value)} /></div> })}</div></details><div className="settings-actions"><button className="primary-button" onClick={() => onSettings(draft)}>Salvar ajustes</button><button className="text-button" onClick={() => { if (window.confirm('Restaurar atividades, horários, ritmo e aparência para os padrões? Salve para confirmar a mudança.')) setDraft(defaultSettings()) }}>Restaurar padrões</button></div></section>
+    <section className="settings-section"><div className="section-heading"><div><h2>Atividades e horários</h2><p className="section-description">Mostre o que importa e ajuste o início de cada atividade.</p></div></div><details className="settings-disclosure"><summary>Personalizar rotina <span>{routineItems.length} atividades</span></summary><div className="settings-list">{routineItems.map((item) => { const enabled = !draft.disabledActivities.includes(item.id); return <div className="setting-row" key={item.id}><button className={`toggle ${enabled ? 'on' : ''}`} role="switch" aria-checked={enabled} aria-label={`${enabled ? 'Desativar' : 'Ativar'} ${item.title}`} onClick={() => toggleActive(item.id)}><span /></button><div><strong>{item.title}</strong><small>{areaLabels[item.area]}</small></div><input aria-label={`Horário inicial de ${item.title}`} type="time" value={draft.scheduleOverrides[item.id]?.startTime ?? item.startTime ?? ''} onChange={(e) => updateTime(item, e.target.value)} /></div> })}</div></details><div className="settings-actions"><button className="primary-button" onClick={() => onSettings(draft)}>Salvar ajustes</button><button className="text-button" onClick={() => { if (window.confirm('Restaurar atividades, horários, ritmo, semana do treino e aparência para os padrões? Salve para confirmar a mudança.')) setDraft(defaultSettings()) }}>Restaurar padrões</button></div></section>
     <section className="settings-section"><h2>Dados neste aparelho</h2><div className="storage-status"><span className={persistence === 'granted' ? 'status-good' : 'status-warn'} aria-hidden="true" /><div><strong>Armazenamento local</strong><p>{storageText}</p></div></div><div className="action-grid"><button className="secondary-button" onClick={exportData}>Exportar backup JSON</button><label className="secondary-button file-button">Importar backup JSON<input type="file" accept="application/json,.json" onChange={(e) => e.target.files?.[0] && importData(e.target.files[0])} /></label></div><p className="fine-print">O app funciona sem conta e sem servidor. Guarde uma cópia do backup fora do celular periodicamente.</p></section>
     <section className="danger-section"><h2>Apagar todos os dados</h2><p>Remove registros, progresso e ajustes somente deste aparelho.</p><button className="danger-button" onClick={clearData}>Apagar registros</button></section></>
 }

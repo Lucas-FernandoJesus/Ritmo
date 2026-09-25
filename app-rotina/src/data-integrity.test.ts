@@ -45,6 +45,14 @@ describe('integridade dos dados iniciais', () => {
     }
   })
 
+  it('oferece o fortalecimento nos três ritmos sem duplicar a movimentação reduzida', () => {
+    const strength = routineItems.find((item) => item.id === 'strength')
+    const reducedMove = routineItems.find((item) => item.id === 'reduced-move')
+    expect(strength?.modes).toEqual(['normal', 'reduzido', 'minimo'])
+    expect(reducedMove?.days).not.toContain(2)
+    expect(reducedMove?.days).not.toContain(4)
+  })
+
   it('mantém o plano de 30 dias completo e sem itens duplicados', () => {
     expect(progressPlan.map((week) => week.week)).toEqual([1, 2, 3, 4])
     const items = progressPlan.flatMap((week) => week.items)

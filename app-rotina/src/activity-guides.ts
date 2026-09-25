@@ -1,21 +1,14 @@
-export interface GuideStep {
-  title: string
-  amount?: string
-  description: string
-}
-
-export interface ActivityGuide {
-  introduction: string
-  steps: readonly GuideStep[]
-  closing?: string
-}
+import { getMuayThaiGuide, getStrengthOverviewGuide } from './training-plan'
+import type { ActivityGuide } from './types'
 
 // Orientações adaptadas dos arquivos de planejamento 02–12, disponíveis ao lado
-// da pasta do projeto. As quantidades dos exercícios vêm do plano original.
+// da pasta do projeto. As quantidades dos exercícios vêm do plano atualizado.
 // Explicações gerais dos movimentos foram conferidas com:
 // https://www.nhs.uk/live-well/exercise/strength-exercises/
 // https://www.uhsussex.nhs.uk/resources/standing-exercises-2/
 // https://www.cuh.nhs.uk/patient-information/hip-strengthening-exercises/
+// https://www.cdc.gov/physical-activity-basics/guidelines/adults.html
+// https://orthoinfo.aaos.org/en/diseases--conditions/adult-forearm-fractures/
 export const activityGuides: Record<string, ActivityGuide> = {
   'wake-weekday': {
     introduction: 'Uma preparação breve para começar a manhã sem pressa.',
@@ -31,36 +24,9 @@ export const activityGuides: Record<string, ActivityGuide> = {
       { title: 'Trocar de roupa', description: 'Vista uma roupa confortável para o treino previsto para hoje.' },
     ],
   },
-  'muay-mon': {
-    introduction: 'Sessão técnica sem contato, leve a moderada. A referência do plano é conseguir conversar durante o esforço.',
-    steps: [
-      { title: 'Aquecimento', amount: '5 min', description: 'Faça 1 minuto de cada: marcha no lugar, passos laterais, elevação confortável dos joelhos, movimentação na base e deslocamentos para frente e para trás.' },
-      { title: 'Base e deslocamento', amount: '1 min + 1 min leve', description: 'Mova-se em diferentes direções. Depois, faça um minuto de recuperação leve.' },
-      { title: 'Shadowboxing técnico', amount: '1 min + 1 min leve', description: 'Treine gestos leves no ar, sem contato e sem golpes explosivos com o braço esquerdo. Recupere-se por um minuto.' },
-      { title: 'Joelhadas no ar', amount: '1 min + 1 min leve', description: 'Faça movimentos controlados, sem impacto. Recupere-se por um minuto.' },
-      { title: 'Defesa e combinação', amount: '2 blocos de 1 min + 1 min leve', description: 'No primeiro bloco, faça passos diagonais, esquivas suaves e defesa sem prender o braço. No segundo, combine passos e joelhadas leves.' },
-      { title: 'Desaceleração', amount: '5 min', description: 'Caminhe devagar por 2 minutos, faça mobilidade confortável de quadris e tornozelos por 2 minutos e use o último minuto para recuperar a respiração e observar sintomas.' },
-    ],
-    closing: 'Se estiver pesado, o plano permite começar com apenas 3 rounds. Não use o saco de pancadas sem liberação específica para impacto.',
-  },
-  'muay-fri': {
-    introduction: 'Sexta é opcional: escolha treino leve sem impacto somente se estiver recuperado; descansar também atende ao plano.',
-    steps: [
-      { title: 'Verificar como está', description: 'Observe sono, cansaço e a condição habitual do braço antes de decidir.' },
-      { title: 'Se treinar', description: 'Priorize aquecimento, base, deslocamentos e movimentos técnicos confortáveis no ar. Não faça contato nem golpes fortes.' },
-      { title: 'Se descansar', description: 'Use este horário para recuperação, sem compensar o treino em outro momento do dia.' },
-    ],
-  },
-  strength: {
-    introduction: 'Uma série contém os quatro movimentos abaixo. Comece com 1 série; o plano prevê 2 apenas se você se recuperar bem.',
-    steps: [
-      { title: 'Sentar e levantar de uma cadeira', amount: '8–12 repetições', description: 'Use uma cadeira firme, sem rodas. Sente-se com os pés apoiados no chão, incline o tronco um pouco à frente, levante-se usando as pernas e volte a sentar de forma controlada. Não force o braço para se impulsionar.' },
-      { title: 'Elevação de panturrilhas', amount: '10–15 repetições', description: 'Em pé, perto de um apoio estável se precisar de equilíbrio, eleve os calcanhares até ficar na ponta dos pés. Abaixe devagar até apoiar os pés novamente.' },
-      { title: 'Elevação de quadril', amount: '8–12 repetições', description: 'Deite-se de costas com os joelhos dobrados e os pés no chão. Contraia levemente o abdômen e os glúteos, levante o quadril até onde for confortável e abaixe de maneira controlada.' },
-      { title: 'Elevação alternada de joelhos em pé', amount: '30–45 segundos', description: 'Fique em pé junto a um apoio estável, se necessário. Eleve um joelho até uma altura confortável, volte o pé ao chão e alterne as pernas lentamente, como uma marcha no lugar.' },
-    ],
-    closing: 'O plano prioriza as pernas e não substitui a reabilitação do antebraço. Pare se aparecerem sintomas novos ou piores; para adaptações ao braço, peça orientação ao profissional que acompanha sua recuperação.',
-  },
+  'muay-mon': getMuayThaiGuide('muay-mon', 1, 'normal'),
+  'muay-fri': getMuayThaiGuide('muay-fri', 1, 'normal'),
+  strength: getStrengthOverviewGuide(1),
   'reduced-move': {
     introduction: 'Movimento confortável é uma possibilidade no modo Reduzido, não uma obrigação.',
     steps: [

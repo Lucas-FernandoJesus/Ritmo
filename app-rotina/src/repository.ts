@@ -1,8 +1,9 @@
-import { defaultSettings, isValidCheckIn, isValidCompletion, isValidDeliveryShift, isValidExpense, isValidProgress, isValidSettings, isValidStudyLog, SCHEMA_VERSION, validateBackup } from './domain'
-import type { AppSettings, BackupData, DailyCheckIn, DailyCompletion, DeliveryShift, Expense, StudyLog, ThirtyDayProgress } from './types'
+import { defaultSettings, isValidCheckIn, isValidCompletion, isValidDailyPlanSnapshot, isValidDeliveryShift, isValidExpense, isValidProgress, isValidSettings, isValidStudyLog, SCHEMA_VERSION, validateBackup } from './domain'
+import type { AppSettings, BackupData, DailyCheckIn, DailyCompletion, DailyPlanSnapshot, DeliveryShift, Expense, StudyLog, ThirtyDayProgress } from './types'
 
 const DB_NAME = 'rotina-local'
-const stores = ['completions', 'checkIns', 'deliveryShifts', 'expenses', 'studyLogs', 'progress', 'settings'] as const
+const DB_VERSION = 2
+const stores = ['completions', 'dailySnapshots', 'checkIns', 'deliveryShifts', 'expenses', 'studyLogs', 'progress', 'settings'] as const
 type StoreName = typeof stores[number]
 
 function requestResult<T>(request: IDBRequest<T>): Promise<T> {
@@ -25,7 +26,7 @@ let dbPromise: Promise<IDBDatabase> | null = null
 function openDatabase(): Promise<IDBDatabase> {
   if (dbPromise) return dbPromise
   dbPromise = new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, SCHEMA_VERSION)
+    const request = indexedDB.open(DB_NAME, DB_VERSION)
     request.onupgradeneeded = () => {
       const db = request.result
       for (const store of stores) if (!db.objectStoreNames.contains(store)) db.createObjectStore(store, { keyPath: 'id' })
@@ -77,9 +78,20 @@ export const repository = {
     return isValidSettings(settings) ? settings : defaultSettings()
   },
   saveSettings: (settings: AppSettings) => { assertValid(settings, isValidSettings, 'Ajustes inválidos.'); return put('settings', settings) },
+  async saveSettingsAndDailySnapshots(settings: AppSettings, snapshots: DailyPlanSnapshot[]) {
+    assertValid(settings, isValidSettings, 'Ajustes inválidos.')
+    for (const snapshot of snapshots) assertValid(snapshot, isValidDailyPlanSnapshot, 'Snapshot diário inválido.')
+    const db = await openDatabase()
+    const tx = db.transaction(['settings', 'dailySnapshots'], 'readwrite')
+    tx.objectStore('settings').put(settings)
+    for (const snapshot of snapshots) tx.objectStore('dailySnapshots').put(snapshot)
+    await transactionDone(tx)
+  },
   getCompletions: () => getAll<DailyCompletion>('completions'),
   saveCompletion: (completion: DailyCompletion) => { assertValid(completion, isValidCompletion, 'Conclusão diária inválida.'); return put('completions', completion) },
   deleteCompletion: (id: string) => remove('completions', id),
+  getDailySnapshots: () => getAll<DailyPlanSnapshot>('dailySnapshots'),
+  saveDailySnapshot: (snapshot: DailyPlanSnapshot) => { assertValid(snapshot, isValidDailyPlanSnapshot, 'Snapshot diário inválido.'); return put('dailySnapshots', snapshot) },
   getCheckIn: (date: string) => get<DailyCheckIn>('checkIns', date),
   saveCheckIn: (checkIn: DailyCheckIn) => { assertValid(checkIn, isValidCheckIn, 'Checagem diária inválida.'); return put('checkIns', { ...checkIn, id: checkIn.localDate }) },
   getDeliveryShifts: () => getAll<DeliveryShift>('deliveryShifts'),
@@ -95,6 +107,7 @@ export const repository = {
       schemaVersion: SCHEMA_VERSION,
       exportedAt: new Date().toISOString(),
       completions: await getAll('completions'),
+      dailySnapshots: await getAll('dailySnapshots'),
       checkIns: (await getAll<{ id: string } & DailyCheckIn>('checkIns')).map(({ id: _id, ...item }) => item),
       deliveryShifts: await getAll('deliveryShifts'),
       expenses: await getAll('expenses'),
@@ -111,6 +124,7 @@ export const repository = {
     const tx = db.transaction([...stores], 'readwrite')
     for (const name of stores) tx.objectStore(name).clear()
     for (const item of data.completions) tx.objectStore('completions').put(item)
+    for (const item of data.dailySnapshots ?? []) tx.objectStore('dailySnapshots').put(item)
     for (const item of data.checkIns) tx.objectStore('checkIns').put({ ...item, id: item.localDate })
     for (const item of data.deliveryShifts) tx.objectStore('deliveryShifts').put(item)
     for (const item of data.expenses) tx.objectStore('expenses').put(item)

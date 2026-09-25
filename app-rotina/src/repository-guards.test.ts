@@ -3,6 +3,10 @@ import { defaultSettings } from './domain'
 import { repository } from './repository'
 import type { BackupData, DeliveryShift, Expense } from './types'
 
+const snapshotRepository = repository as unknown as {
+  saveDailySnapshot: (snapshot: unknown) => Promise<void>
+}
+
 describe('barreiras do repositório', () => {
   it('rejeita despesa inválida antes de acessar a IndexedDB', () => {
     const expense: Expense = { id: 'expense-1', localDate: '2026-09-24', description: 'Inválida', category: 'Outros', amount: -1, createdAt: '2026-09-24T18:00:00.000Z' }
@@ -17,6 +21,17 @@ describe('barreiras do repositório', () => {
   it('rejeita configurações adulteradas antes de acessar a IndexedDB', () => {
     const settings = { ...defaultSettings(), preferredMode: 'turbo' as 'normal' }
     expect(() => repository.saveSettings(settings)).toThrow('Ajustes inválidos')
+  })
+
+  it('rejeita snapshot diário inválido antes de acessar a IndexedDB', () => {
+    const snapshot = {
+      id: '2026-09-24',
+      localDate: '2026-09-23',
+      mode: 'normal',
+      activities: [],
+      capturedAt: '2026-09-24T18:00:00.000Z',
+    }
+    expect(() => snapshotRepository.saveDailySnapshot(snapshot)).toThrow('Snapshot diário inválido')
   })
 
   it('rejeita importação malformada antes de abrir uma transação', async () => {

@@ -257,6 +257,31 @@ textarea { min-height: 86px; resize: vertical; }
 .progress-card header small { grid-column: 2; grid-row: 1 / 3; align-self: center; color: var(--muted); font-size: .78rem; }
 .info-card { max-width: 740px; margin-top: 20px; padding: 16px; border-left: 3px solid var(--accent); background: var(--surface-soft); border-radius: 0 var(--radius-md) var(--radius-md) 0; }
 .info-card p { color: var(--muted); margin-top: 4px; font-size: .85rem; }
+.training-plan-card { padding: 20px; border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--surface); box-shadow: var(--shadow); }
+.training-plan-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.training-plan-header h2 { margin-top: 2px; font-family: Georgia, Cambria, serif; font-size: clamp(1.4rem, 5vw, 1.9rem); }
+.training-objective { max-width: 760px; margin-top: 10px; color: var(--muted); line-height: 1.55; }
+.training-week-focus { display: grid; gap: 5px; margin-top: 18px; padding: 16px; border-left: 3px solid var(--primary); border-radius: 0 var(--radius-md) var(--radius-md) 0; background: var(--surface-soft); }
+.training-week-focus strong { font-size: 1.05rem; }
+.training-week-focus p { line-height: 1.45; }
+.training-week-focus span, .training-week-focus small { color: var(--muted); font-size: .84rem; }
+.training-workout-actions, .training-week-actions { display: grid; gap: 10px; margin-top: 16px; }
+.training-workout-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.training-week-actions { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.training-workout-actions button, .training-week-actions button { width: 100%; }
+.training-criteria { margin-top: 16px; border-top: 1px solid var(--line-soft); border-bottom: 1px solid var(--line-soft); }
+.training-criteria summary, .training-roadmap summary { cursor: pointer; padding: 14px 0; font-weight: 700; }
+.training-criteria dl { display: grid; gap: 12px; padding-bottom: 16px; }
+.training-criteria dl > div { display: grid; gap: 3px; }
+.training-criteria dt { color: var(--primary); font-size: .82rem; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; }
+.training-criteria dd { color: var(--muted); font-size: .9rem; line-height: 1.5; }
+.training-roadmap { margin-top: 14px; padding: 0 18px; border: 1px solid var(--line-soft); border-radius: var(--radius-lg); background: var(--surface); }
+.training-roadmap ol { display: grid; gap: 10px; padding: 0 0 18px; list-style: none; }
+.training-roadmap li { display: grid; gap: 2px; padding: 12px; border: 1px solid var(--line-soft); border-radius: var(--radius-md); }
+.training-roadmap li.current { border-color: var(--accent); background: var(--surface-soft); }
+.training-roadmap li span { color: var(--primary); font-size: .78rem; font-weight: 700; }
+.training-roadmap li p { color: var(--muted); font-size: .84rem; line-height: 1.4; }
+.progress-plan-heading { margin-top: 28px; }
 
 .settings-section, .danger-section { max-width: 800px; margin-bottom: 16px; }
 .settings-section .section-description { margin: -8px 0 16px; }
@@ -307,6 +332,7 @@ textarea { min-height: 86px; resize: vertical; }
   .content { padding-top: 22px; }
   .records-layout, .checklist-columns, .progress-weeks { grid-template-columns: 1fr; }
   .form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .training-workout-actions, .training-week-actions { grid-template-columns: 1fr; }
 }
 @media (max-width: 520px) {
   .topbar > div:nth-child(2) span { display: none; }

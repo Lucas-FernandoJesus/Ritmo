@@ -1,6 +1,6 @@
 const APP_URL = new URL('./', self.location.href)
 const CACHE_PREFIX = `ritmo-${encodeURIComponent(APP_URL.pathname)}-`
-const CACHE_NAME = `${CACHE_PREFIX}v4`
+const CACHE_NAME = `${CACHE_PREFIX}v5`
 const CORE = [
   'manifest.webmanifest',
   'ritmo-mark.svg',
