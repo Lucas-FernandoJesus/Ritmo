@@ -20,6 +20,9 @@ jobs:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
+    defaults:
+      run:
+        working-directory: app-rotina
     steps:
       - name: Obter código
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -28,6 +31,7 @@ jobs:
         with:
           node-version: lts/*
           cache: npm
+          cache-dependency-path: app-rotina/package-lock.json
       - name: Instalar dependências
         run: npm ci
       - name: Validar aplicação
@@ -41,7 +45,7 @@ jobs:
       - name: Enviar arquivos publicados
         uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5
         with:
-          path: ./dist
+          path: ./app-rotina/dist
       - name: Publicar
         id: deployment
         uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5
