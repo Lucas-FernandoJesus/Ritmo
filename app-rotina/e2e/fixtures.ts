@@ -39,7 +39,7 @@ export async function openAppAt(page: Page, time: Date | string) {
   await expect(page.getByRole('heading', { name: 'Um dia de cada vez.', exact: true })).toBeVisible()
 }
 
-export async function goToTab(page: Page, name: 'Hoje' | 'Semana' | 'Registros' | 'Progresso' | 'Ajustes') {
+export async function goToTab(page: Page, name: 'Hoje' | 'Semana' | 'Treinos' | 'Registros' | 'Progresso' | 'Ajustes') {
   const navigation = page.getByRole('navigation', { name: 'Navegação principal' })
   const button = navigation.getByRole('button', { name, exact: true })
   await button.click()

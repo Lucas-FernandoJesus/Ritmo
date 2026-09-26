@@ -1,6 +1,6 @@
 # Pesquisa e plano de exercícios de Muay Thai do Ritmo
 
-Pesquisa: 25–26/09/2026. Estado: **proposta de conteúdo, sem implementação na aplicação**. Documentos de apoio: [inventário integral](./inventario.md) e [fichas das aulas verificadas](./fichas.md).
+Pesquisa: 25–26/09/2026. Estado: **pesquisa documentada; seleção inicial de práticas implementada na tela Treinos**. Documentos de apoio: [inventário integral](./inventario.md) e [fichas das aulas verificadas](./fichas.md).
 
 ## 1. Contexto real do projeto
 
@@ -14,7 +14,7 @@ O plano atualmente codificado ainda diz que o escopo da liberação para golpes 
 
 - Atividades `muay-mon` e `muay-fri` na agenda; guias por atividade, modos normal/reduzido/mínimo e plano de 24 semanas em seis blocos de quatro semanas.
 - O plano define rounds e recuperação por bloco: semanas 1–4, 3 × 1 min e 1 min de recuperação; semanas 5–8, 4 × 1 min; semanas 9–12, 4 × 75 s; semanas 13–24, 4 × 90 s, com recuperação específica por bloco. A quarta semana de cada bloco é de consolidação.
-- Há conclusão da **atividade/sessão**, não um catálogo de técnicas, pré-requisitos por técnica, vínculo de vídeo por exercício ou registro de domínio de cada habilidade. A seleção da semana é local e manual.
+- Há conclusão da **atividade/sessão** e um catálogo simples de práticas de Muay com instruções e vídeos por trecho em [`muay-exercises.ts`](../../app-rotina/src/muay-exercises.ts). Ainda não há registro de domínio de cada habilidade nem pré-requisitos estruturados por técnica. A seleção da semana é local e manual.
 - Os guias ficam embutidos no app para acesso offline; vídeos do YouTube exigem rede. Ver [README da aplicação](../../app-rotina/README.md), [tipos](../../app-rotina/src/types.ts) e [plano](../../app-rotina/src/training-plan.ts).
 
 ## 2. Cobertura e método
@@ -62,14 +62,14 @@ As [fichas das aulas verificadas](./fichas.md) registram o conteúdo observado p
 | **11. Sombra curta pessoal** — adaptação | Combinar 2–3 habilidades conhecidas; combinação; requer itens escolhidos acima. | Ex.: “passo → joelho controlado → saída lateral”; repetir com volta à base e trocar **um** elemento por vez, nos rounds existentes. | Evitar sequência longa, mãos caídas e parada rígida entre ações. | [Spring, camadas](https://www.youtube.com/watch?v=Cn5Z0bOhr1M), [Martial Spirit, combinações](https://www.youtube.com/watch?v=yZWOyDyIUUU), [adicional](https://www.youtube.com/watch?v=z37V3X6tPG4). |
 | **12. Revisão técnica leve** — adaptação | Demonstrar base, deslocamento e retorno sem novidade; consolidação; requer prática anterior. | Na quarta semana de cada bloco, menor volume e registro de dificuldade/recuperação. Sexta: revisão leve ou descanso segundo o plano existente. | Repetir/regredir conforme técnica, esforço e condição habitual do braço; não testar potência. | [Plano do Ritmo](../../app-rotina/src/training-plan.ts), [Spring ~40 min](https://www.youtube.com/watch?v=Cn5Z0bOhr1M&t=2400s). |
 
-**Distribuição proposta, sem automatização:** semanas 1–4: 1–4; 5–8: consolidar 1–4 e, quando adequado, 5–7; 9–12: 7–9; 13–16: direções e possível 10; 17–20: 11 com rounds do bloco; 21–24: 11–12 e revisão. Esta ordem é uma **adaptação pedagógica do Ritmo**, não uma prescrição atribuída aos instrutores.
+**Distribuição proposta:** semanas 1–4: 1–4; 5–8: consolidar 1–4 e, quando adequado, 5–7; 9–12: 7–9; 13–16: direções e possível 10; 17–20: 11 com rounds do bloco; 21–24: 11–12 e revisão. A aplicação agora seleciona práticas por bloco em [`muay-exercises.ts`](../../app-rotina/src/muay-exercises.ts), sem acrescentar rounds. A técnica 10, chute circular, **não foi incluída** enquanto a demonstração visual não for revisada. Esta ordem é uma **adaptação pedagógica do Ritmo**, não uma prescrição atribuída aos instrutores.
 
-## 5. Integração futura, ainda não implementada
+## 5. Integração atual e trabalho editorial restante
 
-1. **Primeira etapa editorial:** decidir quais exercícios aparecem nos guias já existentes de cada bloco e manter as instruções essenciais offline. O documento matinal e o plano de 24 semanas continuam as fontes de dose e critérios.
-2. **Se houver interesse em navegação por técnica:** catálogo com ID, nome, nível, pré-requisitos, instrução, alternativa reduzida, bloco, origem e link de trecho. Isso **não existe** hoje.
+1. **Implementado:** aba Treinos, acesso direto de Hoje/Semana à tela de Muay ou fortalecimento, instruções de Muay offline e links individuais para trechos das aulas. O documento matinal e o plano de 24 semanas continuam as fontes de dose e critérios.
+2. **Ainda editorial:** o catálogo tem ID, nome, objetivo, instrução, atenção, bloco e link, mas ainda não tem nível e pré-requisitos estruturados por técnica; as versões reduzida e mínima usam uma seleção menor. Reavaliar a sequência após conferir visualmente as técnicas.
 3. **Se houver interesse em progresso por habilidade:** registrar “pratiquei / confortável / repetir” separadamente da conclusão da sessão. O checklist atual não prova domínio técnico.
-4. **Vídeos:** links externos como referência opcional; não depender do YouTube para que a instrução do app funcione offline. Diferenciar demonstração verificada, vídeo apenas catalogado e conteúdo não acessível.
+4. **Vídeos:** links externos opcionais. O conteúdo verbal dos trechos selecionados foi pesquisado, mas a demonstração visual não foi inteiramente conferida. As instruções do app permanecem disponíveis offline.
 5. **Antes de qualquer mudança nas condições de impacto:** confirmar com o usuário o escopo da alta de fevereiro de 2026. A alta geral está estabelecida; o escopo específico ainda não foi registrado nos documentos.
 
 ## 6. Pendências explícitas para outra máquina

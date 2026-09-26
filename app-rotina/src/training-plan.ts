@@ -1,6 +1,7 @@
 import type { ActivityGuide, RoutineMode } from './types'
 
 export type TrainingDay = 'A' | 'B'
+export type MuayTrainingId = 'muay-mon' | 'muay-fri'
 
 export interface TrainingExercise {
   id: string
@@ -321,13 +322,18 @@ export function getStrengthOverviewGuide(weekNumber = 1): ActivityGuide {
   }
 }
 
-export function getMuayThaiGuide(itemId: 'muay-mon' | 'muay-fri', weekNumber: number | undefined, mode: RoutineMode): ActivityGuide {
+export function getMuaySession(itemId: MuayTrainingId, weekNumber: number | undefined, mode: RoutineMode) {
   const { block, week } = getTrainingPlanWeek(weekNumber)
   const muay = block.muayThai
   const consolidationRounds = week.consolidation ? Math.max(2, muay.rounds - 1) : muay.rounds
   const rounds = mode === 'minimo' ? 0 : mode === 'reduzido' ? 2 : itemId === 'muay-fri' ? Math.min(2, consolidationRounds) : consolidationRounds
   const duration = mode === 'minimo' ? '3–5 min' : mode === 'reduzido' ? '8–10 min' : 'aprox. 20 min'
   const mainDescription = itemId === 'muay-fri' ? muay.friday : `${muay.objective} ${muay.progression}`
+  return { block, week, muay, rounds, duration, mainDescription }
+}
+
+export function getMuayThaiGuide(itemId: MuayTrainingId, weekNumber: number | undefined, mode: RoutineMode): ActivityGuide {
+  const { block, week, muay, rounds, duration, mainDescription } = getMuaySession(itemId, weekNumber, mode)
   return {
     introduction: `Semana ${week.week} · ${block.title}. Muay Thai técnico sem contato, sem saco e sem movimentos explosivos com o braço esquerdo.`,
     steps: [

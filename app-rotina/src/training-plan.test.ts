@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { getExerciseDemo } from './exercise-demos'
+import { getMuayPractices } from './muay-exercises'
 import { clampTrainingWeek, getMuayThaiGuide, getStrengthGuide, getTrainingPlanWeek, trainingBlocks, trainingPlanWeeks } from './training-plan'
 
 describe('plano de evolução dos treinos', () => {
@@ -79,6 +80,19 @@ describe('plano de evolução dos treinos', () => {
     const text = `${guide.steps.map((step) => step.description).join(' ')} ${guide.closing}`.toLowerCase()
     for (const warning of ['dor maior que a habitual', 'dormência', 'formigamento', 'força', 'pegada', 'inchaço', 'limitação de movimento', 'dia seguinte', 'ausência de dor']) {
       expect(text).toContain(warning)
+    }
+  })
+
+  it('mostra práticas progressivas e oferece revisão simples para a sexta ou o modo mínimo', () => {
+    expect(getMuayPractices(1, 'muay-mon', 'normal').map((item) => item.id)).toEqual(['base', 'directions', 'return', 'knee'])
+    expect(getMuayPractices(12, 'muay-mon', 'normal').map((item) => item.id)).toContain('check')
+    expect(getMuayPractices(24, 'muay-mon', 'normal').map((item) => item.id)).toContain('shadow')
+    expect(getMuayPractices(24, 'muay-fri', 'normal').map((item) => item.id)).toEqual(['base', 'directions'])
+    expect(getMuayPractices(24, 'muay-mon', 'minimo').map((item) => item.id)).toEqual(['base'])
+    for (const week of [1, 5, 9, 13, 17, 21]) {
+      for (const practice of getMuayPractices(week, 'muay-mon', 'normal')) {
+        expect(practice.videoUrl).toMatch(/^https:\/\/www\.youtube\.com\/watch\?v=[\w-]{11}/)
+      }
     }
   })
 

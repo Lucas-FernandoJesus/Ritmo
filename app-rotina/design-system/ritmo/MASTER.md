@@ -29,8 +29,8 @@ Uma agenda pessoal de caráter editorial, sobre preto-carvão e nogueira enverni
 - Campos: rótulo persistente, controle mínimo de 48 px, erro contextual e foco visível.
 - Estados: texto e forma para concluído, em aberto e impedido; nenhuma cor classifica Normal, Reduzido e Mínimo como mérito.
 - Movimento: feedback de 160–220 ms para ação do usuário; respeitar `prefers-reduced-motion`.
-- Navegação: cinco destinos fixos no rodapé em celular, com área segura; largura de leitura limitada em telas maiores.
-- Orientações da rotina: a área de título e horário abre um diálogo nativo em formato de folha inferior para atividades gerais; concluir e pular permanecem botões independentes. O diálogo traz instruções em sequência, cuidados e fechamento visível, com foco contido e tecla Escape. O fortalecimento abre uma tela própria para o treino A ou B da semana atual, com retorno previsível, instruções offline e links externos de demonstração por movimento.
+- Navegação: seis destinos fixos no rodapé em celular, incluindo Treinos; largura de leitura limitada em telas maiores.
+- Orientações da rotina: a área de título e horário abre um diálogo nativo em formato de folha inferior para atividades gerais; concluir e pular permanecem botões independentes. O diálogo traz instruções em sequência, cuidados e fechamento visível, com foco contido e tecla Escape. Fortalecimento e Muay Thai abrem telas próprias da semana atual, com retorno previsível, instruções offline e links externos por movimento.
 
 ## Composição
 
@@ -40,10 +40,10 @@ cabeçalho baixo com foto de nogueira — data / título
 seletor de ritmo — três opções equivalentes
 painel de foco — próxima ação e horário
 linha do tempo — rotina restante
-navegação fixa escura — cinco destinos
+navegação fixa escura — seis destinos
 ```
 
-As demais telas repetem o cabeçalho fotográfico sem ampliar a altura. Semana favorece orientação, Registros mantém formulários e valores em superfícies opacas, Progresso usa marcos neutros e Ajustes agrupa controles. No tema claro, as imagens continuam como detalhe sobre papel quente; cabeçalhos permanecem escuros para garantir contraste.
+As demais telas repetem o cabeçalho fotográfico sem ampliar a altura. Semana favorece orientação, Treinos reúne as sessões e a semana do plano, Registros mantém formulários e valores em superfícies opacas, Progresso usa marcos neutros e Ajustes agrupa controles. No tema claro, as imagens continuam como detalhe sobre papel quente; cabeçalhos permanecem escuros para garantir contraste.
 
 ## Revisão da direção
 

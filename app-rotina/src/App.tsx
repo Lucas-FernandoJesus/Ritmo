@@ -1,13 +1,15 @@
 import { useEffect, useMemo, useRef, useState, type Dispatch, type FormEvent, type SetStateAction } from 'react'
 import { activityGuides } from './activity-guides'
 import { getExerciseDemo } from './exercise-demos'
+import { getMuayPractices } from './muay-exercises'
 import { dayNames, expenseCategories, homeChecklist, mealPrepChecklist, progressPlan, routineItems } from './data'
 import { calculateDelivery, createDailyPlanSnapshot, defaultSettings, filterRoutineForDay, findLinkedActivityId, formatMoney, localDateKey, MAX_BACKUP_BYTES, recentRecords, rideSafetyForDate, summarizeDailyProgress, summarizePlanProgress, summarizeWeeklyProgress, upgradeAppearance, validateBackup, weekBounds, withScheduleStart } from './domain'
 import { repository } from './repository'
-import { clampTrainingWeek, getStrengthSession, getTrainingActivityGuide, getTrainingPlanWeek, trainingBlocks, type TrainingDay } from './training-plan'
+import { clampTrainingWeek, getMuaySession, getMuayThaiGuide, getStrengthSession, getTrainingActivityGuide, getTrainingPlanWeek, trainingBlocks, type MuayTrainingId, type TrainingDay } from './training-plan'
 import type { AppSettings, DailyCheckIn, DailyCompletion, DailyPlanSnapshot, DailyProgressSummary, DeliveryShift, Expense, RoutineArea, RoutineItem, RoutineMode, StoragePersistence, StudyLog, ThirtyDayProgress, WeeklyProgressSummary } from './types'
 
-type Tab = 'hoje' | 'semana' | 'registros' | 'progresso' | 'ajustes'
+type Tab = 'hoje' | 'semana' | 'treinos' | 'registros' | 'progresso' | 'ajustes'
+type TrainingSelection = TrainingDay | MuayTrainingId
 type RecordKind = 'delivery' | 'despesa' | 'estudo' | 'checklists'
 type ActivitySelection = { item: RoutineItem; day: number }
 type LinkableRecord = { kind: 'study', area: StudyLog['area'] } | { kind: 'delivery', startTime: string, endTime: string } | { kind: 'expense' }
@@ -25,6 +27,7 @@ const modeCopy: Record<RoutineMode, { label: string; detail: string }> = {
 const navItems: { id: Tab; label: string }[] = [
   { id: 'hoje', label: 'Hoje' },
   { id: 'semana', label: 'Semana' },
+  { id: 'treinos', label: 'Treinos' },
   { id: 'registros', label: 'Registros' },
   { id: 'progresso', label: 'Progresso' },
   { id: 'ajustes', label: 'Ajustes' },
@@ -34,6 +37,7 @@ function Icon({ name }: { name: Tab }) {
   const paths: Record<Tab, React.ReactNode> = {
     hoje: <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>,
     semana: <><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M7 3v4M17 3v4M3 10h18" /></>,
+    treinos: <><path d="M3 9v6M6 7v10M18 7v10M21 9v6M6 12h12" /></>,
     registros: <><rect x="4" y="3" width="16" height="18" rx="2" /><path d="M8 8h8M8 12h8M8 16h5" /></>,
     progresso: <><path d="M4 19V5M4 19h16M7 15l4-4 3 2 5-6" /></>,
     ajustes: <><path d="M4 7h16M4 17h16" /><circle cx="9" cy="7" r="2" /><circle cx="16" cy="17" r="2" /></>,
@@ -43,9 +47,9 @@ function Icon({ name }: { name: Tab }) {
 
 const uid = () => globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(16).slice(2)}`
 const readableError = (error: unknown, fallback: string) => error instanceof Error ? error.message : fallback
-const workoutFromUrl = (): TrainingDay | null => {
+const workoutFromUrl = (): TrainingSelection | null => {
   const value = new URLSearchParams(window.location.search).get('treino')
-  return value === 'A' || value === 'B' ? value : null
+  return value === 'A' || value === 'B' || value === 'muay-mon' || value === 'muay-fri' ? value : null
 }
 
 function weekDateKeys(localDate: string): string[] {
@@ -83,9 +87,9 @@ function useRecordDate<T extends { localDate: string }>(dateKey: string, setForm
 function App() {
   const [now, setNow] = useState(() => new Date())
   const dateKey = localDateKey(now)
-  const [tab, setTab] = useState<Tab>('hoje')
+  const [tab, setTab] = useState<Tab>(() => workoutFromUrl() ? 'treinos' : 'hoje')
   const [selectedWeekDay, setSelectedWeekDay] = useState(() => new Date().getDay())
-  const [trainingDay, setTrainingDay] = useState<TrainingDay | null>(workoutFromUrl)
+  const [trainingSelection, setTrainingSelection] = useState<TrainingSelection | null>(workoutFromUrl)
   const [detailActivity, setDetailActivity] = useState<ActivitySelection | null>(null)
   const [mode, setMode] = useState<RoutineMode>('normal')
   const [modeSaving, setModeSaving] = useState(false)
@@ -168,7 +172,7 @@ function App() {
   }, [])
 
   useEffect(() => {
-    const onPopState = () => setTrainingDay(workoutFromUrl())
+    const onPopState = () => setTrainingSelection(workoutFromUrl())
     window.addEventListener('popstate', onPopState)
     return () => window.removeEventListener('popstate', onPopState)
   }, [])
@@ -303,11 +307,11 @@ function App() {
     window.requestAnimationFrame(() => document.getElementById('main-content')?.focus())
   }
 
-  function openWorkout(day: TrainingDay) {
+  function openWorkout(selection: TrainingSelection) {
     const url = new URL(window.location.href)
-    url.searchParams.set('treino', day)
+    url.searchParams.set('treino', selection)
     window.history.pushState({ ...window.history.state, ritmoWorkout: true }, '', url)
-    setTrainingDay(day)
+    setTrainingSelection(selection)
     focusContent()
   }
 
@@ -318,22 +322,23 @@ function App() {
       const url = new URL(window.location.href)
       url.searchParams.delete('treino')
       window.history.replaceState(window.history.state, '', url)
-      setTrainingDay(null)
+      setTrainingSelection(null)
     }
     focusContent()
   }
 
   function openActivity(item: RoutineItem, day: number) {
     if (item.id === 'strength') openWorkout(day === 4 ? 'B' : 'A')
+    else if (item.id === 'muay-mon' || item.id === 'muay-fri') openWorkout(item.id)
     else setDetailActivity({ item, day })
   }
 
   function navigateTab(next: Tab) {
-    if (trainingDay) {
+    if (trainingSelection) {
       const url = new URL(window.location.href)
       url.searchParams.delete('treino')
       window.history.replaceState(window.history.state, '', url)
-      setTrainingDay(null)
+      setTrainingSelection(null)
     }
     setTab(next)
     focusContent()
@@ -352,17 +357,20 @@ function App() {
       </header>
 
       <main className="content" id="main-content" tabIndex={-1}>
-        {trainingDay ? <TrainingWorkoutView day={trainingDay} trainingWeek={clampTrainingWeek(settings.trainingWeek)} mode={mode} online={online} onBack={closeWorkout} /> : <>
+        {trainingSelection ? trainingSelection === 'A' || trainingSelection === 'B'
+          ? <TrainingWorkoutView day={trainingSelection} trainingWeek={clampTrainingWeek(settings.trainingWeek)} mode={mode} online={online} onBack={closeWorkout} />
+          : <MuayWorkoutView itemId={trainingSelection} trainingWeek={clampTrainingWeek(settings.trainingWeek)} mode={mode} online={online} onBack={closeWorkout} /> : <>
           {tab === 'hoje' && <TodayView key={dateKey} now={now} items={todayItems} mode={mode} modeSaving={modeSaving} onMode={changeMode} states={todayStates} savingIds={savingIds} dateKey={dateKey} checkIn={todayCheckIn} safety={safety} weeklySummary={weeklySummary} todaySummary={todaySummary} onCheckIn={saveCheckIn} onToggle={toggleCompletion} onSkip={toggleSkipped} onOpen={(item) => openActivity(item, now.getDay())} />}
           {tab === 'semana' && <WeekView settings={settings} selectedDay={selectedWeekDay} onSelectedDay={setSelectedWeekDay} onOpen={openActivity} />}
-          {tab === 'progresso' && <ProgressView progress={progress} weeklySummary={weeklySummary} trainingWeek={clampTrainingWeek(settings.trainingWeek)} mode={mode} onTrainingWeek={changeTrainingWeek} onOpenTraining={openWorkout} onToggle={async (item) => { try { await repository.saveProgress(item); setProgress((v) => [...v.filter((p) => p.id !== item.id), item]) } catch (error) { setMessage(readableError(error, 'Não foi possível salvar o progresso.')) } }} />}
+          {tab === 'treinos' && <TrainingHubView trainingWeek={clampTrainingWeek(settings.trainingWeek)} mode={mode} onTrainingWeek={changeTrainingWeek} onOpenTraining={openWorkout} />}
+          {tab === 'progresso' && <ProgressView progress={progress} weeklySummary={weeklySummary} onToggle={async (item) => { try { await repository.saveProgress(item); setProgress((v) => [...v.filter((p) => p.id !== item.id), item]) } catch (error) { setMessage(readableError(error, 'Não foi possível salvar o progresso.')) } }} />}
           {tab === 'ajustes' && <SettingsView settings={settings} persistence={storagePersistence} onSettings={async (next) => { const snapshotPlan = prepareWeekSnapshots(dailySnapshots, dateKey, next.preferredMode, next, dateKey); try { await repository.saveSettingsAndDailySnapshots(next, snapshotPlan.changed); setSettings(next); setMode(next.preferredMode); setDailySnapshots(snapshotPlan.all); setMessage('Ajustes salvos.') } catch (error) { setMessage(readableError(error, 'Não foi possível salvar os ajustes.')) } }} onMessage={setMessage} onImported={() => window.location.reload()} onCleared={() => window.location.reload()} />}
         </>}
-        <div hidden={tab !== 'registros' || !!trainingDay}><RecordsView dateKey={dateKey} shifts={deliveryShifts} expenses={expenses} studyLogs={studyLogs} completed={todayCompleted} onToggle={toggleCompletion} onShift={saveLinkedShift} onExpense={saveLinkedExpense} onStudy={saveLinkedStudy} /></div>
+        <div hidden={tab !== 'registros' || !!trainingSelection}><RecordsView dateKey={dateKey} shifts={deliveryShifts} expenses={expenses} studyLogs={studyLogs} completed={todayCompleted} onToggle={toggleCompletion} onShift={saveLinkedShift} onExpense={saveLinkedExpense} onStudy={saveLinkedStudy} /></div>
       </main>
 
       <nav className="bottom-nav" aria-label="Navegação principal">
-        {navItems.map((item) => <button key={item.id} className={!trainingDay && tab === item.id ? 'active' : ''} onClick={() => navigateTab(item.id)} aria-current={!trainingDay && tab === item.id ? 'page' : undefined}><Icon name={item.id} /><span>{item.label}</span></button>)}
+        {navItems.map((item) => <button key={item.id} className={!trainingSelection && tab === item.id ? 'active' : ''} onClick={() => navigateTab(item.id)} aria-current={!trainingSelection && tab === item.id ? 'page' : undefined}><Icon name={item.id} /><span>{item.label}</span></button>)}
       </nav>
       {message && <div className="toast" role="status">{message}</div>}
       <ActivityDetailsDialog selection={detailActivity} trainingWeek={clampTrainingWeek(settings.trainingWeek)} mode={mode} onClose={() => setDetailActivity(null)} />
@@ -416,7 +424,7 @@ function TodayView({ now, items, mode, modeSaving, onMode, states, savingIds, da
 }
 
 function ActivityItem({ item, state, saving, blocked, safetyReason, onToggle, onSkip, onOpen, featured = false }: { item: RoutineItem; state?: DailyCompletion['state']; saving: boolean; blocked: boolean; safetyReason: string; onToggle: (id: string) => void; onSkip: (id: string) => void; onOpen: (item: RoutineItem) => void; featured?: boolean }) {
-  const openLabel = item.id === 'strength' ? 'Abrir treino' : 'Ver orientações'
+  const openLabel = item.area === 'treino' ? 'Abrir treino' : 'Ver orientações'
   return <article className={`task-card ${featured ? 'featured' : ''} ${state === 'done' ? 'done' : ''} ${state === 'skipped' ? 'skipped' : ''} ${blocked ? 'blocked' : ''}`}>
     <button type="button" className="task-open" onClick={() => onOpen(item)} aria-label={`${openLabel}: ${item.title}`}>
       <span className="task-time"><strong>{item.startTime ?? 'Livre'}</strong>{item.endTime && <span>até {item.endTime}</span>}</span>
@@ -481,6 +489,38 @@ function TrainingWorkoutView({ day, trainingWeek, mode, online, onBack }: { day:
   </div>
 }
 
+function MuayWorkoutView({ itemId, trainingWeek, mode, online, onBack }: { itemId: MuayTrainingId; trainingWeek: number; mode: RoutineMode; online: boolean; onBack: () => void }) {
+  const { block, week, muay, rounds, duration, mainDescription } = getMuaySession(itemId, trainingWeek, mode)
+  const guide = getMuayThaiGuide(itemId, trainingWeek, mode)
+  const practices = getMuayPractices(week.week, itemId, mode)
+  const friday = itemId === 'muay-fri'
+  return <div className="workout-view">
+    <button type="button" className="workout-back text-button" onClick={onBack}>← Voltar à rotina</button>
+    <header className="page-title workout-title">
+      <p className="eyebrow">Muay Thai · {friday ? 'sexta-feira opcional' : 'segunda e quarta'} · semana {week.week}</p>
+      <h1>{friday ? 'Muay Thai leve' : 'Muay Thai técnico'}</h1>
+      <p>{block.title} · {modeCopy[mode].label.toLowerCase()}</p>
+    </header>
+    <section className="workout-summary" aria-label="Como fazer o treino">
+      <div className="workout-stats"><div><span>Tempo previsto</span><strong>{duration}</strong></div><div><span>Parte principal</span><strong>{rounds ? `${rounds} × ${muay.roundDuration}` : 'Base ou descanso'}</strong></div><div><span>Recuperação</span><strong>{rounds ? muay.recovery : 'livre'}</strong></div></div>
+      <p>{mainDescription}</p>
+      <ol className="workout-flow"><li><strong>Antes</strong><span>{guide.steps[0].description} {guide.steps[0].amount}.</span></li><li><strong>Durante</strong><span>{guide.steps[1].description} {rounds ? 'As práticas abaixo são opções dentro dos rounds previstos; não são rounds extras.' : 'A prática de base abaixo é opcional; descansar também segue o plano.'}</span></li><li><strong>Depois</strong><span>{guide.steps[2].description} {guide.steps[2].amount}.</span></li></ol>
+    </section>
+    <div className="section-heading workout-section-heading"><div><h2>{rounds ? 'Práticas para os rounds' : 'Prática opcional'}</h2><p className="section-description">Faça movimentos controlados no ar. As sequências e a seleção por semana são adaptações do Ritmo.</p></div><span className="count-chip">{practices.length} {practices.length === 1 ? 'prática' : 'práticas'}</span></div>
+    <ol className="workout-exercises">{practices.map((practice, index) => <li key={practice.id} className="workout-exercise">
+      <div className="workout-exercise-heading"><span className="workout-order" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span><div><h3>{practice.title}</h3><span className="workout-amount">{rounds ? 'Parte de um round' : 'Se confortável'} · sem contagem fixa</span></div></div>
+      <p className="workout-prescription">{practice.objective}</p>
+      <div className="workout-example"><strong>Como praticar no Ritmo</strong><p>{practice.instructions}</p></div>
+      <p className="workout-video-caption"><strong>Atenção:</strong> {practice.attention}</p>
+      <p className="workout-video-caption">{practice.videoTitle} · {practice.provider}. Trecho com conteúdo verbal pesquisado; confira a demonstração visual no YouTube. O vídeo pode ter volume, intensidade ou técnicas além desta adaptação.</p>
+      <a className="workout-video-link secondary-button" href={practice.videoUrl} target="_blank" rel="noopener noreferrer" aria-label={`Ver aula sobre ${practice.title} no YouTube (abre em nova aba)`}>▶ Ver aula no YouTube <span aria-hidden="true">↗</span></a>
+    </li>)}</ol>
+    {!online && <p className="workout-offline" role="status">Você está offline. As instruções continuam disponíveis aqui; os vídeos precisam de internet.</p>}
+    <section className="workout-finish" aria-labelledby="muay-finish-title"><h2 id="muay-finish-title">Depois da sessão</h2><p>{week.consolidation ? 'Esta semana reduz um round para revisar técnica e tolerância.' : 'Avance apenas se os movimentos permanecerem confortáveis e controlados.'}</p><p>{guide.closing}</p><p>{friday ? 'Sexta é opcional. Descansar também segue o plano.' : 'Se perder equilíbrio ou controle, retome base e deslocamentos antes de combinar ações.'}</p></section>
+    <button type="button" className="secondary-button workout-end-back" onClick={onBack}>Voltar à rotina</button>
+  </div>
+}
+
 function CheckInCard({ dateKey, value, safety, deliveryToday, onSave, onDirtyChange }: { dateKey: string; value: DailyCheckIn | null; safety: { allowed: boolean; reason: string }; deliveryToday: boolean; onSave: (value: DailyCheckIn) => Promise<boolean>; onDirtyChange: (dirty: boolean) => void }) {
   const [form, setForm] = useState<DailyCheckIn>(value ?? { localDate: dateKey, enoughSleep: null, fatigueLevel: null, armCondition: null, safeToRide: null, note: '' })
   const [saving, setSaving] = useState(false)
@@ -513,7 +553,7 @@ function WeekView({ settings, selectedDay, onSelectedDay, onOpen }: { settings: 
   return <>
     <PageTitle eyebrow="Visão geral" title="Sua semana" subtitle="Veja como os compromissos se distribuem. Ajuste os horários em Ajustes." />
     <div className="week-selector" role="group" aria-label="Escolher dia da semana">{days.map((day) => <button key={day} type="button" className={selectedDay === day ? 'selected' : ''} aria-pressed={selectedDay === day} onClick={() => onSelectedDay(day)}><span>{dayNames[day].slice(0, 3)}</span><i aria-hidden="true" /></button>)}</div>
-    <section className="week-panel" aria-live="polite"><div className="section-heading"><div><h2>{dayNames[selectedDay]}</h2><p className="section-description">{items.length} atividades previstas</p></div></div>{items.length ? <div className="week-list">{items.map((item) => { const openLabel = item.id === 'strength' ? 'Abrir treino' : 'Ver orientações'; return <button type="button" className={`week-item nature-${item.nature}`} key={item.id} onClick={() => onOpen(item, selectedDay)} aria-label={`${openLabel}: ${item.title}`}><time>{item.startTime ?? 'Livre'}</time><span className="week-copy"><strong>{item.title}</strong><span className="week-meta">{areaLabels[item.area]} · {item.nature === 'fixa' ? 'Fixa' : item.nature === 'flexivel' ? 'Flexível' : 'Opcional'}</span><span className="week-hint">{openLabel}</span></span></button> })}</div> : <div className="empty-state"><strong>Dia sem atividades.</strong><p>Aproveite o espaço livre.</p></div>}</section>
+    <section className="week-panel" aria-live="polite"><div className="section-heading"><div><h2>{dayNames[selectedDay]}</h2><p className="section-description">{items.length} atividades previstas</p></div></div>{items.length ? <div className="week-list">{items.map((item) => { const openLabel = item.area === 'treino' ? 'Abrir treino' : 'Ver orientações'; return <button type="button" className={`week-item nature-${item.nature}`} key={item.id} onClick={() => onOpen(item, selectedDay)} aria-label={`${openLabel}: ${item.title}`}><time>{item.startTime ?? 'Livre'}</time><span className="week-copy"><strong>{item.title}</strong><span className="week-meta">{areaLabels[item.area]} · {item.nature === 'fixa' ? 'Fixa' : item.nature === 'flexivel' ? 'Flexível' : 'Opcional'}</span><span className="week-hint">{openLabel}</span></span></button> })}</div> : <div className="empty-state"><strong>Dia sem atividades.</strong><p>Aproveite o espaço livre.</p></div>}</section>
     <p className="week-footnote">Os turnos opcionais dependem da checagem de segurança no dia.</p>
   </>
 }
@@ -583,13 +623,12 @@ function ChecklistRecord({ completed, onToggle }: { completed: Set<string>; onTo
   return <div className="checklist-columns"><section className="form-card"><p className="eyebrow">Domingo</p><h2>Preparo de marmitas</h2>{render('meal-check', mealPrepChecklist)}</section><section className="form-card"><p className="eyebrow">Sábado</p><h2>Manutenção da casa</h2>{render('home-check', homeChecklist)}</section></div>
 }
 
-function ProgressView({ progress, weeklySummary, trainingWeek, mode, onTrainingWeek, onOpenTraining, onToggle }: { progress: ThirtyDayProgress[]; weeklySummary: WeeklyProgressSummary; trainingWeek: number; mode: RoutineMode; onTrainingWeek: (week: number, message: string) => Promise<void>; onOpenTraining: (day: TrainingDay) => void; onToggle: (item: ThirtyDayProgress) => Promise<void> }) {
-  const { completedIds: completed, total, completedCount, percentage } = summarizePlanProgress(progress, progressPlan)
+function TrainingHubView({ trainingWeek, mode, onTrainingWeek, onOpenTraining }: { trainingWeek: number; mode: RoutineMode; onTrainingWeek: (week: number, message: string) => Promise<void>; onOpenTraining: (selection: TrainingSelection) => void }) {
   const { block, week } = getTrainingPlanWeek(trainingWeek)
+  const strengthFormat = getStrengthSession(trainingWeek, 'A', mode).format
+  const muaySession = getMuaySession('muay-mon', trainingWeek, mode)
   return <>
-    <PageTitle eyebrow="Evolução" title="Seu progresso continua" subtitle="A semana do treino pode avançar, repetir ou voltar sem apagar registros anteriores." />
-
-    <WeeklyProgressCard summary={weeklySummary} />
+    <PageTitle eyebrow="Prática da semana" title="Treinos" subtitle="Abra a sessão do dia para ver o que fazer, como praticar e os exemplos em vídeo." />
 
     <section className="training-plan-card" aria-labelledby="training-plan-title">
       <header className="training-plan-header">
@@ -597,13 +636,23 @@ function ProgressView({ progress, weeklySummary, trainingWeek, mode, onTrainingW
         <span className="count-chip">{modeCopy[mode].label}</span>
       </header>
       <p className="training-objective">{block.objective}</p>
-      <div className="training-week-focus"><strong>{week.title}</strong><p>{week.focus}</p><span>{week.circuits} circuito{week.circuits === 1 ? '' : 's'} · descanso {week.rest}</span><small>{week.progression}</small></div>
-      <div className="training-workout-actions" aria-label="Treinos da semana"><button type="button" className="secondary-button" onClick={() => onOpenTraining('A')}>Ver treino A · terça</button><button type="button" className="secondary-button" onClick={() => onOpenTraining('B')}>Ver treino B · quinta</button></div>
+      <p className="training-objective">Muay Thai: {block.muayThai.objective}</p>
+      <div className="training-week-focus"><strong>{week.title}</strong><p>{week.focus}</p><span>Fortalecimento: {strengthFormat.circuits} circuito{strengthFormat.circuits === 1 ? '' : 's'} · descanso {strengthFormat.rest}</span><small>{strengthFormat.note}</small><span>Muay Thai: {muaySession.rounds ? `${muaySession.rounds} × ${muaySession.muay.roundDuration} · recuperação ${muaySession.muay.recovery}` : 'base confortável ou descanso'}</span><small>{mode === 'normal' ? muaySession.muay.progression : getMuayThaiGuide('muay-mon', trainingWeek, mode).steps[1].description}</small></div>
+      <div className="training-workout-actions" role="group" aria-label="Treinos da semana"><button type="button" className="secondary-button" onClick={() => onOpenTraining('muay-mon')}>Ver Muay Thai · segunda e quarta</button><button type="button" className="secondary-button" onClick={() => onOpenTraining('A')}>Ver treino A · terça</button><button type="button" className="secondary-button" onClick={() => onOpenTraining('B')}>Ver treino B · quinta</button><button type="button" className="secondary-button" onClick={() => onOpenTraining('muay-fri')}>Ver Muay Thai leve · sexta opcional</button></div>
       <details className="training-criteria"><summary>Critérios para avançar, repetir ou regredir</summary><dl><div><dt>Avançar</dt><dd>{block.criteria.advance}</dd></div><div><dt>Repetir</dt><dd>{block.criteria.repeat}</dd></div><div><dt>Regredir ou interromper</dt><dd>{block.criteria.regress}</dd></div></dl></details>
       <div className="training-week-actions"><button type="button" className="text-button" disabled={week.week === 1} onClick={() => onTrainingWeek(week.week - 1, `Retorno para a semana ${week.week - 1} salvo.`)}>Semana anterior</button><button type="button" className="secondary-button" onClick={() => onTrainingWeek(week.week, `Semana ${week.week} mantida para repetição.`)}>Repetir semana</button><button type="button" className="primary-button" disabled={week.week === 24} onClick={() => onTrainingWeek(week.week + 1, `Semana ${week.week + 1} iniciada.`)}>Avançar semana</button></div>
     </section>
 
     <details className="training-roadmap"><summary>Ver os seis blocos do plano</summary><ol>{trainingBlocks.map((item) => <li key={item.id} className={item.id === block.id ? 'current' : ''}><span>{item.range}</span><strong>{item.title}</strong><p>{item.objective}</p></li>)}</ol></details>
+  </>
+}
+
+function ProgressView({ progress, weeklySummary, onToggle }: { progress: ThirtyDayProgress[]; weeklySummary: WeeklyProgressSummary; onToggle: (item: ThirtyDayProgress) => Promise<void> }) {
+  const { completedIds: completed, total, completedCount, percentage } = summarizePlanProgress(progress, progressPlan)
+  return <>
+    <PageTitle eyebrow="Evolução" title="Seu progresso continua" subtitle="Acompanhe a rotina e os passos do plano inicial. Os treinos estão na aba Treinos." />
+
+    <WeeklyProgressCard summary={weeklySummary} />
 
     <div className="section-heading progress-plan-heading"><div><h2>Plano inicial de 30 dias</h2><p className="section-description">O checklist original permanece separado e com todos os registros preservados.</p></div></div>
     <section className="progress-summary"><div><strong>{completedCount} de {total} passos registrados</strong><span>Continue de onde fizer sentido.</span></div><div className="progress-track" role="progressbar" aria-label="Passos do plano concluídos" aria-valuenow={completedCount} aria-valuemin={0} aria-valuemax={total}><span style={{ width: `${percentage}%` }} /></div></section>

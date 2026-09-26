@@ -351,7 +351,7 @@ textarea { min-height: 86px; resize: vertical; }
 .empty-state strong { color: var(--ink); }
 .empty-state p { margin-top: 4px; }
 .toast { position: fixed; left: 50%; bottom: calc(var(--nav-height) + env(safe-area-inset-bottom) + 12px); transform: translateX(-50%); width: min(calc(100vw - 32px), 520px); padding: 12px 16px; border-radius: var(--radius-md); background: var(--ink); color: var(--surface); z-index: 40; box-shadow: 0 10px 30px #0003; text-align: center; font-size: .86rem; }
-.bottom-nav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); min-height: calc(var(--nav-height) + env(safe-area-inset-bottom)); padding: 4px max(8px, calc((100vw - 720px) / 2)) calc(4px + env(safe-area-inset-bottom)); background: var(--surface); border-top: 1px solid var(--line); box-shadow: var(--shadow-nav); }
+.bottom-nav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); min-height: calc(var(--nav-height) + env(safe-area-inset-bottom)); padding: 4px max(8px, calc((100vw - 720px) / 2)) calc(4px + env(safe-area-inset-bottom)); background: var(--surface); border-top: 1px solid var(--line); box-shadow: var(--shadow-nav); }
 .bottom-nav button { min-height: 64px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; border: 0; border-radius: var(--radius-sm); background: transparent; color: var(--muted); font-size: .72rem; font-weight: 600; }
 .bottom-nav button.active { color: var(--primary); background: var(--surface-soft); font-weight: 750; }
 .bottom-nav svg { flex: 0 0 auto; }
@@ -392,7 +392,7 @@ textarea { min-height: 86px; resize: vertical; }
   .setting-row { grid-template-columns: 44px minmax(0, 1fr); }
   .setting-row input { grid-column: 2; max-width: 130px; }
   .action-grid { grid-template-columns: 1fr; }
-  .bottom-nav button { font-size: .65rem; }
+  .bottom-nav button { font-size: .61rem; letter-spacing: -.01em; }
   .bottom-nav svg { width: 20px; height: 20px; }
 }
 @media (prefers-reduced-motion: reduce) {
