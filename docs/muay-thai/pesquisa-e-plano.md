@@ -25,6 +25,7 @@ As quatro playlists somaram **157 posições e 142 vídeos distintos**. O vídeo
 
 ### Skills e ferramentas: registro para retomada
 
+- A [skill local `youtube-research`](../../.agents/skills/youtube-research/SKILL.md) preserva o fluxo de inventário, verificação de conteúdo e atualização destes documentos no repositório. Ela não instala ferramentas nem transcreve áudio por si só.
 - `youtube-report` **não transcreve**. Recebe texto de transcrição já disponível e produz um relatório Markdown **por vídeo**, no formato `Highlights` / `Video Details`. Poderia ser usada para fichas narrativas individuais, mas não recuperaria legendas ausentes nem substitui esta síntese integrada.
 - `youtube-transcribe` é a skill de transcrição de áudio via `yt-dlp`, `ffmpeg` e API de ASR. Na máquina desta pesquisa, faltavam `yt-dlp`, `ffmpeg` e `ASR_API_KEY`; nenhuma ferramenta adicional foi instalada.
 - As páginas, posições, durações e legendas disponíveis foram obtidas pelo navegador/Playwright. Os metadados individuais complementaram títulos truncados na playlist. **Não afirmar que os 33 casos S/I foram transcritos.**

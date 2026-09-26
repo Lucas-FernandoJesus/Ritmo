@@ -9,6 +9,7 @@ O Ritmo reúne uma aplicação de rotina pessoal e os documentos que fundamentam
 | [`app-rotina/`](app-rotina/) | PWA, dependências, código-fonte, testes e instruções de execução/publicação |
 | [`docs/rotina/`](docs/rotina/) | Treze documentos numerados da rotina; comece por [`00_LEIA_PRIMEIRO.txt`](docs/rotina/00_LEIA_PRIMEIRO.txt) |
 | [`docs/muay-thai/`](docs/muay-thai/) | [Pesquisa e plano](docs/muay-thai/pesquisa-e-plano.md), [inventário dos vídeos](docs/muay-thai/inventario.md) e [fichas das aulas](docs/muay-thai/fichas.md) |
+| [`.agents/skills/youtube-research/`](.agents/skills/youtube-research/) | Skill local para retomar a pesquisa de vídeos em outra máquina |
 | `.github/workflows/` | Validação e publicação da aplicação no GitHub Pages |
 
 ## Executar a aplicação
