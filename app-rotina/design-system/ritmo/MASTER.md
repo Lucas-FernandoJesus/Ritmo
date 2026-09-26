@@ -30,7 +30,7 @@ Uma agenda pessoal de caráter editorial, sobre preto-carvão e nogueira enverni
 - Estados: texto e forma para concluído, em aberto e impedido; nenhuma cor classifica Normal, Reduzido e Mínimo como mérito.
 - Movimento: feedback de 160–220 ms para ação do usuário; respeitar `prefers-reduced-motion`.
 - Navegação: cinco destinos fixos no rodapé em celular, com área segura; largura de leitura limitada em telas maiores.
-- Orientações da rotina: a área de título e horário de cada atividade abre um diálogo nativo em formato de folha inferior; concluir e pular permanecem botões independentes. O diálogo traz instruções em sequência, cuidados e fechamento visível, com foco contido e tecla Escape.
+- Orientações da rotina: a área de título e horário abre um diálogo nativo em formato de folha inferior para atividades gerais; concluir e pular permanecem botões independentes. O diálogo traz instruções em sequência, cuidados e fechamento visível, com foco contido e tecla Escape. O fortalecimento abre uma tela própria para o treino A ou B da semana atual, com retorno previsível, instruções offline e links externos de demonstração por movimento.
 
 ## Composição
 

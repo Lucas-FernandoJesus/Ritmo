@@ -287,10 +287,15 @@ function sessionFormat(block: TrainingBlock, week: TrainingWeekPrescription, mod
   return { duration: 'aprox. 20 min', circuits: week.circuits, rest: week.rest, note: week.progression }
 }
 
-export function getStrengthGuide(weekNumber: number | undefined, day: TrainingDay, mode: RoutineMode): ActivityGuide {
+export function getStrengthSession(weekNumber: number | undefined, day: TrainingDay, mode: RoutineMode) {
   const { block, week } = getTrainingPlanWeek(weekNumber)
   const format = sessionFormat(block, week, mode)
   const exercises = mode === 'minimo' ? block.minimum : mode === 'reduzido' ? block.workouts[day].filter((exercise) => exercise.reduced) : block.workouts[day]
+  return { block, week, format, exercises }
+}
+
+export function getStrengthGuide(weekNumber: number | undefined, day: TrainingDay, mode: RoutineMode): ActivityGuide {
+  const { block, week, format, exercises } = getStrengthSession(weekNumber, day, mode)
   return {
     introduction: `Semana ${week.week} · ${block.title}. ${block.objective}`,
     steps: [

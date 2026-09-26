@@ -30,10 +30,10 @@ test('mantém navegação e orientações disponíveis offline', async ({ contex
 
     await page.getByRole('group', { name: 'Escolher dia da semana' })
       .getByRole('button', { name: 'Ter', exact: true }).click()
-    await page.getByRole('button', { name: `Ver orientações: ${strengthActivity}` }).click()
-    const dialog = page.getByRole('dialog', { name: strengthActivity })
-    await expect(dialog.getByRole('heading', { name: 'O que fazer', exact: true })).toBeVisible()
-    await dialog.getByRole('button', { name: 'Fechar orientações', exact: true }).first().click()
+    await page.getByRole('button', { name: `Abrir treino: ${strengthActivity}` }).click()
+    await expect(page.getByRole('heading', { name: 'Treino A', exact: true })).toBeVisible()
+    await expect(page.getByText('Você está offline. As instruções continuam disponíveis aqui; os vídeos precisam de internet.')).toBeVisible()
+    await page.getByRole('button', { name: '← Voltar à rotina' }).click()
 
     await navigation.getByRole('button', { name: 'Progresso', exact: true }).click()
     await expect(page.getByRole('heading', { name: 'Seu progresso continua', exact: true })).toBeVisible()

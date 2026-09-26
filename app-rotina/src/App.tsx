@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState, type Dispatch, type FormEvent, type SetStateAction } from 'react'
 import { activityGuides } from './activity-guides'
+import { getExerciseDemo } from './exercise-demos'
 import { dayNames, expenseCategories, homeChecklist, mealPrepChecklist, progressPlan, routineItems } from './data'
 import { calculateDelivery, createDailyPlanSnapshot, defaultSettings, filterRoutineForDay, findLinkedActivityId, formatMoney, localDateKey, MAX_BACKUP_BYTES, recentRecords, rideSafetyForDate, summarizeDailyProgress, summarizePlanProgress, summarizeWeeklyProgress, upgradeAppearance, validateBackup, weekBounds, withScheduleStart } from './domain'
 import { repository } from './repository'
-import { clampTrainingWeek, getTrainingActivityGuide, getTrainingPlanWeek, trainingBlocks, type TrainingDay } from './training-plan'
+import { clampTrainingWeek, getStrengthSession, getTrainingActivityGuide, getTrainingPlanWeek, trainingBlocks, type TrainingDay } from './training-plan'
 import type { AppSettings, DailyCheckIn, DailyCompletion, DailyPlanSnapshot, DailyProgressSummary, DeliveryShift, Expense, RoutineArea, RoutineItem, RoutineMode, StoragePersistence, StudyLog, ThirtyDayProgress, WeeklyProgressSummary } from './types'
 
 type Tab = 'hoje' | 'semana' | 'registros' | 'progresso' | 'ajustes'
@@ -42,6 +43,10 @@ function Icon({ name }: { name: Tab }) {
 
 const uid = () => globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(16).slice(2)}`
 const readableError = (error: unknown, fallback: string) => error instanceof Error ? error.message : fallback
+const workoutFromUrl = (): TrainingDay | null => {
+  const value = new URLSearchParams(window.location.search).get('treino')
+  return value === 'A' || value === 'B' ? value : null
+}
 
 function weekDateKeys(localDate: string): string[] {
   const { weekStart } = weekBounds(localDate)
@@ -79,6 +84,7 @@ function App() {
   const [now, setNow] = useState(() => new Date())
   const dateKey = localDateKey(now)
   const [tab, setTab] = useState<Tab>('hoje')
+  const [trainingDay, setTrainingDay] = useState<TrainingDay | null>(workoutFromUrl)
   const [detailActivity, setDetailActivity] = useState<ActivitySelection | null>(null)
   const [mode, setMode] = useState<RoutineMode>('normal')
   const [modeSaving, setModeSaving] = useState(false)
@@ -158,6 +164,12 @@ function App() {
     window.addEventListener('online', onOnline)
     window.addEventListener('offline', onOffline)
     return () => { window.removeEventListener('online', onOnline); window.removeEventListener('offline', onOffline) }
+  }, [])
+
+  useEffect(() => {
+    const onPopState = () => setTrainingDay(workoutFromUrl())
+    window.addEventListener('popstate', onPopState)
+    return () => window.removeEventListener('popstate', onPopState)
   }, [])
 
   useEffect(() => {
@@ -285,6 +297,47 @@ function App() {
     catch { setMessage('Não foi possível salvar a checagem. Tente novamente.'); return false }
   }
 
+  function focusContent() {
+    window.scrollTo({ top: 0, behavior: 'instant' })
+    window.requestAnimationFrame(() => document.getElementById('main-content')?.focus())
+  }
+
+  function openWorkout(day: TrainingDay) {
+    const url = new URL(window.location.href)
+    url.searchParams.set('treino', day)
+    window.history.pushState({ ...window.history.state, ritmoWorkout: true }, '', url)
+    setTrainingDay(day)
+    focusContent()
+  }
+
+  function closeWorkout() {
+    if (window.history.state?.ritmoWorkout) {
+      window.history.back()
+    } else {
+      const url = new URL(window.location.href)
+      url.searchParams.delete('treino')
+      window.history.replaceState(window.history.state, '', url)
+      setTrainingDay(null)
+    }
+    focusContent()
+  }
+
+  function openActivity(item: RoutineItem, day: number) {
+    if (item.id === 'strength') openWorkout(day === 4 ? 'B' : 'A')
+    else setDetailActivity({ item, day })
+  }
+
+  function navigateTab(next: Tab) {
+    if (trainingDay) {
+      const url = new URL(window.location.href)
+      url.searchParams.delete('treino')
+      window.history.replaceState(window.history.state, '', url)
+      setTrainingDay(null)
+    }
+    setTab(next)
+    focusContent()
+  }
+
   if (loading) return <main className="loading-state"><div className="spinner" /><p>Preparando sua rotina…</p></main>
   if (loadError) return <main className="loading-state load-error"><h1>Não foi possível abrir seus dados.</h1><p>Os registros deste aparelho não foram alterados.</p><button className="primary-button" onClick={() => window.location.reload()}>Tentar novamente</button></main>
 
@@ -298,15 +351,17 @@ function App() {
       </header>
 
       <main className="content" id="main-content" tabIndex={-1}>
-        {tab === 'hoje' && <TodayView key={dateKey} now={now} items={todayItems} mode={mode} modeSaving={modeSaving} onMode={changeMode} states={todayStates} savingIds={savingIds} dateKey={dateKey} checkIn={todayCheckIn} safety={safety} weeklySummary={weeklySummary} todaySummary={todaySummary} onCheckIn={saveCheckIn} onToggle={toggleCompletion} onSkip={toggleSkipped} onOpen={(item) => setDetailActivity({ item, day: now.getDay() })} />}
-        {tab === 'semana' && <WeekView settings={settings} onOpen={(item, day) => setDetailActivity({ item, day })} />}
-        <div hidden={tab !== 'registros'}><RecordsView dateKey={dateKey} shifts={deliveryShifts} expenses={expenses} studyLogs={studyLogs} completed={todayCompleted} onToggle={toggleCompletion} onShift={saveLinkedShift} onExpense={saveLinkedExpense} onStudy={saveLinkedStudy} /></div>
-        {tab === 'progresso' && <ProgressView progress={progress} weeklySummary={weeklySummary} trainingWeek={clampTrainingWeek(settings.trainingWeek)} mode={mode} onTrainingWeek={changeTrainingWeek} onOpenTraining={(day) => { const item = routineItems.find((candidate) => candidate.id === 'strength'); if (item) setDetailActivity({ item, day: day === 'A' ? 2 : 4 }) }} onToggle={async (item) => { try { await repository.saveProgress(item); setProgress((v) => [...v.filter((p) => p.id !== item.id), item]) } catch (error) { setMessage(readableError(error, 'Não foi possível salvar o progresso.')) } }} />}
-        {tab === 'ajustes' && <SettingsView settings={settings} persistence={storagePersistence} onSettings={async (next) => { const snapshotPlan = prepareWeekSnapshots(dailySnapshots, dateKey, next.preferredMode, next, dateKey); try { await repository.saveSettingsAndDailySnapshots(next, snapshotPlan.changed); setSettings(next); setMode(next.preferredMode); setDailySnapshots(snapshotPlan.all); setMessage('Ajustes salvos.') } catch (error) { setMessage(readableError(error, 'Não foi possível salvar os ajustes.')) } }} onMessage={setMessage} onImported={() => window.location.reload()} onCleared={() => window.location.reload()} />}
+        {trainingDay ? <TrainingWorkoutView day={trainingDay} trainingWeek={clampTrainingWeek(settings.trainingWeek)} mode={mode} online={online} onBack={closeWorkout} /> : <>
+          {tab === 'hoje' && <TodayView key={dateKey} now={now} items={todayItems} mode={mode} modeSaving={modeSaving} onMode={changeMode} states={todayStates} savingIds={savingIds} dateKey={dateKey} checkIn={todayCheckIn} safety={safety} weeklySummary={weeklySummary} todaySummary={todaySummary} onCheckIn={saveCheckIn} onToggle={toggleCompletion} onSkip={toggleSkipped} onOpen={(item) => openActivity(item, now.getDay())} />}
+          {tab === 'semana' && <WeekView settings={settings} onOpen={openActivity} />}
+          {tab === 'progresso' && <ProgressView progress={progress} weeklySummary={weeklySummary} trainingWeek={clampTrainingWeek(settings.trainingWeek)} mode={mode} onTrainingWeek={changeTrainingWeek} onOpenTraining={openWorkout} onToggle={async (item) => { try { await repository.saveProgress(item); setProgress((v) => [...v.filter((p) => p.id !== item.id), item]) } catch (error) { setMessage(readableError(error, 'Não foi possível salvar o progresso.')) } }} />}
+          {tab === 'ajustes' && <SettingsView settings={settings} persistence={storagePersistence} onSettings={async (next) => { const snapshotPlan = prepareWeekSnapshots(dailySnapshots, dateKey, next.preferredMode, next, dateKey); try { await repository.saveSettingsAndDailySnapshots(next, snapshotPlan.changed); setSettings(next); setMode(next.preferredMode); setDailySnapshots(snapshotPlan.all); setMessage('Ajustes salvos.') } catch (error) { setMessage(readableError(error, 'Não foi possível salvar os ajustes.')) } }} onMessage={setMessage} onImported={() => window.location.reload()} onCleared={() => window.location.reload()} />}
+        </>}
+        <div hidden={tab !== 'registros' || !!trainingDay}><RecordsView dateKey={dateKey} shifts={deliveryShifts} expenses={expenses} studyLogs={studyLogs} completed={todayCompleted} onToggle={toggleCompletion} onShift={saveLinkedShift} onExpense={saveLinkedExpense} onStudy={saveLinkedStudy} /></div>
       </main>
 
       <nav className="bottom-nav" aria-label="Navegação principal">
-        {navItems.map((item) => <button key={item.id} className={tab === item.id ? 'active' : ''} onClick={() => { setTab(item.id); window.scrollTo({ top: 0, behavior: 'instant' }); window.requestAnimationFrame(() => document.getElementById('main-content')?.focus()) }} aria-current={tab === item.id ? 'page' : undefined}><Icon name={item.id} /><span>{item.label}</span></button>)}
+        {navItems.map((item) => <button key={item.id} className={!trainingDay && tab === item.id ? 'active' : ''} onClick={() => navigateTab(item.id)} aria-current={!trainingDay && tab === item.id ? 'page' : undefined}><Icon name={item.id} /><span>{item.label}</span></button>)}
       </nav>
       {message && <div className="toast" role="status">{message}</div>}
       <ActivityDetailsDialog selection={detailActivity} trainingWeek={clampTrainingWeek(settings.trainingWeek)} mode={mode} onClose={() => setDetailActivity(null)} />
@@ -360,10 +415,11 @@ function TodayView({ now, items, mode, modeSaving, onMode, states, savingIds, da
 }
 
 function ActivityItem({ item, state, saving, blocked, safetyReason, onToggle, onSkip, onOpen, featured = false }: { item: RoutineItem; state?: DailyCompletion['state']; saving: boolean; blocked: boolean; safetyReason: string; onToggle: (id: string) => void; onSkip: (id: string) => void; onOpen: (item: RoutineItem) => void; featured?: boolean }) {
+  const openLabel = item.id === 'strength' ? 'Abrir treino' : 'Ver orientações'
   return <article className={`task-card ${featured ? 'featured' : ''} ${state === 'done' ? 'done' : ''} ${state === 'skipped' ? 'skipped' : ''} ${blocked ? 'blocked' : ''}`}>
-    <button type="button" className="task-open" onClick={() => onOpen(item)} aria-label={`Ver orientações: ${item.title}`}>
+    <button type="button" className="task-open" onClick={() => onOpen(item)} aria-label={`${openLabel}: ${item.title}`}>
       <span className="task-time"><strong>{item.startTime ?? 'Livre'}</strong>{item.endTime && <span>até {item.endTime}</span>}</span>
-      <span className="task-body"><span className={`area-tag area-${item.area}`}>{areaLabels[item.area]}</span><span className="task-title" role="heading" aria-level={3}>{item.title}</span>{state && <span className="task-status">{state === 'done' ? 'Concluída' : 'Deixada para outro momento'}</span>}{item.conditions?.[0] && !state && <span className="task-description">{item.conditions[0]}</span>}{blocked && !state && <span className="warning-text">{safetyReason}</span>}<span className="task-detail-link">Ver orientações</span></span>
+      <span className="task-body"><span className={`area-tag area-${item.area}`}>{areaLabels[item.area]}</span><span className="task-title" role="heading" aria-level={3}>{item.title}</span>{state && <span className="task-status">{state === 'done' ? 'Concluída' : 'Deixada para outro momento'}</span>}{item.conditions?.[0] && !state && <span className="task-description">{item.conditions[0]}</span>}{blocked && !state && <span className="warning-text">{safetyReason}</span>}<span className="task-detail-link">{openLabel}</span></span>
     </button>
     <div className="task-actions"><button type="button" className="check-button" onClick={() => onToggle(item.id)} disabled={(blocked && state !== 'done') || saving} aria-label={`${state === 'done' ? 'Desmarcar' : 'Concluir'} ${item.title}`} aria-pressed={state === 'done'}>{saving ? '…' : state === 'done' ? '✓' : ''}</button><button type="button" className="skip-button" onClick={() => onSkip(item.id)} disabled={saving} aria-pressed={state === 'skipped'}>{state === 'skipped' ? 'Retomar' : 'Pular'}</button></div>
   </article>
@@ -391,6 +447,37 @@ function ActivityDetailsDialog({ selection, trainingWeek, mode, onClose }: { sel
       <footer className="activity-dialog-footer"><button type="button" className="secondary-button" onClick={() => dialogRef.current?.close()}>Fechar orientações</button></footer>
     </>}
   </dialog>
+}
+
+function TrainingWorkoutView({ day, trainingWeek, mode, online, onBack }: { day: TrainingDay; trainingWeek: number; mode: RoutineMode; online: boolean; onBack: () => void }) {
+  const { block, week, format, exercises } = getStrengthSession(trainingWeek, day, mode)
+  return <div className="workout-view">
+    <button type="button" className="workout-back text-button" onClick={onBack}>← Voltar à rotina</button>
+    <header className="page-title workout-title">
+      <p className="eyebrow">Fortalecimento · {day === 'A' ? 'terça-feira' : 'quinta-feira'} · semana {week.week}</p>
+      <h1>Treino {day}</h1>
+      <p>{block.title} · {modeCopy[mode].label.toLowerCase()}</p>
+    </header>
+    <section className="workout-summary" aria-label="Como fazer o treino">
+      <div className="workout-stats"><div><span>Tempo previsto</span><strong>{format.duration}</strong></div><div><span>Sequência</span><strong>{format.circuits} circuito{format.circuits === 1 ? '' : 's'}</strong></div><div><span>Descanso</span><strong>{format.rest}</strong></div></div>
+      <p>{block.objective}</p>
+      <ol className="workout-flow"><li><strong>Antes</strong><span>Observe sono, cansaço, pegada, sensibilidade e movimento do braço. Aqueça com marcha e mobilidade confortável por {mode === 'minimo' ? '1 minuto' : '3 minutos'}.</span></li><li><strong>Durante</strong><span>Faça os exercícios abaixo na ordem. Ao terminar a lista, descanse e repita se houver outro circuito. {format.note}</span></li><li><strong>Depois</strong><span>Desacelere, observe como está o braço e confira novamente no dia seguinte.</span></li></ol>
+    </section>
+    <div className="section-heading workout-section-heading"><div><h2>Exercícios de hoje</h2><p className="section-description">Leia a variação do Ritmo antes de abrir o exemplo em vídeo.</p></div><span className="count-chip">{exercises.length} movimentos</span></div>
+    <ol className="workout-exercises">{exercises.map((exercise, index) => {
+      const demo = getExerciseDemo(exercise)
+      return <li key={exercise.id} className="workout-exercise">
+        <div className="workout-exercise-heading"><span className="workout-order" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span><div><h3>{exercise.title}</h3><span className="workout-amount">{exercise.amount}</span></div></div>
+        <p className="workout-prescription">{exercise.description}</p>
+        {demo && <><div className="workout-example"><strong>Exemplo prático</strong><p>{demo.example}</p></div>
+          <p className="workout-video-caption">{demo.videoTitle} · {demo.provider}. {demo.note ?? 'Siga a quantidade e a amplitude descritas no Ritmo.'}</p>
+          <a className="workout-video-link secondary-button" href={demo.videoUrl} target="_blank" rel="noopener noreferrer" aria-label={`Ver demonstração de ${exercise.title} no YouTube (abre em nova aba)`}>▶ Ver exemplo no YouTube <span aria-hidden="true">↗</span></a></>}
+      </li>
+    })}</ol>
+    {!online && <p className="workout-offline" role="status">Você está offline. As instruções continuam disponíveis aqui; os vídeos precisam de internet.</p>}
+    <section className="workout-finish" aria-labelledby="workout-finish-title"><h2 id="workout-finish-title">Quando avançar</h2><p>{week.focus}</p><p>{block.criteria.advance}</p><p>{block.criteria.repeat}</p><p>{block.criteria.regress}</p></section>
+    <button type="button" className="secondary-button workout-end-back" onClick={onBack}>Voltar à rotina</button>
+  </div>
 }
 
 function CheckInCard({ dateKey, value, safety, deliveryToday, onSave, onDirtyChange }: { dateKey: string; value: DailyCheckIn | null; safety: { allowed: boolean; reason: string }; deliveryToday: boolean; onSave: (value: DailyCheckIn) => Promise<boolean>; onDirtyChange: (dirty: boolean) => void }) {
@@ -426,7 +513,7 @@ function WeekView({ settings, onOpen }: { settings: AppSettings; onOpen: (item: 
   return <>
     <PageTitle eyebrow="Visão geral" title="Sua semana" subtitle="Veja como os compromissos se distribuem. Ajuste os horários em Ajustes." />
     <div className="week-selector" role="group" aria-label="Escolher dia da semana">{days.map((day) => <button key={day} type="button" className={selectedDay === day ? 'selected' : ''} aria-pressed={selectedDay === day} onClick={() => setSelectedDay(day)}><span>{dayNames[day].slice(0, 3)}</span><i aria-hidden="true" /></button>)}</div>
-    <section className="week-panel" aria-live="polite"><div className="section-heading"><div><h2>{dayNames[selectedDay]}</h2><p className="section-description">{items.length} atividades previstas</p></div></div>{items.length ? <div className="week-list">{items.map((item) => <button type="button" className={`week-item nature-${item.nature}`} key={item.id} onClick={() => onOpen(item, selectedDay)} aria-label={`Ver orientações: ${item.title}`}><time>{item.startTime ?? 'Livre'}</time><span className="week-copy"><strong>{item.title}</strong><span className="week-meta">{areaLabels[item.area]} · {item.nature === 'fixa' ? 'Fixa' : item.nature === 'flexivel' ? 'Flexível' : 'Opcional'}</span><span className="week-hint">Ver orientações</span></span></button>)}</div> : <div className="empty-state"><strong>Dia sem atividades.</strong><p>Aproveite o espaço livre.</p></div>}</section>
+    <section className="week-panel" aria-live="polite"><div className="section-heading"><div><h2>{dayNames[selectedDay]}</h2><p className="section-description">{items.length} atividades previstas</p></div></div>{items.length ? <div className="week-list">{items.map((item) => { const openLabel = item.id === 'strength' ? 'Abrir treino' : 'Ver orientações'; return <button type="button" className={`week-item nature-${item.nature}`} key={item.id} onClick={() => onOpen(item, selectedDay)} aria-label={`${openLabel}: ${item.title}`}><time>{item.startTime ?? 'Livre'}</time><span className="week-copy"><strong>{item.title}</strong><span className="week-meta">{areaLabels[item.area]} · {item.nature === 'fixa' ? 'Fixa' : item.nature === 'flexivel' ? 'Flexível' : 'Opcional'}</span><span className="week-hint">{openLabel}</span></span></button> })}</div> : <div className="empty-state"><strong>Dia sem atividades.</strong><p>Aproveite o espaço livre.</p></div>}</section>
     <p className="week-footnote">Os turnos opcionais dependem da checagem de segurança no dia.</p>
   </>
 }

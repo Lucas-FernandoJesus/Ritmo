@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { getExerciseDemo } from './exercise-demos'
 import { clampTrainingWeek, getMuayThaiGuide, getStrengthGuide, getTrainingPlanWeek, trainingBlocks, trainingPlanWeeks } from './training-plan'
 
 describe('plano de evolução dos treinos', () => {
@@ -78,6 +79,17 @@ describe('plano de evolução dos treinos', () => {
     const text = `${guide.steps.map((step) => step.description).join(' ')} ${guide.closing}`.toLowerCase()
     for (const warning of ['dor maior que a habitual', 'dormência', 'formigamento', 'força', 'pegada', 'inchaço', 'limitação de movimento', 'dia seguinte', 'ausência de dor']) {
       expect(text).toContain(warning)
+    }
+  })
+
+  it('oferece demonstração individual para todos os exercícios das 24 semanas e da versão mínima', () => {
+    for (const block of trainingBlocks) {
+      for (const exercise of [...block.workouts.A, ...block.workouts.B, ...block.minimum]) {
+        const demo = getExerciseDemo(exercise)
+        expect(demo, `Sem exemplo para ${exercise.id}`).not.toBeNull()
+        expect(demo?.videoUrl).toMatch(/^https:\/\/www\.youtube\.com\/watch\?v=[\w-]{11}$/)
+        expect(demo?.example.length).toBeGreaterThan(30)
+      }
     }
   })
 })
