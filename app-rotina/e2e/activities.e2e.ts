@@ -47,6 +47,13 @@ test('abre o treino B da quinta e os atalhos A/B do progresso', async ({ page })
   await page.goBack()
   await expect(page.getByRole('heading', { name: 'Um dia de cada vez.' })).toBeVisible()
 
+  await goToTab(page, 'Semana')
+  await page.getByRole('group', { name: 'Escolher dia da semana' }).getByRole('button', { name: 'Ter', exact: true }).click()
+  await page.getByRole('button', { name: `Abrir treino: ${strengthActivity}` }).click()
+  await expect(page.getByRole('heading', { name: 'Treino A', exact: true })).toBeVisible()
+  await page.getByRole('button', { name: '← Voltar à rotina' }).click()
+  await expect(page.getByRole('group', { name: 'Escolher dia da semana' }).getByRole('button', { name: 'Ter', exact: true })).toHaveAttribute('aria-pressed', 'true')
+
   await goToTab(page, 'Progresso')
   await page.getByRole('button', { name: 'Ver treino A · terça' }).click()
   await expect(page.getByRole('heading', { name: 'Treino A', exact: true })).toBeVisible()
