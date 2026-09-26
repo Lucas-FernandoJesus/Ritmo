@@ -16,6 +16,14 @@ ARQUIVOS
 10_limpeza_e_organizacao_da_casa.txt: tarefas diárias e semanais.
 11_sono_jogos_e_celular.txt: horários de descanso, lazer e limites de tela.
 12_plano_30_dias_e_checklist.txt: implantação e revisão da rotina.
+docs/muay-thai/pesquisa-e-plano.md: pesquisa das aulas e proposta de exercícios.
+docs/muay-thai/inventario.md: todos os vídeos das quatro playlists e status de acesso.
+docs/muay-thai/fichas.md: observações individuais das aulas com legendas verificadas.
+
+ALTA PARA EXERCÍCIOS
+Alta médica recebida em meados de fevereiro de 2026. A dúvida registrada no plano
+de Muay Thai refere-se especificamente ao escopo para impacto e saco de pancadas;
+ela não significa ausência de alta para praticar exercícios.
 
 PRIORIDADES
 1. Dormir o suficiente e pilotar em condições seguras.
