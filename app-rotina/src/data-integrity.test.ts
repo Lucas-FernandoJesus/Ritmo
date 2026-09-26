@@ -3,18 +3,18 @@ import { defaultSettings, filterRoutineForDay } from './domain'
 import { progressPlan, routineItems } from './data'
 
 const expectedSources = new Set([
-  '01_perfil_e_objetivos.txt',
-  '02_rotina_segunda_a_sexta.txt',
-  '03_treino_muay_thai_matinal.txt',
-  '04_fortalecimento_e_cuidados_com_braco.txt',
-  '05_escala_delivery_escolhida.txt',
-  '06_rotina_sabado_e_domingo.txt',
-  '07_alimentacao_e_marmitas.txt',
-  '08_estudos_e_leitura.txt',
-  '09_financas_e_controle_delivery.txt',
-  '10_limpeza_e_organizacao_da_casa.txt',
-  '11_sono_jogos_e_celular.txt',
-  '12_plano_30_dias_e_checklist.txt',
+  'docs/rotina/01_perfil_e_objetivos.txt',
+  'docs/rotina/02_rotina_segunda_a_sexta.txt',
+  'docs/rotina/03_treino_muay_thai_matinal.txt',
+  'docs/rotina/04_fortalecimento_e_cuidados_com_braco.txt',
+  'docs/rotina/05_escala_delivery_escolhida.txt',
+  'docs/rotina/06_rotina_sabado_e_domingo.txt',
+  'docs/rotina/07_alimentacao_e_marmitas.txt',
+  'docs/rotina/08_estudos_e_leitura.txt',
+  'docs/rotina/09_financas_e_controle_delivery.txt',
+  'docs/rotina/10_limpeza_e_organizacao_da_casa.txt',
+  'docs/rotina/11_sono_jogos_e_celular.txt',
+  'docs/rotina/12_plano_30_dias_e_checklist.txt',
 ])
 
 describe('integridade dos dados iniciais', () => {

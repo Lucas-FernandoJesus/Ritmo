@@ -2,6 +2,8 @@
 
 PWA local-first para acompanhar uma rotina pessoal no celular. Funciona sem conta ou servidor, grava em IndexedDB e pode ser usada offline depois da primeira visita.
 
+[Visão geral do repositório](../README.md).
+
 ## Executar
 
 ```bash
@@ -45,22 +47,22 @@ Registros de estudo, delivery e despesa podem oferecer a conclusão da atividade
 
 | Fonte | Dados e telas |
 |---|---|
-| `00_LEIA_PRIMEIRO.txt` | prioridades, modos reduzido/mínimo e linguagem geral |
-| `01_perfil_e_objetivos.txt` | contexto, trabalho, objetivos e segurança |
-| `02_rotina_segunda_a_sexta.txt` | Hoje e Semana nos dias úteis |
-| `03_treino_muay_thai_matinal.txt` | treino técnico, condições e alertas |
-| `04_fortalecimento_e_cuidados_com_braco.txt` | treino leve, checagem e segurança |
-| `05_escala_delivery_escolhida.txt` | turnos opcionais e alertas de pilotagem |
-| `06_rotina_sabado_e_domingo.txt` | agenda do fim de semana |
-| `07_alimentacao_e_marmitas.txt` | refeições e checklist de marmitas |
-| `08_estudos_e_leitura.txt` | agenda e registros de estudo |
-| `09_financas_e_controle_delivery.txt` | despesas, turnos e cálculos estimados |
-| `10_limpeza_e_organizacao_da_casa.txt` | manutenção diária e checklist doméstico |
-| `11_sono_jogos_e_celular.txt` | sono, lazer e preparação noturna |
-| `12_plano_30_dias_e_checklist.txt` | Progresso e modos da rotina |
+| `docs/rotina/00_LEIA_PRIMEIRO.txt` | prioridades, modos reduzido/mínimo e linguagem geral |
+| `docs/rotina/01_perfil_e_objetivos.txt` | contexto, trabalho, objetivos e segurança |
+| `docs/rotina/02_rotina_segunda_a_sexta.txt` | Hoje e Semana nos dias úteis |
+| `docs/rotina/03_treino_muay_thai_matinal.txt` | treino técnico, condições e alertas |
+| `docs/rotina/04_fortalecimento_e_cuidados_com_braco.txt` | treino leve, checagem e segurança |
+| `docs/rotina/05_escala_delivery_escolhida.txt` | turnos opcionais e alertas de pilotagem |
+| `docs/rotina/06_rotina_sabado_e_domingo.txt` | agenda do fim de semana |
+| `docs/rotina/07_alimentacao_e_marmitas.txt` | refeições e checklist de marmitas |
+| `docs/rotina/08_estudos_e_leitura.txt` | agenda e registros de estudo |
+| `docs/rotina/09_financas_e_controle_delivery.txt` | despesas, turnos e cálculos estimados |
+| `docs/rotina/10_limpeza_e_organizacao_da_casa.txt` | manutenção diária e checklist doméstico |
+| `docs/rotina/11_sono_jogos_e_celular.txt` | sono, lazer e preparação noturna |
+| `docs/rotina/12_plano_30_dias_e_checklist.txt` | Progresso e modos da rotina |
 | `docs/muay-thai/` | Inventário das quatro playlists, fichas das aulas verificadas e proposta de exercícios progressivos; pesquisa editorial ainda não implementada no app |
 
-Cada atividade padrão conserva `sourceFile`. A camada `repository.ts` concentra o acesso local para permitir uma implementação futura de sincronização sem reescrever as telas.
+Cada atividade padrão conserva `sourceFile` como caminho relativo à raiz do repositório em `docs/rotina/`. Backups antigos podem conservar apenas o nome do arquivo; os IDs das atividades permanecem iguais. A camada `repository.ts` concentra o acesso local para permitir uma implementação futura de sincronização sem reescrever as telas.
 
 As instruções exibidas ao tocar em uma atividade ficam em `src/activity-guides.ts`, incorporadas ao aplicativo para funcionar offline. A evolução dos exercícios durante 24 semanas fica estruturada em `src/training-plan.ts`; a semana atual é uma preferência local incluída no backup, sem substituir o checklist inicial de 30 dias. As descrições gerais dos movimentos do fortalecimento foram conferidas com orientações de [exercícios de força do NHS](https://www.nhs.uk/live-well/exercise/strength-exercises/), [exercícios em pé do University Hospitals Sussex NHS Foundation Trust](https://www.uhsussex.nhs.uk/resources/standing-exercises-2/), [fortalecimento do quadril do Cambridge University Hospitals NHS Foundation Trust](https://www.cuh.nhs.uk/patient-information/hip-strengthening-exercises/), [atividade física para adultos do CDC](https://www.cdc.gov/physical-activity-basics/guidelines/adults.html) e [recuperação de fraturas do antebraço da AAOS](https://orthoinfo.aaos.org/en/diseases--conditions/adult-forearm-fractures/); séries, progressões e critérios de segurança continuam alinhados ao arquivo `04_fortalecimento_e_cuidados_com_braco.txt`.
 
