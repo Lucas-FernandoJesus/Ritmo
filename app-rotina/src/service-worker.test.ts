@@ -1,8 +1,14 @@
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { runInNewContext } from 'node:vm'
 import { describe, expect, it, vi } from 'vitest'
 
 const source = readFileSync(new URL('../public/sw.js', import.meta.url), 'utf8')
+const indexSource = readFileSync(new URL('../index.html', import.meta.url), 'utf8')
+const manifest = JSON.parse(readFileSync(new URL('../public/manifest.webmanifest', import.meta.url), 'utf8')) as {
+  background_color: string
+  theme_color: string
+  icons: Array<{ src: string }>
+}
 
 function createWorker(options: { assetFailure?: boolean; responseOk?: boolean; basePath?: string; offline?: boolean } = {}) {
   const baseUrl = `https://ritmo.local${options.basePath ?? '/'}`
@@ -39,6 +45,15 @@ function createWorker(options: { assetFailure?: boolean; responseOk?: boolean; b
 }
 
 describe('shell offline', () => {
+  it('usa a cor inicial escura atual e declara somente ícones existentes', () => {
+    expect(indexSource).toContain('<meta name="theme-color" content="#0F172A"')
+    expect(manifest.background_color).toBe('#0F172A')
+    expect(manifest.theme_color).toBe('#0F172A')
+    for (const icon of manifest.icons) {
+      expect(existsSync(new URL(`../public/${icon.src}`, import.meta.url)), `Ícone ausente: ${icon.src}`).toBe(true)
+    }
+  })
+
   it('só ativa após guardar JavaScript, CSS e arquivos essenciais', async () => {
     const { handlers, cache, worker } = createWorker()
     let pending: Promise<unknown> | undefined

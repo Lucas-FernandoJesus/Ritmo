@@ -176,6 +176,10 @@ describe('regras críticas', () => {
     darkBackup.settings.theme = 'dark'
     expect(validateBackup(darkBackup)).toBe(true)
 
+    const legacySystemBackup = cloneBackup()
+    legacySystemBackup.settings.theme = 'system'
+    expect(validateBackup(legacySystemBackup)).toBe(true)
+
     const invalidTheme = cloneBackup()
     invalidTheme.settings.theme = 'neon' as 'light'
     expect(validateBackup(invalidTheme)).toBe(false)

@@ -2,28 +2,25 @@
 
 ## Direção
 
-Uma agenda pessoal de caráter editorial, sobre preto-carvão e nogueira envernizada. A madeira é ambiente, não suporte direto para dados: aparece no fundo com baixa opacidade e em cabeçalhos compactos protegidos por uma camada escura. O foco do dia é o elemento principal. A aplicação permanece local, acessível e inteiramente em português brasileiro.
+Uma agenda pessoal de caráter editorial, com fundo abstrato estático feito em CSS e gradientes discretos em teal e azul. Cards sólidos e legíveis protegem o conteúdo; o foco do dia é o elemento principal. A aplicação permanece local, acessível e inteiramente em português brasileiro.
 
 ## Tokens
 
-| Papel | Escuro (padrão) | Claro (opcional) |
+| Papel | Escuro | Claro |
 | --- | --- | --- |
-| Fundo | `#12100F` | `#EEE7DD` |
-| Superfície | `#211C19` | `#F9F5ED` |
-| Superfície sutil | `#302822` | `#E9DFD1` |
-| Campo | `#181513` | `#FFFCF6` |
-| Texto | `#F5EEE5` | `#27211C` |
-| Texto secundário | `#C5B9AC` | `#65584D` |
-| Ação primária | `#D5B592` | `#68452E` |
-| Destaque | `#D6A27D` | `#874F35` |
-| Erro | `#EDAAA1` | `#9D443C` |
-| Painel de foco | `#3A281F` | `#3A261C` |
+| Fundo | `#0F172A` | `#F0F7F6` |
+| Cards | `#192134` | `#FFFFFF` |
+| Texto | `#F8FAFC` | `#134E4A` |
+| Ação primária | `#14B8A6` | `#0D9488` |
+| Destaque | `#22C55E` | `#EA580C` |
+
+Existem somente os modos Claro e Escuro. Valores antigos persistidos como `system` devem ser normalizados futuramente para o modo correspondente à preferência atual do dispositivo. Tokens complementares devem manter contraste mínimo de 4.5:1 para texto normal.
 
 - Corpo: `Segoe UI Variable`, `Segoe UI`, sistema. Títulos e marca: `Georgia`, `Cambria`, serif. Sem fontes externas nem dependência de rede.
 - Escala tipográfica: 13, 14, 16, 18, 24 e 32 px. Corpo 16 px, entrelinha 1,5. Valores e horários usam algarismos tabulares.
 - Espaçamento: base de 4 px; passos principais 8, 12, 16, 24, 32 e 40 px.
 - Raios: 8 px em campos, 12 px em botões, 18 px em painéis. Pílulas apenas em estados e filtros.
-- Superfícies: base escura; cartões sólidos; painel de foco em marrom profundo. A textura fotográfica fica atrás do conteúdo, não dos campos. Sombra somente na navegação fixa e em avisos.
+- Superfícies: cards sólidos e legíveis sobre fundo abstrato estático em CSS, com gradientes discretos em teal e azul. Não usar fotografia. Sombra somente na navegação fixa e em avisos.
 - Ícones: SVG linear de 24 px com traço de 1,8 px; rótulos sempre visíveis na navegação.
 - Botões: primário preenchido, secundário contornado, textual e perigoso separado. Alvos de no mínimo 44 px.
 - Campos: rótulo persistente, controle mínimo de 48 px, erro contextual e foco visível.
@@ -36,15 +33,15 @@ Uma agenda pessoal de caráter editorial, sobre preto-carvão e nogueira enverni
 
 ```text
 topo sólido escuro — marca / estado local
-cabeçalho baixo com foto de nogueira — data / título
+cabeçalho baixo com fundo abstrato — data / título
 seletor de ritmo — três opções equivalentes
 painel de foco — próxima ação e horário
 linha do tempo — rotina restante
 navegação fixa escura — seis destinos
 ```
 
-As demais telas repetem o cabeçalho fotográfico sem ampliar a altura. Semana favorece orientação, Treinos reúne as sessões e a semana do plano, Registros mantém formulários e valores em superfícies opacas, Progresso usa marcos neutros e Ajustes agrupa controles. No tema claro, as imagens continuam como detalhe sobre papel quente; cabeçalhos permanecem escuros para garantir contraste.
+As demais telas repetem o cabeçalho abstrato sem ampliar a altura. Semana favorece orientação, Treinos reúne as sessões e a semana do plano, Registros mantém formulários e valores em superfícies opacas, Progresso usa marcos neutros e Ajustes agrupa controles. Nos modos Claro e Escuro, cards e cabeçalhos preservam contraste mínimo de 4.5:1 para texto normal.
 
 ## Revisão da direção
 
-A pesquisa da UI/UX Pro Max trouxe padrões de landing page, glassmorphism e acentos frios, incompatíveis com um aplicativo diário. Foram aproveitados os critérios de contraste, alvos de toque, foco, responsividade e redução de movimento. A direção própria combina estética vintage discreta com ergonomia contemporânea. O ponto memorável é a nogueira iluminada no cabeçalho, não um efeito espalhado por cada componente.
+A pesquisa da UI/UX Pro Max orienta os critérios de contraste, alvos de toque, foco, responsividade e redução de movimento. A direção usa acentos frios discretos, gradientes estáticos e ergonomia contemporânea, sem espalhar efeitos que prejudiquem a leitura.

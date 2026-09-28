@@ -4,6 +4,7 @@ import { getExerciseDemo } from './exercise-demos'
 import { getMuayPractices } from './muay-exercises'
 import { dayNames, expenseCategories, homeChecklist, mealPrepChecklist, progressPlan, routineItems } from './data'
 import { calculateDelivery, createDailyPlanSnapshot, defaultSettings, filterRoutineForDay, findLinkedActivityId, formatMoney, localDateKey, MAX_BACKUP_BYTES, recentRecords, rideSafetyForDate, summarizeDailyProgress, summarizePlanProgress, summarizeWeeklyProgress, upgradeAppearance, validateBackup, weekBounds, withScheduleStart } from './domain'
+import { ProgressDashboard } from './components/ProgressDashboard'
 import { repository } from './repository'
 import { clampTrainingWeek, getMuaySession, getMuayThaiGuide, getStrengthSession, getTrainingActivityGuide, getTrainingPlanWeek, trainingBlocks, type MuayTrainingId, type TrainingDay } from './training-plan'
 import type { AppSettings, DailyCheckIn, DailyCompletion, DailyPlanSnapshot, DailyProgressSummary, DeliveryShift, Expense, RoutineArea, RoutineItem, RoutineMode, StoragePersistence, StudyLog, ThirtyDayProgress, WeeklyProgressSummary } from './types'
@@ -13,6 +14,8 @@ type TrainingSelection = TrainingDay | MuayTrainingId
 type RecordKind = 'delivery' | 'despesa' | 'estudo' | 'checklists'
 type ActivitySelection = { item: RoutineItem; day: number }
 type LinkableRecord = { kind: 'study', area: StudyLog['area'] } | { kind: 'delivery', startTime: string, endTime: string } | { kind: 'expense' }
+type EffectiveTheme = 'light' | 'dark'
+type AppearanceFeedback = { kind: 'idle' | 'saving' | 'saved' | 'error'; message: string }
 
 const areaLabels: Record<RoutineArea, string> = {
   sono: 'Sono', saude: 'Bem-estar', trabalho: 'Trabalho', treino: 'Treino', alimentacao: 'Alimentação', casa: 'Casa', estudos: 'Estudos', financas: 'Finanças', delivery: 'Delivery', lazer: 'Tempo livre',
@@ -47,6 +50,13 @@ function Icon({ name }: { name: Tab }) {
 
 const uid = () => globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(16).slice(2)}`
 const readableError = (error: unknown, fallback: string) => error instanceof Error ? error.message : fallback
+const effectiveTheme = (theme: AppSettings['theme']): EffectiveTheme => theme === 'light' ? 'light' : 'dark'
+const deviceTheme = (): EffectiveTheme => window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+const applyDocumentTheme = (theme: EffectiveTheme) => {
+  document.documentElement.dataset.theme = theme
+  const themeColor = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]')
+  if (themeColor) themeColor.content = theme === 'light' ? '#F0F7F6' : '#0F172A'
+}
 const workoutFromUrl = (): TrainingSelection | null => {
   const value = new URLSearchParams(window.location.search).get('treino')
   return value === 'A' || value === 'B' || value === 'muay-mon' || value === 'muay-fri' ? value : null
@@ -94,6 +104,8 @@ function App() {
   const [mode, setMode] = useState<RoutineMode>('normal')
   const [modeSaving, setModeSaving] = useState(false)
   const [settings, setSettings] = useState<AppSettings>(defaultSettings())
+  const [appearanceSaving, setAppearanceSaving] = useState(false)
+  const [appearanceFeedback, setAppearanceFeedback] = useState<AppearanceFeedback>({ kind: 'idle', message: '' })
   const [completions, setCompletions] = useState<DailyCompletion[]>([])
   const [dailySnapshots, setDailySnapshots] = useState<DailyPlanSnapshot[]>([])
   const [checkIn, setCheckIn] = useState<DailyCheckIn | null>(null)
@@ -114,16 +126,7 @@ function App() {
   }, [])
 
   useEffect(() => {
-    const appearance = settings.theme ?? 'dark'
-    const preference = window.matchMedia('(prefers-color-scheme: light)')
-    const update = () => {
-      document.documentElement.dataset.theme = appearance
-      const themeColor = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]')
-      if (themeColor) themeColor.content = appearance === 'light' || (appearance === 'system' && preference.matches) ? '#f9f5ed' : '#12100f'
-    }
-    update()
-    preference.addEventListener('change', update)
-    return () => preference.removeEventListener('change', update)
+    applyDocumentTheme(effectiveTheme(settings.theme))
   }, [settings.theme])
 
   useEffect(() => {
@@ -135,17 +138,21 @@ function App() {
           repository.getSettings(), repository.getCompletions(), repository.getDailySnapshots(), repository.getCheckIn(dateKey), repository.getDeliveryShifts(), repository.getExpenses(), repository.getStudyLogs(), repository.getProgress(),
         ])
         if (!active) return
-        const nextSettings = upgradeAppearance(loadedSettings)
+        const upgradedSettings = upgradeAppearance(loadedSettings)
+        const resolvedTheme = loadedSettings.theme === 'system' ? deviceTheme() : effectiveTheme(upgradedSettings.theme)
+        const nextSettings = upgradedSettings.theme === resolvedTheme && upgradedSettings.appearanceVersion === 2
+          ? upgradedSettings
+          : { ...upgradedSettings, theme: resolvedTheme, appearanceVersion: 2 as const }
+        setSettings(nextSettings)
+        setMode(nextSettings.preferredMode)
         if (nextSettings !== loadedSettings) {
           try { await repository.saveSettings(nextSettings) }
-          catch { if (active) setMessage('A nova aparência está ativa, mas não foi possível salvar a preferência.') }
+          catch { if (active) setMessage('A aparência compatível está ativa, mas não foi possível salvar a preferência explícita.') }
         }
         if (!active) return
         const snapshotPlan = prepareWeekSnapshots(loadedSnapshots, dateKey, nextSettings.preferredMode, nextSettings)
         await Promise.all(snapshotPlan.changed.map((snapshot) => repository.saveDailySnapshot(snapshot)))
         if (!active) return
-        setSettings(nextSettings)
-        setMode(nextSettings.preferredMode)
         setCompletions(loadedCompletions)
         setDailySnapshots(snapshotPlan.all)
         setCheckIn(loadedCheckIn ?? null)
@@ -297,6 +304,30 @@ function App() {
     } catch { setMessage('Não foi possível salvar a semana do treino. Tente novamente.') }
   }
 
+  async function changeAppearance(nextTheme: EffectiveTheme) {
+    if (appearanceSaving) return false
+    if (effectiveTheme(settings.theme) === nextTheme) return true
+    const previousSettings = settings
+    const nextSettings: AppSettings = { ...settings, theme: nextTheme, appearanceVersion: 2 }
+    applyDocumentTheme(nextTheme)
+    setSettings(nextSettings)
+    setAppearanceSaving(true)
+    setAppearanceFeedback({ kind: 'saving', message: 'Salvando aparência…' })
+    try {
+      await repository.saveSettings(nextSettings)
+      setAppearanceFeedback({ kind: 'saved', message: `Aparência ${nextTheme === 'light' ? 'clara' : 'escura'} salva neste aparelho.` })
+      return true
+    } catch {
+      const previousTheme = effectiveTheme(previousSettings.theme)
+      applyDocumentTheme(previousTheme)
+      setSettings((current) => ({ ...current, theme: previousTheme, appearanceVersion: 2 }))
+      setAppearanceFeedback({ kind: 'error', message: `Não foi possível salvar a aparência. O modo ${previousTheme === 'light' ? 'claro' : 'escuro'} foi restaurado; tente novamente.` })
+      return false
+    } finally {
+      setAppearanceSaving(false)
+    }
+  }
+
   async function saveCheckIn(next: DailyCheckIn) {
     try { await repository.saveCheckIn(next); setCheckIn(next); setMessage('Checagem salva neste aparelho.'); return true }
     catch { setMessage('Não foi possível salvar a checagem. Tente novamente.'); return false }
@@ -363,8 +394,8 @@ function App() {
           {tab === 'hoje' && <TodayView key={dateKey} now={now} items={todayItems} mode={mode} modeSaving={modeSaving} onMode={changeMode} states={todayStates} savingIds={savingIds} dateKey={dateKey} checkIn={todayCheckIn} safety={safety} weeklySummary={weeklySummary} todaySummary={todaySummary} onCheckIn={saveCheckIn} onToggle={toggleCompletion} onSkip={toggleSkipped} onOpen={(item) => openActivity(item, now.getDay())} />}
           {tab === 'semana' && <WeekView settings={settings} selectedDay={selectedWeekDay} onSelectedDay={setSelectedWeekDay} onOpen={openActivity} />}
           {tab === 'treinos' && <TrainingHubView trainingWeek={clampTrainingWeek(settings.trainingWeek)} mode={mode} onTrainingWeek={changeTrainingWeek} onOpenTraining={openWorkout} />}
-          {tab === 'progresso' && <ProgressView progress={progress} weeklySummary={weeklySummary} onToggle={async (item) => { try { await repository.saveProgress(item); setProgress((v) => [...v.filter((p) => p.id !== item.id), item]) } catch (error) { setMessage(readableError(error, 'Não foi possível salvar o progresso.')) } }} />}
-          {tab === 'ajustes' && <SettingsView settings={settings} persistence={storagePersistence} onSettings={async (next) => { const snapshotPlan = prepareWeekSnapshots(dailySnapshots, dateKey, next.preferredMode, next, dateKey); try { await repository.saveSettingsAndDailySnapshots(next, snapshotPlan.changed); setSettings(next); setMode(next.preferredMode); setDailySnapshots(snapshotPlan.all); setMessage('Ajustes salvos.') } catch (error) { setMessage(readableError(error, 'Não foi possível salvar os ajustes.')) } }} onMessage={setMessage} onImported={() => window.location.reload()} onCleared={() => window.location.reload()} />}
+          {tab === 'progresso' && <ProgressView today={dateKey} snapshots={dailySnapshots} completions={completions} studyLogs={studyLogs} deliveryShifts={deliveryShifts} expenses={expenses} progress={progress} weeklySummary={weeklySummary} onToggle={async (item) => { try { await repository.saveProgress(item); setProgress((v) => [...v.filter((p) => p.id !== item.id), item]) } catch (error) { setMessage(readableError(error, 'Não foi possível salvar o progresso.')) } }} />}
+          {tab === 'ajustes' && <SettingsView settings={settings} persistence={storagePersistence} appearanceSaving={appearanceSaving} appearanceFeedback={appearanceFeedback} onAppearance={changeAppearance} onSettings={async (next) => { const synchronizedNext: AppSettings = { ...next, theme: effectiveTheme(settings.theme), appearanceVersion: 2 }; const snapshotPlan = prepareWeekSnapshots(dailySnapshots, dateKey, synchronizedNext.preferredMode, synchronizedNext, dateKey); try { await repository.saveSettingsAndDailySnapshots(synchronizedNext, snapshotPlan.changed); setSettings(synchronizedNext); setMode(synchronizedNext.preferredMode); setDailySnapshots(snapshotPlan.all); setMessage('Ajustes salvos.') } catch (error) { setMessage(readableError(error, 'Não foi possível salvar os ajustes.')) } }} onMessage={setMessage} onImported={() => window.location.reload()} onCleared={() => window.location.reload()} />}
         </>}
         <div hidden={tab !== 'registros' || !!trainingSelection}><RecordsView dateKey={dateKey} shifts={deliveryShifts} expenses={expenses} studyLogs={studyLogs} completed={todayCompleted} onToggle={toggleCompletion} onShift={saveLinkedShift} onExpense={saveLinkedExpense} onStudy={saveLinkedStudy} /></div>
       </main>
@@ -647,17 +678,23 @@ function TrainingHubView({ trainingWeek, mode, onTrainingWeek, onOpenTraining }:
   </>
 }
 
-function ProgressView({ progress, weeklySummary, onToggle }: { progress: ThirtyDayProgress[]; weeklySummary: WeeklyProgressSummary; onToggle: (item: ThirtyDayProgress) => Promise<void> }) {
+function ProgressView({ today, snapshots, completions, studyLogs, deliveryShifts, expenses, progress, weeklySummary, onToggle }: { today: string; snapshots: DailyPlanSnapshot[]; completions: DailyCompletion[]; studyLogs: StudyLog[]; deliveryShifts: DeliveryShift[]; expenses: Expense[]; progress: ThirtyDayProgress[]; weeklySummary: WeeklyProgressSummary; onToggle: (item: ThirtyDayProgress) => Promise<void> }) {
   const { completedIds: completed, total, completedCount, percentage } = summarizePlanProgress(progress, progressPlan)
   return <>
     <PageTitle eyebrow="Evolução" title="Seu progresso continua" subtitle="Acompanhe a rotina e os passos do plano inicial. Os treinos estão na aba Treinos." />
 
-    <WeeklyProgressCard summary={weeklySummary} />
+    <ProgressDashboard today={today} snapshots={snapshots} completions={completions} studyLogs={studyLogs} deliveryShifts={deliveryShifts} expenses={expenses} />
 
-    <div className="section-heading progress-plan-heading"><div><h2>Plano inicial de 30 dias</h2><p className="section-description">O checklist original permanece separado e com todos os registros preservados.</p></div></div>
-    <section className="progress-summary"><div><strong>{completedCount} de {total} passos registrados</strong><span>Continue de onde fizer sentido.</span></div><div className="progress-track" role="progressbar" aria-label="Passos do plano concluídos" aria-valuenow={completedCount} aria-valuemin={0} aria-valuemax={total}><span style={{ width: `${percentage}%` }} /></div></section>
-    <div className="progress-weeks">{progressPlan.map((planWeek) => { const weekDone = planWeek.items.filter((_, index) => completed.has(`week-${planWeek.week}-${index}`)).length; return <section className="progress-card" key={planWeek.week}><header><span>Etapa {planWeek.week}</span><strong>{planWeek.title}</strong><small>{weekDone} de {planWeek.items.length}</small></header>{planWeek.items.map((text, index) => { const id = `week-${planWeek.week}-${index}`; const done = completed.has(id); return <label className="checklist-row" key={id}><input type="checkbox" checked={done} onChange={() => onToggle({ id, week: planWeek.week, item: text, state: done ? 'pending' : 'done', completedAt: done ? undefined : new Date().toISOString() })} /><span>{text}</span></label> })}</section> })}</div>
-    <div className="info-card"><strong>Uma leitura honesta</strong><p>Dados incompletos não permitem concluir que uma mudança de saúde ou renda ocorreu. Observe tendências e leve decisões clínicas ou financeiras importantes a profissionais habilitados.</p></div>
+    <section className="dashboard-existing-progress" aria-labelledby="existing-progress-title">
+      <div className="section-heading"><div><p className="eyebrow">Rotina preservada</p><h2 id="existing-progress-title">Progresso semanal e plano de 30 dias</h2><p className="section-description">Estas leituras permanecem separadas do dashboard mensal e anual.</p></div></div>
+
+      <WeeklyProgressCard summary={weeklySummary} />
+
+      <div className="section-heading progress-plan-heading"><div><h2>Plano inicial de 30 dias</h2><p className="section-description">O checklist original permanece separado e com todos os registros preservados.</p></div></div>
+      <section className="progress-summary"><div><strong>{completedCount} de {total} passos registrados</strong><span>Continue de onde fizer sentido.</span></div><div className="progress-track" role="progressbar" aria-label="Passos do plano concluídos" aria-valuenow={completedCount} aria-valuemin={0} aria-valuemax={total}><span style={{ width: `${percentage}%` }} /></div></section>
+      <div className="progress-weeks">{progressPlan.map((planWeek) => { const weekDone = planWeek.items.filter((_, index) => completed.has(`week-${planWeek.week}-${index}`)).length; return <section className="progress-card" key={planWeek.week}><header><span>Etapa {planWeek.week}</span><strong>{planWeek.title}</strong><small>{weekDone} de {planWeek.items.length}</small></header>{planWeek.items.map((text, index) => { const id = `week-${planWeek.week}-${index}`; const done = completed.has(id); return <label className="checklist-row" key={id}><input type="checkbox" checked={done} onChange={() => onToggle({ id, week: planWeek.week, item: text, state: done ? 'pending' : 'done', completedAt: done ? undefined : new Date().toISOString() })} /><span>{text}</span></label> })}</section> })}</div>
+      <div className="info-card"><strong>Uma leitura honesta</strong><p>Dados incompletos não permitem concluir que uma mudança de saúde ou renda ocorreu. Observe tendências e leve decisões clínicas ou financeiras importantes a profissionais habilitados.</p></div>
+    </section>
   </>
 }
 
@@ -669,8 +706,14 @@ function WeeklyProgressCard({ summary, today }: { summary: WeeklyProgressSummary
   </section>
 }
 
-function SettingsView({ settings, persistence, onSettings, onMessage, onImported, onCleared }: { settings: AppSettings; persistence: StoragePersistence; onSettings: (settings: AppSettings) => Promise<void>; onMessage: (message: string) => void; onImported: () => void; onCleared: () => void }) {
+function SettingsView({ settings, persistence, appearanceSaving, appearanceFeedback, onAppearance, onSettings, onMessage, onImported, onCleared }: { settings: AppSettings; persistence: StoragePersistence; appearanceSaving: boolean; appearanceFeedback: AppearanceFeedback; onAppearance: (theme: EffectiveTheme) => Promise<boolean>; onSettings: (settings: AppSettings) => Promise<void>; onMessage: (message: string) => void; onImported: () => void; onCleared: () => void }) {
   const [draft, setDraft] = useState(settings)
+  const selectedTheme = effectiveTheme(settings.theme)
+  async function updateAppearance(nextTheme: EffectiveTheme) {
+    const previousTheme = selectedTheme
+    setDraft((current) => ({ ...current, theme: nextTheme, appearanceVersion: 2 }))
+    if (!await onAppearance(nextTheme)) setDraft((current) => ({ ...current, theme: previousTheme, appearanceVersion: 2 }))
+  }
   function updateTime(item: RoutineItem, startTime: string) { setDraft((current) => withScheduleStart(current, item.id, startTime)) }
   function toggleActive(id: string) { setDraft((current) => ({ ...current, disabledActivities: current.disabledActivities.includes(id) ? current.disabledActivities.filter((item) => item !== id) : [...current.disabledActivities, id] })) }
   async function exportData() { try { const data = await repository.exportAll(); const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const anchor = document.createElement('a'); anchor.href = url; anchor.download = `ritmo-backup-${localDateKey()}.json`; document.body.appendChild(anchor); anchor.click(); anchor.remove(); window.setTimeout(() => URL.revokeObjectURL(url), 1000); onMessage('Backup JSON exportado.') } catch (error) { onMessage(readableError(error, 'Não foi possível exportar o backup.')) } }
@@ -678,8 +721,8 @@ function SettingsView({ settings, persistence, onSettings, onMessage, onImported
   async function clearData() { if (!window.confirm('Esta ação apagará permanentemente todos os registros deste aparelho e não pode ser desfeita. Continuar?')) return; try { await repository.clearAll(); onCleared() } catch (error) { onMessage(readableError(error, 'Não foi possível apagar os dados.')) } }
   const storageText = persistence === 'granted' ? 'Proteção persistente concedida' : persistence === 'checking' ? 'Verificando…' : persistence === 'unsupported' ? 'O navegador não informa proteção persistente' : 'Sujeito a limpeza pelo navegador — faça backups periódicos'
   return <><PageTitle eyebrow="Preferências e dados" title="Ajustes" subtitle="Sua rotina pode mudar junto com você." />
-    <section className="settings-section"><h2>Aparência</h2><p className="section-description">Escolha como o Ritmo aparece neste aparelho.</p><div className="appearance-options" role="group" aria-label="Aparência">{([['system', 'Do aparelho'], ['light', 'Clara'], ['dark', 'Escura']] as const).map(([value, label]) => <button key={value} type="button" aria-pressed={(draft.theme ?? 'system') === value} className={(draft.theme ?? 'system') === value ? 'selected' : ''} onClick={() => setDraft({ ...draft, theme: value })}>{label}</button>)}</div></section>
-    <section className="settings-section"><div className="section-heading"><div><h2>Atividades e horários</h2><p className="section-description">Mostre o que importa e ajuste o início de cada atividade.</p></div></div><details className="settings-disclosure"><summary>Personalizar rotina <span>{routineItems.length} atividades</span></summary><div className="settings-list">{routineItems.map((item) => { const enabled = !draft.disabledActivities.includes(item.id); return <div className="setting-row" key={item.id}><button className={`toggle ${enabled ? 'on' : ''}`} role="switch" aria-checked={enabled} aria-label={`${enabled ? 'Desativar' : 'Ativar'} ${item.title}`} onClick={() => toggleActive(item.id)}><span /></button><div><strong>{item.title}</strong><small>{areaLabels[item.area]}</small></div><input aria-label={`Horário inicial de ${item.title}`} type="time" value={draft.scheduleOverrides[item.id]?.startTime ?? item.startTime ?? ''} onChange={(e) => updateTime(item, e.target.value)} /></div> })}</div></details><div className="settings-actions"><button className="primary-button" onClick={() => onSettings(draft)}>Salvar ajustes</button><button className="text-button" onClick={() => { if (window.confirm('Restaurar atividades, horários, ritmo, semana do treino e aparência para os padrões? Salve para confirmar a mudança.')) setDraft(defaultSettings()) }}>Restaurar padrões</button></div></section>
+    <section className="settings-section"><h2>Aparência</h2><p className="section-description">Escolha como o Ritmo aparece neste aparelho. A mudança é salva imediatamente.</p><div className="appearance-options" role="group" aria-label="Aparência">{([['light', 'Claro'], ['dark', 'Escuro']] as const).map(([value, label]) => <button key={value} type="button" aria-pressed={selectedTheme === value} className={selectedTheme === value ? 'selected' : ''} disabled={appearanceSaving} onClick={() => updateAppearance(value)}>{label}</button>)}</div><p className={`appearance-status ${appearanceFeedback.kind}`} role={appearanceFeedback.kind === 'error' ? 'alert' : 'status'} aria-live={appearanceFeedback.kind === 'error' ? 'assertive' : 'polite'} aria-atomic="true" aria-label="Status da aparência">{appearanceFeedback.message}</p></section>
+    <section className="settings-section"><div className="section-heading"><div><h2>Atividades e horários</h2><p className="section-description">Mostre o que importa e ajuste o início de cada atividade.</p></div></div><details className="settings-disclosure"><summary>Personalizar rotina <span>{routineItems.length} atividades</span></summary><div className="settings-list">{routineItems.map((item) => { const enabled = !draft.disabledActivities.includes(item.id); return <div className="setting-row" key={item.id}><button className={`toggle ${enabled ? 'on' : ''}`} role="switch" aria-checked={enabled} aria-label={`${enabled ? 'Desativar' : 'Ativar'} ${item.title}`} onClick={() => toggleActive(item.id)}><span /></button><div><strong>{item.title}</strong><small>{areaLabels[item.area]}</small></div><input aria-label={`Horário inicial de ${item.title}`} type="time" value={draft.scheduleOverrides[item.id]?.startTime ?? item.startTime ?? ''} onChange={(e) => updateTime(item, e.target.value)} /></div> })}</div></details><div className="settings-actions"><button className="primary-button" disabled={appearanceSaving} onClick={() => onSettings({ ...draft, theme: selectedTheme, appearanceVersion: 2 })}>Salvar ajustes</button><button className="text-button" onClick={() => { if (window.confirm('Restaurar atividades, horários, ritmo e semana do treino para os padrões? Salve para confirmar a mudança.')) setDraft({ ...defaultSettings(), theme: selectedTheme }) }}>Restaurar padrões</button></div></section>
     <section className="settings-section"><h2>Dados neste aparelho</h2><div className="storage-status"><span className={persistence === 'granted' ? 'status-good' : 'status-warn'} aria-hidden="true" /><div><strong>Armazenamento local</strong><p>{storageText}</p></div></div><div className="action-grid"><button className="secondary-button" onClick={exportData}>Exportar backup JSON</button><label className="secondary-button file-button">Importar backup JSON<input type="file" accept="application/json,.json" onChange={(e) => e.target.files?.[0] && importData(e.target.files[0])} /></label></div><p className="fine-print">O app funciona sem conta e sem servidor. Guarde uma cópia do backup fora do celular periodicamente.</p></section>
     <section className="danger-section"><h2>Apagar todos os dados</h2><p>Remove registros, progresso e ajustes somente deste aparelho.</p><button className="danger-button" onClick={clearData}>Apagar registros</button></section></>
 }

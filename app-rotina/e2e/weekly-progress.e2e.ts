@@ -37,8 +37,9 @@ test('fecha o dia com todas as obrigatórias, ignora opcionais e reage a uma ati
   await expect(weekly).toContainText('Dia concluído')
 
   await goToTab(page, 'Progresso')
-  await expect(page.getByText('Semana 1 de 24', { exact: false })).toBeVisible()
-  await expect(page.getByText('0 de 19 passos registrados', { exact: true })).toBeVisible()
+  const preservedProgress = page.getByRole('region', { name: 'Progresso semanal e plano de 30 dias' })
+  await expect(preservedProgress.getByRole('region', { name: 'Progresso desta semana' })).toContainText('1 de 7 dias concluídos')
+  await expect(preservedProgress.getByText('0 de 19 passos registrados', { exact: true })).toBeVisible()
 })
 
 test('preserva snapshots passados quando o modo atual muda', async ({ page }) => {
