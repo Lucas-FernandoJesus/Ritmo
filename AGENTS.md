@@ -10,6 +10,16 @@
 - O agente principal é o único editor e integrador. Subagentes, quando usados, limitam-se a inspeção ou revisão com entregas delimitadas.
 - Nunca permita edições concorrentes nos mesmos arquivos.
 
+## Execução por tarefas e economia de contexto
+
+- Solicitações com mais de uma funcionalidade, área ou objetivo devem ser divididas antes da implementação em tarefas ordenadas e independentes. Cada tarefa deve declarar, de forma compacta, objetivo, escopo permitido, critério de conclusão, verificação e dependências.
+- Execute uma tarefa por vez e não antecipe arquivos, documentação, testes ou decisões de tarefas seguintes. Cada etapa deve terminar funcional e verificável; não separe mudanças fortemente acopladas se isso deixar o projeto quebrado.
+- Se uma solicitação ampla não vier dividida, converta-a em um backlog numerado e execute somente a primeira tarefa segura e coerente. Continue sem nova confirmação quando a sequência já estiver autorizada e não houver decisão material.
+- Quando o usuário ou o sistema informar orçamento restante de até 20%, ative o modo econômico: priorize correções críticas e de maior valor; carregue apenas o contexto necessário; não use subagentes, pesquisa web, novas skills, dependências ou refatorações paralelas sem necessidade concreta; execute testes relacionados por tarefa e reserve suíte completa, build e revisão visual para a integração final, salvo risco que exija antecipação.
+- Ao concluir cada tarefa no modo econômico, entregue um handoff curto com o que foi concluído, arquivos alterados, testes executados e próxima tarefa.
+- Pare antes de mudanças de arquitetura, dados, dependências, ações destrutivas ou expansão de escopo. Não invente métricas de tokens; use somente o orçamento informado e referencie contexto já documentado em vez de repeti-lo.
+- Economia de contexto nunca autoriza omitir testes essenciais, quebrar compatibilidade ou declarar conclusão sem evidência.
+
 ## Instalação e verificação
 
 - `npm ci` está autorizado.
