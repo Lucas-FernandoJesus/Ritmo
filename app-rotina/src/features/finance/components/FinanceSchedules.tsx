@@ -51,7 +51,7 @@ function ScheduleForm({ today, accounts, recurring, installment, locked, onRecur
     <AccountField accounts={accounts} value={form.accountId} onChange={accountId => setForm({ ...form, accountId })} label="Conta prevista" />
     {(kind === 'installment' || form.type === 'saida' || form.type === 'pendencia') && <AccountField accounts={accounts} value={form.liabilityAccountId} onChange={liabilityAccountId => setForm({ ...form, liabilityAccountId })} label="Dívida a reduzir após pagamento" liability />}
     {amounts.length > 0 && <p className="fine-print">{amounts.length} parcela(s): primeira {formatMoney(amounts[0])}, última {formatMoney(amounts.at(-1)!)}. Último vencimento: {dateLabel(anchoredMonth(form.startDate, form.count - 1))}.</p>}
-    <p className="fine-print">Planejamento não é pagamento nem recebimento. Use Saída para contas fixas a pagar. Créditos e pendências confirmados continuam em aberto até a baixa.</p>
+    <p className="fine-print">Ocorrências planejadas de Saída e parcelas entram em A pagar no período. Só passam a Saídas e alteram o saldo quando o pagamento é confirmado. Créditos e pendências confirmados continuam em aberto até a baixa.</p>
     {locked && <p className="fine-print">Há ocorrências confirmadas. Datas, frequência, tipo e estrutura de parcelas permanecem fixos; pause e crie outro planejamento para substituí-los.</p>}
     {error && <p role="alert" className="warning-text">{error}</p>}
     <div className="finance-row-actions"><button className="primary-button" disabled={saving}>{saving ? 'Salvando…' : 'Salvar planejamento'}</button><button type="button" className="text-button" disabled={saving} onClick={onCancel}>Cancelar</button></div>

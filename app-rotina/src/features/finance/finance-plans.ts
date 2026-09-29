@@ -138,7 +138,7 @@ export function buildRecurringAnnualOverview(recurringPlans: readonly RecurringP
 
 export function plannedMovements(occurrences: readonly PlanOccurrence[]): FinancialMovement[] {
   return occurrences.filter(o => !o.record).map(o => ({ id: o.id, sourceId: o.ref.planId, source: 'planning', origin: o.ref.kind === 'recurring' ? 'Recorrências' : 'Parcelamentos', localDate: o.dueDate,
-    description: o.ref.kind === 'installment' ? `${o.name} · parcela ${o.ref.key}` : o.name, type: o.type, category: o.category, amount: o.amount, status: 'planejado' }))
+    description: o.ref.kind === 'installment' ? `${o.name} · parcela ${o.ref.key}` : o.name, type: o.type === 'saida' ? 'pendencia' : o.type, category: o.category, amount: o.amount, status: 'planejado' }))
 }
 
 export function installmentProgress(plan: InstallmentPlan, records: readonly FinancialRecord[], today: string) {

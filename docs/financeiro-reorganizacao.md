@@ -101,7 +101,7 @@ O volume de blocos mistura consulta, cadastro, planejamento, patrimônio, ferram
 | Registrar conta a pagar | Financeiro > Registrar > A pagar | `FinancialRecord` do tipo `pendencia` | Ao pagar, o mesmo registro passa a saída; não cria cópia |
 | Registrar turno e valores próprios do trabalho | Registros > Delivery | `DeliveryShift` | Receita, combustível, outros custos do turno e reserva continuam no formulário operacional |
 | Registrar gasto adicional do delivery | Financeiro > Registrar > Saída | `Expense` vinculado ao turno | Usar somente para gasto que ainda não esteja nos campos do turno |
-| Confirmar recorrência ou parcela | Planejamento > Recorrências e parcelas | `FinancialRecord` com `planningRef` | Exceção gerada pelo planejamento; reconcilia a ocorrência e permanece idempotente |
+| Confirmar recorrência ou parcela | Planejamento > Recorrências e parcelas | `FinancialRecord` com `planningRef` | A ocorrência planejada de saída compõe A pagar até a confirmação; ao pagar, passa a Saída realizada, reconcilia pelo mesmo identificador e permanece idempotente |
 | Transferir entre contas próprias | Patrimônio > Transferir | `AccountTransfer` | Movimenta patrimônio sem compor entrada, saída ou saldo do período |
 
 `Expense` é, portanto, a origem canônica de **novas saídas manuais**. `FinancialRecord` continua sendo a origem de entradas, valores a receber, valores a pagar e confirmações do planejamento. Essa divisão reaproveita as entidades atuais e não exige schema, migração ou conversão de dados.
@@ -189,6 +189,8 @@ Nenhuma dessas decisões depende apenas de troca de textos: os contratos da tare
 
 - Receber transforma o mesmo crédito em entrada, preservando ID e quantidade total de registros.
 - Pagar transforma a mesma pendência em saída, preservando ID e quantidade total de registros.
+- Cada ocorrência não confirmada de uma recorrência do tipo Saída ou de um parcelamento compõe A pagar no respectivo período, junto das contas individuais; ela não compõe Saídas nem Saldo antes do pagamento.
+- Confirmar o pagamento remove a ocorrência virtual de A pagar e cria uma única Saída realizada com o mesmo identificador de ocorrência e `planningRef`.
 - Editar um `Expense` atualiza `expenses`; editar um `FinancialRecord` atualiza `financialRecords`; editar um turno abre Registros > Delivery.
 - Uma saída antiga armazenada em `FinancialRecord` continua editável nessa mesma coleção e nunca é convertida automaticamente em `Expense`.
 - Um registro com `planningRef` mantém a referência durante confirmação, baixa e edição permitida.

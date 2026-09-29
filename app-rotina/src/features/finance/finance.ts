@@ -103,8 +103,8 @@ export function summarizeFinance(rows: readonly FinancialMovement[]) {
   return {
     hasData, hasRealizedData, hasDeliveryData: delivery.length > 0, entries, exits,
     credits: hasData ? sum(rows.filter((row) => row.type === 'credito' && row.status !== 'planejado')) : null,
-    pending: hasData ? sum(rows.filter((row) => row.type === 'pendencia' && row.status !== 'planejado')) : null,
-    payablePending: hasData ? sum(rows.filter((row) => row.type === 'pendencia' && row.status === 'aberto')) : null,
+    pending: hasData ? sum(rows.filter((row) => row.type === 'pendencia')) : null,
+    payablePending: hasData ? sum(rows.filter((row) => row.type === 'pendencia' && (row.status === 'aberto' || row.status === 'planejado'))) : null,
     balance: entries === null || exits === null ? null : (cents(entries) - cents(exits)) / 100,
     deliveryGross, deliveryExpenses,
     operationalExpenses, operationalNet: subtractMoney(deliveryGross, operationalExpenses),

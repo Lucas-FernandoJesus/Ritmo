@@ -36,6 +36,26 @@ describe('planejamento recorrente e parcelas', () => {
     expect(confirmed.planningRef?.dueDate).toBe(sources.today)
     expect(plannedMovements(planOccurrences([{ ...recurrence, type, startDate: sources.today }], [], [confirmed], { start: sources.today, end: sources.today }))).toEqual([])
   })
+  it('soma saída recorrente às contas a pagar e a move para saídas após o pagamento', () => {
+    const plan = { ...recurrence, startDate: sources.today }
+    const interval = { start: sources.today, end: sources.today }
+    const manualPending = { ...record(25), id: 'internet', type: 'pendencia' as const, description: 'Internet' }
+    const unpaidRows = buildFinancialMovements({ ...sources, records: [manualPending], recurringPlans: [plan], installmentPlans: [], planningInterval: interval })
+    const planned = unpaidRows.find(row => row.source === 'planning')
+
+    expect(planned).toMatchObject({ type: 'pendencia', status: 'planejado', amount: 100 })
+    expect(summarizeFinance(unpaidRows)).toMatchObject({ pending: 125, payablePending: 125, exits: null, balance: null })
+
+    const occurrence = planOccurrences([plan], [], [], interval)[0]
+    const paid = createOccurrenceRecord(occurrence, sources.today, stamp)
+    const paidRows = buildFinancialMovements({ ...sources, records: [manualPending, paid], recurringPlans: [plan], installmentPlans: [], planningInterval: interval })
+
+    expect(paidRows.filter(row => row.id === `financial:${paid.id}`)).toEqual([
+      expect.objectContaining({ id: `financial:${paid.id}`, type: 'saida', status: 'realizado', amount: 100 }),
+    ])
+    expect(paidRows.some(row => row.source === 'planning' && row.sourceId === plan.id)).toBe(false)
+    expect(summarizeFinance(paidRows)).toMatchObject({ pending: 25, payablePending: 25, exits: 100, balance: -100 })
+  })
   it('mantém identidade ao pagar em outra data e não projeta novamente', () => {
     const occurrence = planOccurrences([], [installment], [], { start: sources.today, end: sources.today })[0]
     const paid = createOccurrenceRecord(occurrence, '2026-09-24', stamp)

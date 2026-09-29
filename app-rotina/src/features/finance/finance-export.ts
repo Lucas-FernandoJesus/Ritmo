@@ -8,7 +8,7 @@ function reportGrid(report: FinanceReport): Cell[][] {
   return [
     ['Rotina · relatório financeiro'], ['Período', report.start, report.end], ['Data de referência', report.today],
     ['Entradas recebidas', money(summary.entries)], ['Saídas pagas', money(summary.exits)], ['Saldo realizado', money(summary.balance)],
-    ['Créditos confirmados em aberto', money(summary.credits)], ['Pendências confirmadas em aberto', money(summary.payablePending)],
+    ['Créditos confirmados em aberto', money(summary.credits)], ['A pagar no período (planejado ou em aberto)', money(summary.payablePending)],
     ['Reserva de manutenção (estimativa)', money(summary.maintenanceReserve)],
     ['Planejamento e previsão não compõem o saldo realizado. Transferências e saldos iniciais não são receitas/despesas.'],
     [], ['Data', 'Descrição', 'Categoria', 'Tipo', 'Origem', 'Status', 'Valor (BRL)', 'Observação'],

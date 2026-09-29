@@ -175,6 +175,31 @@ test('recorrências de crédito e pendência mantêm identidade após baixas e p
   await expect(page.getByRole('region', { name: 'Ocorrências do período' }).getByRole('button', { name: /Confirmar Crédito/ })).toHaveCount(0)
 })
 
+test('recorrência de saída entra em A pagar e passa para Saídas quando paga', async ({ page }) => {
+  await openAppOnTuesday(page)
+  await goToTab(page, 'Financeiro')
+  await recurrence(page, 'Aluguel', 'saida', '15000')
+  await financeArea(page, 'Visão geral')
+  const summary = page.getByRole('region', { name: 'Resumo financeiro', exact: true })
+  const payable = summary.getByText('A pagar; reserva separada', { exact: true }).locator('..')
+  const exits = summary.getByText('Saídas', { exact: true }).locator('..')
+  const historyItem = page.getByRole('region', { name: 'Histórico financeiro' }).getByRole('article').filter({ hasText: 'Aluguel' })
+
+  await expect(payable).toContainText('150,00')
+  await expect(exits).toContainText('Sem dados')
+  await expect(historyItem).toContainText('A pagar')
+  await expect(historyItem).toContainText('Planejado')
+
+  await financeArea(page, 'Planejamento')
+  await confirm(page, 'Aluguel')
+  await financeArea(page, 'Visão geral')
+
+  await expect(payable).toContainText('0,00')
+  await expect(exits).toContainText('150,00')
+  await expect(historyItem).toContainText('Saída')
+  await expect(historyItem).toContainText('Realizado')
+})
+
 for (const theme of ['light', 'dark'] as const) test(`visão anual de gastos recorrentes no tema ${theme}, responsiva, acessível e offline`, async ({ page, context }, testInfo) => {
   await openAppOnTuesday(page)
   await page.emulateMedia({ reducedMotion: 'reduce' })
