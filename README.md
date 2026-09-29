@@ -8,6 +8,8 @@ O Ritmo reúne uma aplicação de rotina pessoal e os documentos que fundamentam
 |---|---|
 | [`app-rotina/`](app-rotina/) | PWA, dependências, código-fonte, testes e instruções de execução/publicação |
 | [`docs/estrutura.md`](docs/estrutura.md) | Mapa dos arquivos, responsabilidades e critérios de organização |
+| [`docs/telas-e-funcionalidades.md`](docs/telas-e-funcionalidades.md) | Destino de cada ação e leitura nas sete telas |
+| [`GLOSSARY.md`](GLOSSARY.md) | Termos da rotina, registros e Financeiro |
 | [`docs/financeiro.md`](docs/financeiro.md) | Arquitetura, persistência e regras do Financeiro |
 | [`docs/design-system/ritmo/`](docs/design-system/ritmo/) | Identidade visual atual e arquivos históricos de referência |
 | [`docs/rotina/`](docs/rotina/) | Treze documentos numerados da rotina; comece por [`00_LEIA_PRIMEIRO.txt`](docs/rotina/00_LEIA_PRIMEIRO.txt) |

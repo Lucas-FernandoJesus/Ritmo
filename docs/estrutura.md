@@ -13,6 +13,7 @@ Ritmo/
 ├── .github/workflows/pages.yml
 ├── docs/
 │   ├── estrutura.md
+│   ├── telas-e-funcionalidades.md
 │   ├── financeiro.md
 │   ├── rotina/
 │   ├── muay-thai/
@@ -40,7 +41,10 @@ Ritmo/
             │   └── components/
             ├── dashboard/
             │   └── components/
+            ├── progress/
+            ├── records/
             ├── routine/
+            ├── settings/
             └── training/
 ```
 
@@ -48,16 +52,19 @@ Ritmo/
 
 | Local | Conteúdo |
 | --- | --- |
-| `src/App.tsx` | Composição das telas, navegação e estado da aplicação |
+| `src/App.tsx` | Composição das telas, navegação e coordenação do estado da aplicação |
 | `src/main.tsx` | Inicialização do React e registro do serviço offline |
 | `src/index.css` | Estilos e tokens compartilhados dos dois temas |
-| `src/components/` | Menu principal, primitivas de formulário, input monetário e gráfico reutilizável |
+| `src/components/` | Menu principal, primitivas de formulário, input monetário, gráfico e indicador semanal reutilizáveis |
 | `src/core/` | Modelos compartilhados, validação, cálculos gerais, precisão monetária e calendário financeiro |
 | `src/infrastructure/` | Repositório IndexedDB, testes de proteção da persistência e do serviço offline |
 | `src/features/finance/` | Movimentações, análises, planos, fechamento, exportações, testes e componentes financeiros |
-| `src/features/dashboard/` | Agregações, testes e componente da Dashboard |
-| `src/features/routine/` | Dados iniciais da rotina, guias gerais e testes de integridade |
-| `src/features/training/` | Plano de treinos, catálogos de exercícios e testes |
+| `src/features/dashboard/` | Agregações, testes e Dashboard |
+| `src/features/progress/` | Tela Progresso e plano inicial de 30 dias |
+| `src/features/records/` | Tela Registros, formulários de delivery e estudo |
+| `src/features/routine/` | Telas Hoje e Semana, checklists do fim de semana, orientações e dados da rotina |
+| `src/features/settings/` | Tela Ajustes e aplicação dos temas Claro/Escuro |
+| `src/features/training/` | Tela Treinos, sessões A/B e Muay Thai, plano e catálogos de exercícios |
 | `e2e/` | Cenários de navegador, fixtures, servidor de preview e teardown |
 | `public/` | Manifesto, serviço offline e recursos estáticos publicados |
 | `scripts/` | Utilitários de validação e manutenção dos ícones |
@@ -67,6 +74,7 @@ Ritmo/
 ## Critérios de manutenção
 
 - Coloque cada módulo na funcionalidade que o utiliza; mantenha testes unitários próximos do código testado. Componentes usados por mais de uma área ficam em `src/components/`.
+- Use [o mapa de telas](telas-e-funcionalidades.md) para escolher o destino de cada ação. O [glossário](../GLOSSARY.md) define os termos compartilhados.
 - Use imports diretos para módulos existentes. A organização não introduz aliases, barrels ou outra camada de roteamento.
 - Regras financeiras continuam no domínio; componentes consomem resultados. O repositório permanece o único ponto de acesso ao IndexedDB.
 - `finance-schedule.ts` fica em `core/` porque suas primitivas de calendário também são necessárias à validação compartilhada.
@@ -91,4 +99,4 @@ node scripts/visual-review.mjs
 
 `visual-review.mjs` executa a suíte existente de navegador com o Edge instalado, incluindo capturas dos dois temas, menu, Financeiro, responsividade, console, backup e offline. Usa as configurações e fixtures de `e2e/`, sem depender de uma sessão CDP aberta manualmente. Capturas e anexos ficam em `test-results/`.
 
-Validação da reorganização: lint e TypeScript aprovados; 182 testes unitários e 55 cenários de navegador aprovados (237 no total); build aprovado. Foram conferidos 47 links locais da documentação e a preservação de 47 arquivos realocados, além da atualização dos dois documentos visuais. Nos módulos, só caminhos de imports e URLs dos arquivos de teste foram ajustados. Migrations, schema, cálculos e dependências não foram alterados.
+Os números de testes de reorganizações anteriores ficam nos relatórios da época. Execute os comandos acima para conferir o estado atual após cada mudança.

@@ -1,39 +1,24 @@
-import { useEffect, useMemo, useRef, useState, type Dispatch, type FormEvent, type SetStateAction } from 'react'
-import { activityGuides } from './features/routine/activity-guides'
-import { getExerciseDemo } from './features/training/exercise-demos'
-import { getMuayPractices } from './features/training/muay-exercises'
-import { dayNames, homeChecklist, mealPrepChecklist, progressPlan, routineItems } from './features/routine/data'
-import { calculateDelivery, createDailyPlanSnapshot, defaultSettings, filterRoutineForDay, findLinkedActivityId, formatMoney, localDateKey, MAX_BACKUP_BYTES, paymentMethodLabel, recentRecords, rideSafetyForDate, shiftDuration, summarizeDailyProgress, summarizePlanProgress, summarizeWeeklyProgress, upgradeAppearance, validateBackup, weekBounds, withScheduleStart } from './core/domain'
-import { ProgressDashboard } from './features/dashboard/components/ProgressDashboard'
+import { useEffect, useMemo, useState } from 'react'
+import { routineItems } from './features/routine/data'
+import { TodayView } from './features/routine/components/TodayView'
+import { WeekView } from './features/routine/components/WeekView'
+import { ActivityDetailsDialog, type ActivitySelection } from './features/routine/components/ActivityDetailsDialog'
+import { createDailyPlanSnapshot, defaultSettings, filterRoutineForDay, findLinkedActivityId, localDateKey, rideSafetyForDate, summarizeDailyProgress, summarizeWeeklyProgress, upgradeAppearance, weekBounds } from './core/domain'
+import { ProgressView } from './features/progress/components/ProgressView'
+import { SettingsView } from './features/settings/components/SettingsView'
+import { applyDocumentTheme, deviceTheme, effectiveTheme, type AppearanceFeedback, type EffectiveTheme } from './features/settings/theme'
 import { FinanceView, type FinanceRegistrationRequest } from './features/finance/components/FinanceView'
+import { RecordsView, type DeliverySelection, type RecordKind } from './features/records/components/RecordsView'
 import { MainMenu } from './components/MainMenu'
-import { AccountField } from './features/finance/components/FinanceSchedules'
-import { PaymentMethodField } from './features/finance/components/PaymentMethodField'
-import { Field, PageTitle } from './components/FormPrimitives'
-import { MoneyInput } from './components/MoneyInput'
-import { deliveryFinancials, settleFinancialRecord } from './features/finance/finance'
+import { settleFinancialRecord } from './features/finance/finance'
 import { repository } from './infrastructure/repository'
-import { clampTrainingWeek, getMuaySession, getMuayThaiGuide, getStrengthSession, getTrainingActivityGuide, getTrainingPlanWeek, trainingBlocks, type MuayTrainingId, type TrainingDay } from './features/training/training-plan'
-import type { AccountTransfer, AssetAccount, AppSettings, CategoryBudget, DailyCheckIn, DailyCompletion, DailyPlanSnapshot, DailyProgressSummary, DeliveryShift, Expense, FinancialGoal, FinancialRecord, FinancePlanningData, InstallmentPlan, PaymentMethod, PlanningReference, RecurringPlan, RoutineArea, RoutineItem, RoutineMode, StoragePersistence, StudyLog, ThirtyDayProgress, WeeklyProgressSummary } from './core/types'
+import { clampTrainingWeek } from './features/training/training-plan'
+import { MuayWorkoutView, TrainingHubView, TrainingWorkoutView, type TrainingSelection } from './features/training/components/TrainingViews'
+import type { AccountTransfer, AssetAccount, AppSettings, CategoryBudget, DailyCheckIn, DailyCompletion, DailyPlanSnapshot, DailyProgressSummary, DeliveryShift, Expense, FinancialGoal, FinancialRecord, FinancePlanningData, InstallmentPlan, PlanningReference, RecurringPlan, RoutineItem, RoutineMode, StoragePersistence, StudyLog, ThirtyDayProgress } from './core/types'
 
 type Tab = 'hoje' | 'semana' | 'treinos' | 'registros' | 'financeiro' | 'progresso' | 'ajustes'
-type TrainingSelection = TrainingDay | MuayTrainingId
-type RecordKind = 'delivery' | 'despesa' | 'estudo' | 'checklists'
-type DeliverySelection = { id?: string; revision: number }
-type ActivitySelection = { item: RoutineItem; day: number }
 type LinkableRecord = { kind: 'study', area: StudyLog['area'] } | { kind: 'delivery', startTime: string, endTime: string } | { kind: 'expense' }
-type EffectiveTheme = 'light' | 'dark'
-type AppearanceFeedback = { kind: 'idle' | 'saving' | 'saved' | 'error'; message: string }
 
-const areaLabels: Record<RoutineArea, string> = {
-  sono: 'Sono', saude: 'Bem-estar', trabalho: 'Trabalho', treino: 'Treino', alimentacao: 'Alimentação', casa: 'Casa', estudos: 'Estudos', financas: 'Finanças', delivery: 'Delivery', lazer: 'Tempo livre',
-}
-
-const modeCopy: Record<RoutineMode, { label: string; detail: string }> = {
-  normal: { label: 'Normal', detail: 'Rotina completa' },
-  reduzido: { label: 'Reduzido', detail: 'Só o sustentável' },
-  minimo: { label: 'Mínimo', detail: 'Essencial e descanso' },
-}
 
 const navItems: { id: Tab; label: string }[] = [
   { id: 'hoje', label: 'Hoje' },
@@ -45,15 +30,7 @@ const navItems: { id: Tab; label: string }[] = [
   { id: 'ajustes', label: 'Ajustes' },
 ]
 
-const uid = () => globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(16).slice(2)}`
 const readableError = (error: unknown, fallback: string) => error instanceof Error ? error.message : fallback
-const effectiveTheme = (theme: AppSettings['theme']): EffectiveTheme => theme === 'light' ? 'light' : 'dark'
-const deviceTheme = (): EffectiveTheme => window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
-const applyDocumentTheme = (theme: EffectiveTheme) => {
-  document.documentElement.dataset.theme = theme
-  const themeColor = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]')
-  if (themeColor) themeColor.content = theme === 'light' ? '#F0F7F6' : '#0F172A'
-}
 const workoutFromUrl = (): TrainingSelection | null => {
   const value = new URLSearchParams(window.location.search).get('treino')
   return value === 'A' || value === 'B' || value === 'muay-mon' || value === 'muay-fri' ? value : null
@@ -81,15 +58,6 @@ function prepareWeekSnapshots(existing: DailyPlanSnapshot[], localDate: string, 
   return { all: [...byDate.values()], changed }
 }
 
-function useRecordDate<T extends { localDate: string }>(dateKey: string, setForm: Dispatch<SetStateAction<T>>, preserveDate = false) {
-  const previousDate = useRef(dateKey)
-  useEffect(() => {
-    if (previousDate.current === dateKey) return
-    const oldDate = previousDate.current
-    previousDate.current = dateKey
-    if (!preserveDate) setForm((form) => form.localDate === oldDate ? { ...form, localDate: dateKey } : form)
-  }, [dateKey, setForm, preserveDate])
-}
 
 function App() {
   const [now, setNow] = useState(() => new Date())
@@ -453,13 +421,13 @@ function App() {
           ? <TrainingWorkoutView day={trainingSelection} trainingWeek={clampTrainingWeek(settings.trainingWeek)} mode={mode} online={online} onBack={closeWorkout} />
           : <MuayWorkoutView itemId={trainingSelection} trainingWeek={clampTrainingWeek(settings.trainingWeek)} mode={mode} online={online} onBack={closeWorkout} /> : <>
           {tab === 'hoje' && <TodayView key={dateKey} now={now} items={todayItems} mode={mode} modeSaving={modeSaving} onMode={changeMode} states={todayStates} savingIds={savingIds} dateKey={dateKey} checkIn={todayCheckIn} safety={safety} weeklySummary={weeklySummary} todaySummary={todaySummary} onCheckIn={saveCheckIn} onToggle={toggleCompletion} onSkip={toggleSkipped} onOpen={(item) => openActivity(item, now.getDay())} />}
-          {tab === 'semana' && <WeekView settings={settings} selectedDay={selectedWeekDay} onSelectedDay={setSelectedWeekDay} onOpen={openActivity} />}
+          {tab === 'semana' && <WeekView settings={settings} selectedDay={selectedWeekDay} onSelectedDay={setSelectedWeekDay} onOpen={openActivity} completed={todayCompleted} onToggle={toggleCompletion} />}
           {tab === 'treinos' && <TrainingHubView trainingWeek={clampTrainingWeek(settings.trainingWeek)} mode={mode} onTrainingWeek={changeTrainingWeek} onOpenTraining={openWorkout} />}
           {tab === 'financeiro' && <FinanceView planning={financePlanning} operations={financeOperations} today={dateKey} shifts={deliveryShifts} expenses={expenses} records={financialRecords} goals={financialGoals} budgets={categoryBudgets} registrationRequest={financeRegistration} onGoal={saveFinancialGoal} onBudget={saveCategoryBudget} onDeleteGoal={(id) => removeFinancialPlan("goal", id)} onDeleteBudget={(id) => removeFinancialPlan("budget", id)} onSave={saveFinancialRecord} onExpense={saveLinkedExpense} onDelivery={(id) => { setDeliverySelection((current) => ({ id, revision: current.revision + 1 })); setRecordKind('delivery'); navigateTab('registros') }} />}
           {tab === 'progresso' && <ProgressView planning={financePlanning} today={dateKey} snapshots={dailySnapshots} completions={completions} studyLogs={studyLogs} deliveryShifts={deliveryShifts} expenses={expenses} financialRecords={financialRecords} financialGoals={financialGoals} categoryBudgets={categoryBudgets} onFinance={() => navigateTab('financeiro')} progress={progress} weeklySummary={weeklySummary} onToggle={async (item) => { try { await repository.saveProgress(item); setProgress((v) => [...v.filter((p) => p.id !== item.id), item]) } catch (error) { setMessage(readableError(error, 'Não foi possível salvar o progresso.')) } }} />}
           {tab === 'ajustes' && <SettingsView settings={settings} persistence={storagePersistence} appearanceSaving={appearanceSaving} appearanceFeedback={appearanceFeedback} onAppearance={changeAppearance} onSettings={async (next) => { const synchronizedNext: AppSettings = { ...next, theme: effectiveTheme(settings.theme), appearanceVersion: 2 }; const snapshotPlan = prepareWeekSnapshots(dailySnapshots, dateKey, synchronizedNext.preferredMode, synchronizedNext, dateKey); try { await repository.saveSettingsAndDailySnapshots(synchronizedNext, snapshotPlan.changed); setSettings(synchronizedNext); setMode(synchronizedNext.preferredMode); setDailySnapshots(snapshotPlan.all); setMessage('Ajustes salvos.') } catch (error) { setMessage(readableError(error, 'Não foi possível salvar os ajustes.')) } }} onMessage={setMessage} onImported={() => window.location.reload()} onCleared={() => window.location.reload()} />}
         </>}
-        <div hidden={tab !== 'registros' || !!trainingSelection}><RecordsView accounts={financePlanning.accounts} deliverySelection={deliverySelection} kind={recordKind} onKind={setRecordKind} onExpenseRegistration={() => { setFinanceRegistration((current) => ({ intent: 'saida', revision: (current?.revision ?? 0) + 1 })); navigateTab('financeiro') }} dateKey={dateKey} shifts={deliveryShifts} expenses={expenses} financialRecords={financialRecords} studyLogs={studyLogs} completed={todayCompleted} onToggle={toggleCompletion} onShift={saveLinkedShift} onStudy={saveLinkedStudy} /></div>
+        <div hidden={tab !== 'registros' || !!trainingSelection}><RecordsView accounts={financePlanning.accounts} deliverySelection={deliverySelection} kind={recordKind} onKind={setRecordKind} onExpenseRegistration={() => { setFinanceRegistration((current) => ({ intent: 'saida', revision: (current?.revision ?? 0) + 1 })); navigateTab('financeiro') }} dateKey={dateKey} shifts={deliveryShifts} expenses={expenses} financialRecords={financialRecords} studyLogs={studyLogs} onShift={saveLinkedShift} onStudy={saveLinkedStudy} /></div>
       </main>
 
       <MainMenu items={navItems} current={trainingSelection ? 'treinos' : tab} onNavigate={navigateTab} />
@@ -469,334 +437,15 @@ function App() {
   )
 }
 
-function TodayView({ now, items, mode, modeSaving, onMode, states, savingIds, dateKey, checkIn, safety, weeklySummary, todaySummary, onCheckIn, onToggle, onSkip, onOpen }: { now: Date; items: RoutineItem[]; mode: RoutineMode; modeSaving: boolean; onMode: (mode: RoutineMode) => void; states: Map<string, DailyCompletion['state']>; savingIds: string[]; dateKey: string; checkIn: DailyCheckIn | null; safety: { allowed: boolean; reason: string }; weeklySummary: WeeklyProgressSummary; todaySummary: DailyProgressSummary; onCheckIn: (item: DailyCheckIn) => Promise<boolean>; onToggle: (id: string) => void; onSkip: (id: string) => void; onOpen: (item: RoutineItem) => void }) {
-  const [checkInDirty, setCheckInDirty] = useState(false)
-  const effectiveSafety = checkInDirty ? { allowed: false, reason: 'Salve a checagem atualizada antes de decidir pilotar.' } : safety
-  const formattedDate = new Intl.DateTimeFormat('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' }).format(now)
-  const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
-  const pending = items.filter((item) => !states.has(item.id))
-  const focus = pending.find((item) => item.startTime && item.startTime <= currentTime && (!item.endTime || item.endTime >= currentTime))
-    ?? pending.find((item) => item.startTime && item.startTime > currentTime)
-    ?? pending[0]
-  const focusIsNow = !!focus?.startTime && focus.startTime <= currentTime && (!focus.endTime || focus.endTime >= currentTime)
-  const focusIsPast = !!focus?.endTime && focus.endTime < currentTime
-  const done = items.filter((item) => states.get(item.id) === 'done').length
-  const deliveryToday = items.some((item) => item.area === 'delivery')
-  return <>
-    <header className="today-header">
-      <p className="date-line">{formattedDate}</p>
-      <h1>Um dia de cada vez.</h1>
-      <p>Escolha o ritmo que faz sentido hoje.</p>
-    </header>
 
-    <section className="rhythm-section" aria-labelledby="rhythm-heading">
-      <div className="section-heading"><h2 id="rhythm-heading">Seu ritmo hoje</h2><span className="quiet-note">Você pode mudar</span></div>
-      <div className="mode-switch" role="group" aria-label="Intensidade da rotina">
-        {(Object.keys(modeCopy) as RoutineMode[]).map((key) => <button key={key} type="button" onClick={() => onMode(key)} disabled={modeSaving} aria-pressed={mode === key} className={mode === key ? 'selected' : ''}><strong>{modeCopy[key].label}</strong><span>{modeCopy[key].detail}</span></button>)}
-      </div>
-    </section>
 
-    <WeeklyProgressCard summary={weeklySummary} today={todaySummary} />
 
-    <section className="focus-section" aria-labelledby="focus-heading">
-      <div className="section-heading"><h2 id="focus-heading">{focus ? focusIsNow ? 'Agora' : focusIsPast ? 'Ainda em aberto' : focus.startTime ? 'Seu próximo compromisso' : 'Para quando couber' : 'Por enquanto, tudo certo'}</h2><span className="quiet-note">{done} de {items.length} concluídas</span></div>
-      {focus ? <ActivityItem item={focus} state={states.get(focus.id)} saving={savingIds.includes(`${dateKey}:${focus.id}`)} blocked={focus.area === 'delivery' && !effectiveSafety.allowed} safetyReason={effectiveSafety.reason} onToggle={onToggle} onSkip={onSkip} onOpen={onOpen} featured /> : <div className="focus-empty"><strong>Há espaço para seguir no seu tempo.</strong><p>{items.length ? 'As atividades de hoje já foram concluídas ou deixadas para outro momento.' : 'Não há atividades previstas neste ritmo.'}</p></div>}
-    </section>
 
-    <CheckInCard dateKey={dateKey} value={checkIn} safety={safety} deliveryToday={deliveryToday} onSave={onCheckIn} onDirtyChange={setCheckInDirty} />
 
-    <section className="section-block" aria-labelledby="timeline-heading">
-      <div className="section-heading"><div><h2 id="timeline-heading">Ao longo do dia</h2><p className="section-description">Horários são referências, não cobranças.</p></div><span className="count-chip">{items.length} atividades</span></div>
-      {items.length === 0 ? <div className="empty-state"><strong>Sem atividades previstas.</strong><p>Use este espaço para descansar ou cuidar do essencial.</p></div> : <div className="timeline">
-        {items.filter((item) => item.id !== focus?.id).map((item) => <ActivityItem key={item.id} item={item} state={states.get(item.id)} saving={savingIds.includes(`${dateKey}:${item.id}`)} blocked={item.area === 'delivery' && !effectiveSafety.allowed} safetyReason={effectiveSafety.reason} onToggle={onToggle} onSkip={onSkip} onOpen={onOpen} />)}
-      </div>}
-    </section>
-  </>
-}
 
-function ActivityItem({ item, state, saving, blocked, safetyReason, onToggle, onSkip, onOpen, featured = false }: { item: RoutineItem; state?: DailyCompletion['state']; saving: boolean; blocked: boolean; safetyReason: string; onToggle: (id: string) => void; onSkip: (id: string) => void; onOpen: (item: RoutineItem) => void; featured?: boolean }) {
-  const openLabel = item.area === 'treino' ? 'Abrir treino' : 'Ver orientações'
-  return <article className={`task-card ${featured ? 'featured' : ''} ${state === 'done' ? 'done' : ''} ${state === 'skipped' ? 'skipped' : ''} ${blocked ? 'blocked' : ''}`}>
-    <button type="button" className="task-open" onClick={() => onOpen(item)} aria-label={`${openLabel}: ${item.title}`}>
-      <span className="task-time"><strong>{item.startTime ?? 'Livre'}</strong>{item.endTime && <span>até {item.endTime}</span>}</span>
-      <span className="task-body"><span className={`area-tag area-${item.area}`}>{areaLabels[item.area]}</span><span className="task-title" role="heading" aria-level={3}>{item.title}</span>{state && <span className="task-status">{state === 'done' ? 'Concluída' : 'Deixada para outro momento'}</span>}{item.conditions?.[0] && !state && <span className="task-description">{item.conditions[0]}</span>}{blocked && !state && <span className="warning-text">{safetyReason}</span>}<span className="task-detail-link">{openLabel}</span></span>
-    </button>
-    <div className="task-actions"><button type="button" className="check-button" onClick={() => onToggle(item.id)} disabled={(blocked && state !== 'done') || saving} aria-label={`${state === 'done' ? 'Desmarcar' : 'Concluir'} ${item.title}`} aria-pressed={state === 'done'}>{saving ? '…' : state === 'done' ? '✓' : ''}</button><button type="button" className="skip-button" onClick={() => onSkip(item.id)} disabled={saving} aria-pressed={state === 'skipped'}>{state === 'skipped' ? 'Retomar' : 'Pular'}</button></div>
-  </article>
-}
 
-function ActivityDetailsDialog({ selection, trainingWeek, mode, onClose }: { selection: ActivitySelection | null; trainingWeek: number; mode: RoutineMode; onClose: () => void }) {
-  const dialogRef = useRef<HTMLDialogElement>(null)
-  const item = selection?.item ?? null
-  useEffect(() => {
-    const dialog = dialogRef.current
-    if (!dialog) return
-    if (item && !dialog.open) dialog.showModal()
-    if (!item && dialog.open) dialog.close()
-  }, [item])
-  const guide = item ? getTrainingActivityGuide(item.id, trainingWeek, selection?.day ?? new Date().getDay(), mode) ?? activityGuides[item.id] : null
-  return <dialog ref={dialogRef} className="activity-dialog" aria-labelledby="activity-dialog-title" aria-describedby="activity-dialog-intro" onClose={onClose} onClick={(event) => { if (event.target === event.currentTarget) event.currentTarget.close() }}>
-    {item && guide && <>
-      <div className="activity-dialog-main">
-        <header className="activity-dialog-header"><div><span className="activity-dialog-area">{areaLabels[item.area]} · {item.startTime ? `${item.startTime}${item.endTime ? `–${item.endTime}` : ''}` : 'Horário livre'}</span><h2 id="activity-dialog-title">{item.title}</h2></div><button type="button" className="activity-dialog-close" aria-label="Fechar orientações" onClick={() => dialogRef.current?.close()}><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><path d="M5 5l14 14M19 5L5 19" /></svg></button></header>
-        <p className="activity-dialog-intro" id="activity-dialog-intro">{guide.introduction}</p>
-        <section className="activity-dialog-section" aria-labelledby="activity-dialog-steps"><h3 id="activity-dialog-steps">O que fazer</h3><ol className="guide-steps">{guide.steps.map((step) => <li key={step.title}><div className="guide-step-heading"><strong>{step.title}</strong>{step.amount && <span>{step.amount}</span>}</div><p>{step.description}</p></li>)}</ol></section>
-        {!!item.conditions?.length && <section className="activity-dialog-section guide-conditions" aria-labelledby="activity-dialog-conditions"><h3 id="activity-dialog-conditions">Cuidados do plano</h3><ul>{item.conditions.map((condition) => <li key={condition}>{condition}</li>)}</ul></section>}
-        {guide.closing && <p className="guide-closing">{guide.closing}</p>}
-      </div>
-      <footer className="activity-dialog-footer"><button type="button" className="secondary-button" onClick={() => dialogRef.current?.close()}>Fechar orientações</button></footer>
-    </>}
-  </dialog>
-}
 
-function TrainingWorkoutView({ day, trainingWeek, mode, online, onBack }: { day: TrainingDay; trainingWeek: number; mode: RoutineMode; online: boolean; onBack: () => void }) {
-  const { block, week, format, exercises } = getStrengthSession(trainingWeek, day, mode)
-  return <div className="workout-view">
-    <button type="button" className="workout-back text-button" onClick={onBack}>← Voltar à rotina</button>
-    <header className="page-title workout-title">
-      <p className="eyebrow">Fortalecimento · {day === 'A' ? 'terça-feira' : 'quinta-feira'} · semana {week.week}</p>
-      <h1>Treino {day}</h1>
-      <p>{block.title} · {modeCopy[mode].label.toLowerCase()}</p>
-    </header>
-    <section className="workout-summary" aria-label="Como fazer o treino">
-      <div className="workout-stats"><div><span>Tempo previsto</span><strong>{format.duration}</strong></div><div><span>Sequência</span><strong>{format.circuits} circuito{format.circuits === 1 ? '' : 's'}</strong></div><div><span>Descanso</span><strong>{format.rest}</strong></div></div>
-      <p>{block.objective}</p>
-      <ol className="workout-flow"><li><strong>Antes</strong><span>Observe sono, cansaço, pegada, sensibilidade e movimento do braço. Aqueça com marcha e mobilidade confortável por {mode === 'minimo' ? '1 minuto' : '3 minutos'}.</span></li><li><strong>Durante</strong><span>Faça os exercícios abaixo na ordem. Ao terminar a lista, descanse e repita se houver outro circuito. {format.note}</span></li><li><strong>Depois</strong><span>Desacelere, observe como está o braço e confira novamente no dia seguinte.</span></li></ol>
-    </section>
-    <div className="section-heading workout-section-heading"><div><h2>Exercícios de hoje</h2><p className="section-description">Leia a variação do Ritmo antes de abrir o exemplo em vídeo.</p></div><span className="count-chip">{exercises.length} movimentos</span></div>
-    <ol className="workout-exercises">{exercises.map((exercise, index) => {
-      const demo = getExerciseDemo(exercise)
-      return <li key={exercise.id} className="workout-exercise">
-        <div className="workout-exercise-heading"><span className="workout-order" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span><div><h3>{exercise.title}</h3><span className="workout-amount">{exercise.amount}</span></div></div>
-        <p className="workout-prescription">{exercise.description}</p>
-        {demo && <><div className="workout-example"><strong>Exemplo prático</strong><p>{demo.example}</p></div>
-          <p className="workout-video-caption">{demo.videoTitle} · {demo.provider}. {demo.note ?? 'Siga a quantidade e a amplitude descritas no Ritmo.'}</p>
-          <a className="workout-video-link secondary-button" href={demo.videoUrl} target="_blank" rel="noopener noreferrer" aria-label={`Ver demonstração de ${exercise.title} no YouTube (abre em nova aba)`}>▶ Ver exemplo no YouTube <span aria-hidden="true">↗</span></a></>}
-      </li>
-    })}</ol>
-    {!online && <p className="workout-offline" role="status">Você está offline. As instruções continuam disponíveis aqui; os vídeos precisam de internet.</p>}
-    <section className="workout-finish" aria-labelledby="workout-finish-title"><h2 id="workout-finish-title">Quando avançar</h2><p>{week.focus}</p><p>{block.criteria.advance}</p><p>{block.criteria.repeat}</p><p>{block.criteria.regress}</p></section>
-    <button type="button" className="secondary-button workout-end-back" onClick={onBack}>Voltar à rotina</button>
-  </div>
-}
 
-function MuayWorkoutView({ itemId, trainingWeek, mode, online, onBack }: { itemId: MuayTrainingId; trainingWeek: number; mode: RoutineMode; online: boolean; onBack: () => void }) {
-  const { block, week, muay, rounds, duration, mainDescription } = getMuaySession(itemId, trainingWeek, mode)
-  const guide = getMuayThaiGuide(itemId, trainingWeek, mode)
-  const practices = getMuayPractices(week.week, itemId, mode)
-  const friday = itemId === 'muay-fri'
-  return <div className="workout-view">
-    <button type="button" className="workout-back text-button" onClick={onBack}>← Voltar à rotina</button>
-    <header className="page-title workout-title">
-      <p className="eyebrow">Muay Thai · {friday ? 'sexta-feira opcional' : 'segunda e quarta'} · semana {week.week}</p>
-      <h1>{friday ? 'Muay Thai leve' : 'Muay Thai técnico'}</h1>
-      <p>{block.title} · {modeCopy[mode].label.toLowerCase()}</p>
-    </header>
-    <section className="workout-summary" aria-label="Como fazer o treino">
-      <div className="workout-stats"><div><span>Tempo previsto</span><strong>{duration}</strong></div><div><span>Parte principal</span><strong>{rounds ? `${rounds} × ${muay.roundDuration}` : 'Base ou descanso'}</strong></div><div><span>Recuperação</span><strong>{rounds ? muay.recovery : 'livre'}</strong></div></div>
-      <p>{mainDescription}</p>
-      <ol className="workout-flow"><li><strong>Antes</strong><span>{guide.steps[0].description} {guide.steps[0].amount}.</span></li><li><strong>Durante</strong><span>{guide.steps[1].description} {rounds ? 'As práticas abaixo são opções dentro dos rounds previstos; não são rounds extras.' : 'A prática de base abaixo é opcional; descansar também segue o plano.'}</span></li><li><strong>Depois</strong><span>{guide.steps[2].description} {guide.steps[2].amount}.</span></li></ol>
-    </section>
-    <div className="section-heading workout-section-heading"><div><h2>{rounds ? 'Práticas para os rounds' : 'Prática opcional'}</h2><p className="section-description">Faça movimentos controlados no ar. As sequências e a seleção por semana são adaptações do Ritmo.</p></div><span className="count-chip">{practices.length} {practices.length === 1 ? 'prática' : 'práticas'}</span></div>
-    <ol className="workout-exercises">{practices.map((practice, index) => <li key={practice.id} className="workout-exercise">
-      <div className="workout-exercise-heading"><span className="workout-order" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span><div><h3>{practice.title}</h3><span className="workout-amount">{rounds ? 'Parte de um round' : 'Se confortável'} · sem contagem fixa</span></div></div>
-      <p className="workout-prescription">{practice.objective}</p>
-      <div className="workout-example"><strong>Como praticar no Ritmo</strong><p>{practice.instructions}</p></div>
-      <p className="workout-video-caption"><strong>Atenção:</strong> {practice.attention}</p>
-      <p className="workout-video-caption">{practice.videoTitle} · {practice.provider}. Trecho com conteúdo verbal pesquisado; confira a demonstração visual no YouTube. O vídeo pode ter volume, intensidade ou técnicas além desta adaptação.</p>
-      <a className="workout-video-link secondary-button" href={practice.videoUrl} target="_blank" rel="noopener noreferrer" aria-label={`Ver aula sobre ${practice.title} no YouTube (abre em nova aba)`}>▶ Ver aula no YouTube <span aria-hidden="true">↗</span></a>
-    </li>)}</ol>
-    {!online && <p className="workout-offline" role="status">Você está offline. As instruções continuam disponíveis aqui; os vídeos precisam de internet.</p>}
-    <section className="workout-finish" aria-labelledby="muay-finish-title"><h2 id="muay-finish-title">Depois da sessão</h2><p>{week.consolidation ? 'Esta semana reduz um round para revisar técnica e tolerância.' : 'Avance apenas se os movimentos permanecerem confortáveis e controlados.'}</p><p>{guide.closing}</p><p>{friday ? 'Sexta é opcional. Descansar também segue o plano.' : 'Se perder equilíbrio ou controle, retome base e deslocamentos antes de combinar ações.'}</p></section>
-    <button type="button" className="secondary-button workout-end-back" onClick={onBack}>Voltar à rotina</button>
-  </div>
-}
 
-function CheckInCard({ dateKey, value, safety, deliveryToday, onSave, onDirtyChange }: { dateKey: string; value: DailyCheckIn | null; safety: { allowed: boolean; reason: string }; deliveryToday: boolean; onSave: (value: DailyCheckIn) => Promise<boolean>; onDirtyChange: (dirty: boolean) => void }) {
-  const [form, setForm] = useState<DailyCheckIn>(value ?? { localDate: dateKey, enoughSleep: null, fatigueLevel: null, armCondition: null, safeToRide: null, note: '' })
-  const [saving, setSaving] = useState(false)
-  const changed = !!value && JSON.stringify(form) !== JSON.stringify(value)
-  useEffect(() => { onDirtyChange(changed) }, [changed, onDirtyChange])
-  const set = <K extends keyof DailyCheckIn>(key: K, fieldValue: DailyCheckIn[K]) => setForm((current) => ({ ...current, [key]: fieldValue }))
-  async function save() { if (saving) return; setSaving(true); try { await onSave(form) } finally { setSaving(false) } }
-  return <details className="checkin-card" open={deliveryToday && !value}>
-    <summary><div><span className="pulse-dot" />Checagem rápida</div><span>{value ? 'Atualizar' : '2 minutos'}</span></summary>
-    <div className="checkin-content">
-      <p>Uma pausa para observar como você está. Isso não substitui avaliação profissional.</p>
-      <div className="check-grid">
-        <fieldset><legend>Dormiu o suficiente?</legend><div className="choice-row"><Choice active={form.enoughSleep === true} onClick={() => set('enoughSleep', true)}>Sim</Choice><Choice active={form.enoughSleep === false} onClick={() => set('enoughSleep', false)}>Não</Choice></div></fieldset>
-        <fieldset><legend>Nível de cansaço</legend><select value={form.fatigueLevel ?? ''} onChange={(e) => set('fatigueLevel', e.target.value === '' ? null : Number(e.target.value) as 0 | 1 | 2 | 3)}><option value="">Selecione</option><option value="0">Bem disposto</option><option value="1">Leve</option><option value="2">Cansado</option><option value="3">Muito cansado</option></select></fieldset>
-        <fieldset><legend>Como está o braço?</legend><select value={form.armCondition ?? ''} onChange={(e) => set('armCondition', (e.target.value || null) as DailyCheckIn['armCondition'])}><option value="">Selecione</option><option value="habitual">Condição habitual</option><option value="alterado">Força ou sensibilidade alterada</option><option value="dor">Dor maior que a habitual</option></select></fieldset>
-        <fieldset><legend>Consegue manobrar e frear com segurança?</legend><div className="choice-row"><Choice active={form.safeToRide === true} onClick={() => set('safeToRide', true)}>Sim</Choice><Choice active={form.safeToRide === false} onClick={() => set('safeToRide', false)}>Não</Choice></div></fieldset>
-      </div>
-      <label>Observação opcional<textarea value={form.note ?? ''} onChange={(e) => set('note', e.target.value)} placeholder="Algo importante para lembrar?" /></label>
-      <div className={`safety-result ${value && !changed && safety.allowed ? 'safe' : ''}`}><strong>{changed ? 'Alterações não salvas' : !value ? 'Checagem pendente' : safety.allowed ? 'Checagem salva: favorável' : 'Checagem salva: atenção'}</strong><span>{changed ? 'Salve novamente para atualizar a orientação e a situação do delivery.' : value ? safety.reason : 'Salve a checagem para ver a orientação de hoje.'}</span></div>
-      <button className="primary-button" type="button" disabled={saving} onClick={save}>{saving ? 'Salvando checagem…' : 'Salvar checagem'}</button>
-    </div>
-  </details>
-}
-
-function Choice({ active, onClick, children }: { active: boolean; onClick: () => void; children: string }) { return <button type="button" className={active ? 'choice active' : 'choice'} aria-pressed={active} onClick={onClick}>{children}</button> }
-
-function WeekView({ settings, selectedDay, onSelectedDay, onOpen }: { settings: AppSettings; selectedDay: number; onSelectedDay: (day: number) => void; onOpen: (item: RoutineItem, day: number) => void }) {
-  const days = [1, 2, 3, 4, 5, 6, 0] as const
-  const items = routineItems.filter((item) => item.days.includes(selectedDay as 0 | 1 | 2 | 3 | 4 | 5 | 6) && item.active && !settings.disabledActivities.includes(item.id)).map((item) => ({ ...item, ...settings.scheduleOverrides[item.id] })).sort((a, b) => (a.startTime ?? '').localeCompare(b.startTime ?? ''))
-  return <>
-    <PageTitle eyebrow="Visão geral" title="Sua semana" subtitle="Veja como os compromissos se distribuem. Ajuste os horários em Ajustes." />
-    <div className="week-selector" role="group" aria-label="Escolher dia da semana">{days.map((day) => <button key={day} type="button" className={selectedDay === day ? 'selected' : ''} aria-pressed={selectedDay === day} onClick={() => onSelectedDay(day)}><span>{dayNames[day].slice(0, 3)}</span><i aria-hidden="true" /></button>)}</div>
-    <section className="week-panel" aria-live="polite"><div className="section-heading"><div><h2>{dayNames[selectedDay]}</h2><p className="section-description">{items.length} atividades previstas</p></div></div>{items.length ? <div className="week-list">{items.map((item) => { const openLabel = item.area === 'treino' ? 'Abrir treino' : 'Ver orientações'; return <button type="button" className={`week-item nature-${item.nature}`} key={item.id} onClick={() => onOpen(item, selectedDay)} aria-label={`${openLabel}: ${item.title}`}><time>{item.startTime ?? 'Livre'}</time><span className="week-copy"><strong>{item.title}</strong><span className="week-meta">{areaLabels[item.area]} · {item.nature === 'fixa' ? 'Fixa' : item.nature === 'flexivel' ? 'Flexível' : 'Opcional'}</span><span className="week-hint">{openLabel}</span></span></button> })}</div> : <div className="empty-state"><strong>Dia sem atividades.</strong><p>Aproveite o espaço livre.</p></div>}</section>
-    <p className="week-footnote">Os turnos opcionais dependem da checagem de segurança no dia.</p>
-  </>
-}
-
-function RecordsView({ accounts, deliverySelection, kind, onKind, onExpenseRegistration, dateKey, shifts, expenses, financialRecords, studyLogs, completed, onToggle, onShift, onStudy }: { accounts: readonly AssetAccount[]; deliverySelection: DeliverySelection; kind: RecordKind; onKind: (kind: RecordKind) => void; onExpenseRegistration: () => void; dateKey: string; shifts: DeliveryShift[]; expenses: Expense[]; financialRecords: FinancialRecord[]; studyLogs: StudyLog[]; completed: Set<string>; onToggle: (id: string) => void; onShift: (item: DeliveryShift) => Promise<boolean>; onStudy: (item: StudyLog) => Promise<boolean> }) {
-  return <>
-    <PageTitle eyebrow="Acompanhar sem culpa" title="Registros" subtitle="Dados simples para entender sua rotina real." />
-    <div className="subnav" role="group" aria-label="Tipo de registro">{([['delivery', 'Delivery'], ['despesa', 'Despesas'], ['estudo', 'Estudos'], ['checklists', 'Checklists']] as [RecordKind, string][]).map(([id, label]) => <button key={id} type="button" aria-pressed={kind === id} className={kind === id ? 'active' : ''} onClick={() => id === 'despesa' ? onExpenseRegistration() : onKind(id)}>{label}</button>)}</div>
-    <div hidden={kind !== 'delivery'}><DeliveryRecord accounts={accounts} key={deliverySelection.revision} initial={shifts.find((shift) => shift.id === deliverySelection.id)} dateKey={dateKey} shifts={shifts} expenses={expenses} financialRecords={financialRecords} onSave={onShift} /></div>
-    <div hidden={kind !== 'estudo'}><StudyRecord dateKey={dateKey} logs={studyLogs} onSave={onStudy} /></div>
-    <div hidden={kind !== 'checklists'}><ChecklistRecord completed={completed} onToggle={onToggle} /></div>
-  </>
-}
-
-function deliveryForm(item: DeliveryShift | undefined, dateKey: string) {
-  return { localDate: item?.localDate ?? dateKey, startTime: item?.startTime ?? '', endTime: item?.endTime ?? '', kilometers: item?.kilometers == null ? '' : String(item.kilometers), grossRevenue: item?.grossRevenue ?? null, fuelCost: item?.fuelCost ?? null, maintenanceReserve: item?.maintenanceReserve ?? null, otherExpenses: item?.otherExpenses ?? null, paymentMethod: item?.paymentMethod ?? '' as PaymentMethod | '', fatigueLevel: item?.fatigueLevel == null ? '' : String(item.fatigueLevel), armCondition: item?.armCondition ?? '', accountId: item?.accountId ?? '', note: item?.note ?? '' }
-}
-
-function DeliveryRecord({ accounts, initial, dateKey, shifts, expenses, financialRecords, onSave }: { accounts: readonly AssetAccount[]; initial?: DeliveryShift; dateKey: string; shifts: DeliveryShift[]; expenses: Expense[]; financialRecords: FinancialRecord[]; onSave: (item: DeliveryShift) => Promise<boolean> }) {
-  const blank = deliveryForm(undefined, dateKey)
-  const [form, setForm] = useState(() => deliveryForm(initial, dateKey))
-  const [editing, setEditing] = useState<DeliveryShift | null>(initial ?? null)
-  useRecordDate(dateKey, setForm, !!editing)
-  const [saving, setSaving] = useState(false)
-  const [error, setError] = useState('')
-  const latestShifts = useMemo(() => recentRecords(shifts, 8), [shifts])
-  const set = (key: keyof typeof blank, value: string | number | null) => setForm((current) => ({ ...current, [key]: value }))
-  const hours = shiftDuration(form.startTime, form.endTime)
-  const kilometers = form.kilometers === '' ? null : Number(form.kilometers)
-  const calculation = calculateDelivery({ ...form, hours, kilometers })
-  const preview: DeliveryShift = { ...form, accountId: form.accountId || undefined, paymentMethod: form.paymentMethod || undefined, id: editing?.id ?? 'new', hours, kilometers, ...calculation, fatigueLevel: form.fatigueLevel === '' ? null : Number(form.fatigueLevel) as 0 | 1 | 2 | 3, armCondition: (form.armCondition || null) as DeliveryShift['armCondition'], createdAt: editing?.createdAt ?? new Date().toISOString() }
-  const display = deliveryFinancials(preview, expenses, financialRecords, dateKey)
-  async function submit(event: FormEvent) {
-    event.preventDefault()
-    if (saving) return
-    setSaving(true)
-    setError('')
-    try {
-      if (await onSave({ ...preview, id: editing?.id ?? uid() })) { setForm(blank); setEditing(null) }
-      else setError('O turno não foi salvo. Confira os dados e tente novamente.')
-    } finally { setSaving(false) }
-  }
-  function edit(item: DeliveryShift) {
-    setEditing(item)
-    setForm(deliveryForm(item, dateKey))
-    document.querySelector<HTMLFormElement>('[aria-label="Turno de delivery"]')?.scrollIntoView({ block: 'start' })
-    document.querySelector<HTMLInputElement>('[aria-label="Turno de delivery"] input')?.focus()
-  }
-  return <div className="records-layout">
-    <form className="form-card" aria-label="Turno de delivery" onSubmit={submit}>
-      <h2>{editing ? 'Editar turno' : 'Novo turno'}</h2>
-      <fieldset className="form-group"><legend>Período e distância</legend><div className="form-grid"><Field label="Data"><input type="date" required value={form.localDate} onChange={(e) => set('localDate', e.target.value)} /></Field><Field label="Início"><input type="time" required value={form.startTime} onChange={(e) => set('startTime', e.target.value)} /></Field><Field label="Fim"><input type="time" required value={form.endTime} onChange={(e) => set('endTime', e.target.value)} /></Field><Field label="Horas em turno"><input type="number" readOnly value={hours ?? ''} /><small>Calculadas pelo início e fim; fim anterior ao início indica o dia seguinte.</small></Field><Field label="Quilômetros"><input type="number" min="0" step="0.1" required value={form.kilometers} onChange={(e) => set('kilometers', e.target.value)} /></Field></div></fieldset>
-      <fieldset className="form-group"><legend>Valores informados</legend><div className="form-grid"><Field label="Receita bruta (R$)"><MoneyInput required value={form.grossRevenue} onChange={(value) => set('grossRevenue', value)} /></Field><Field label="Combustível (R$)"><MoneyInput required value={form.fuelCost} onChange={(value) => set('fuelCost', value)} /></Field><Field label="Reserva manutenção (R$)"><MoneyInput required value={form.maintenanceReserve} onChange={(value) => set('maintenanceReserve', value)} /></Field><Field label="Outras despesas (R$)"><MoneyInput required value={form.otherExpenses} onChange={(value) => set('otherExpenses', value)} /></Field></div><p className="fine-print">Informe zero quando não houver custo. Despesas adicionais podem ser associadas em Despesas ou Financeiro; registre cada gasto uma única vez.</p></fieldset>
-      <PaymentMethodField value={form.paymentMethod} onChange={(value) => set('paymentMethod', value)} />
-      {accounts.length > 0 && <AccountField accounts={accounts} value={form.accountId} label="Conta do turno" onChange={value => set('accountId', value)} />}
-      <fieldset className="form-group"><legend>Como foi o turno</legend><div className="form-grid"><Field label="Cansaço"><select required value={form.fatigueLevel} onChange={(e) => set('fatigueLevel', e.target.value)}><option value="">Selecione</option><option value="0">Bem disposto</option><option value="1">Leve</option><option value="2">Cansado</option><option value="3">Muito cansado</option></select></Field><Field label="Braço"><select required value={form.armCondition} onChange={(e) => set('armCondition', e.target.value)}><option value="">Selecione</option><option value="habitual">Habitual</option><option value="alterado">Alterado</option><option value="dor">Dor</option></select></Field></div><Field label="Observação"><textarea maxLength={5000} value={form.note} onChange={(e) => set('note', e.target.value)} /></Field></fieldset>
-      <section className="calculation" aria-label="Valores calculados"><h3>Estimativa automática</h3><div className="result-strip"><div><span>Renda bruta</span><strong>{formatMoney(form.grossRevenue)}</strong></div><div><span>Despesas pagas</span><strong>{formatMoney(display.operationalExpenses)}</strong></div><div><span>Renda líquida operacional</span><strong>{formatMoney(display.operationalNet)}</strong></div><div><span>Reserva estimada</span><strong>{formatMoney(form.maintenanceReserve)}</strong></div><div><span>Despesas e reserva</span><strong>{formatMoney(display.expenses)}</strong></div><div><span>Renda líquida estimada</span><strong>{formatMoney(display.net)}</strong></div><div><span>Por hora</span><strong>{formatMoney(display.perHour)}</strong></div><div><span>Por km</span><strong>{formatMoney(display.perKilometer)}</strong></div></div><p className="fine-print">Resultado estimado com os custos informados, reserva e despesas vinculadas já pagas. Pendências abertas não são descontadas até o pagamento.</p><dl className="financial-metrics"><div><dt>Bruto / hora</dt><dd>{formatMoney(display.grossPerHour)}/h</dd></div><div><dt>Despesas / hora</dt><dd>{formatMoney(display.expensesPerHour)}/h</dd></div><div><dt>Líquido operacional / hora</dt><dd>{formatMoney(display.operationalNetPerHour)}/h</dd></div><div><dt>Resultado após reserva / hora</dt><dd>{formatMoney(display.perHour)}/h</dd></div></dl></section>
-      {error && <p className="warning-text" role="alert">{error}</p>}
-      <button className="primary-button" disabled={saving}>{saving ? 'Salvando turno…' : editing ? 'Salvar alterações do turno' : 'Salvar turno'}</button>
-      {editing && <button type="button" className="text-button" disabled={saving} onClick={() => { setEditing(null); setForm(blank) }}>Cancelar edição</button>}
-    </form>
-    <RecordList title="Últimos turnos" empty="Nenhum turno registrado.">{latestShifts.map((item) => { const values = deliveryFinancials(item, expenses, financialRecords, dateKey); return <div className="record-row" key={item.id}><div><strong>{new Date(`${item.localDate}T12:00`).toLocaleDateString('pt-BR')}</strong><span>{item.startTime}–{item.endTime} · {values.hours ?? '—'}h · {item.kilometers ?? '—'} km</span><span>Bruta {formatMoney(item.grossRevenue)} · despesas e reserva {formatMoney(values.expenses)}</span><span>Forma de pagamento: {paymentMethodLabel(item.paymentMethod)}</span><span>Líquida estimada {formatMoney(values.net)} · {formatMoney(values.perHour)}/h</span><button type="button" className="text-button" onClick={() => edit(item)}>Editar turno</button></div><strong>{formatMoney(values.net)}</strong></div> })}</RecordList>
-  </div>
-}
-
-function StudyRecord({ dateKey, logs, onSave }: { dateKey: string; logs: StudyLog[]; onSave: (item: StudyLog) => Promise<boolean> }) {
-  const [form, setForm] = useState({ localDate: dateKey, area: 'Inglês', minutes: '', content: '', note: '' })
-  useRecordDate(dateKey, setForm)
-  const [saving, setSaving] = useState(false)
-  const latestLogs = useMemo(() => recentRecords(logs, 10), [logs])
-  async function submit(event: FormEvent) { event.preventDefault(); if (saving) return; const item: StudyLog = { id: uid(), localDate: form.localDate, area: form.area as StudyLog['area'], minutes: Number(form.minutes), content: form.content, note: form.note, createdAt: new Date().toISOString() }; setSaving(true); try { if (await onSave(item)) setForm({ ...form, minutes: '', content: '', note: '' }) } finally { setSaving(false) } }
-  return <div className="records-layout"><form className="form-card" onSubmit={submit}><h2>Novo estudo ou leitura</h2><div className="form-grid"><Field label="Data"><input type="date" required value={form.localDate} onChange={(e) => setForm({ ...form, localDate: e.target.value })} /></Field><Field label="Área"><select value={form.area} onChange={(e) => setForm({ ...form, area: e.target.value })}><option>Inglês</option><option>Programação</option><option>Leitura</option><option>Outro</option></select></Field><Field label="Minutos"><input type="number" min="1" required value={form.minutes} onChange={(e) => setForm({ ...form, minutes: e.target.value })} /></Field></div><Field label="Conteúdo"><input required value={form.content} onChange={(e) => setForm({ ...form, content: e.target.value })} placeholder="O que você praticou?" /></Field><Field label="Observação curta"><textarea value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} /></Field><button className="primary-button" disabled={saving}>{saving ? 'Salvando registro…' : 'Salvar registro'}</button></form><RecordList title="Atividades recentes" empty="Nenhum estudo registrado.">{latestLogs.map((item) => <div className="record-row" key={item.id}><div><strong>{item.area}: {item.content}</strong><span>{item.minutes} min · {new Date(`${item.localDate}T12:00`).toLocaleDateString('pt-BR')}</span></div></div>)}</RecordList></div>
-}
-
-function ChecklistRecord({ completed, onToggle }: { completed: Set<string>; onToggle: (id: string) => void }) {
-  const render = (prefix: string, items: string[]) => items.map((item, index) => { const id = `${prefix}-${index}`; return <label className="checklist-row" key={id}><input type="checkbox" checked={completed.has(id)} onChange={() => onToggle(id)} /><span>{item}</span></label> })
-  return <div className="checklist-columns"><section className="form-card"><p className="eyebrow">Domingo</p><h2>Preparo de marmitas</h2>{render('meal-check', mealPrepChecklist)}</section><section className="form-card"><p className="eyebrow">Sábado</p><h2>Manutenção da casa</h2>{render('home-check', homeChecklist)}</section></div>
-}
-
-function TrainingHubView({ trainingWeek, mode, onTrainingWeek, onOpenTraining }: { trainingWeek: number; mode: RoutineMode; onTrainingWeek: (week: number, message: string) => Promise<void>; onOpenTraining: (selection: TrainingSelection) => void }) {
-  const { block, week } = getTrainingPlanWeek(trainingWeek)
-  const strengthFormat = getStrengthSession(trainingWeek, 'A', mode).format
-  const muaySession = getMuaySession('muay-mon', trainingWeek, mode)
-  return <>
-    <PageTitle eyebrow="Prática da semana" title="Treinos" subtitle="Abra a sessão do dia para ver o que fazer, como praticar e os exemplos em vídeo." />
-
-    <section className="training-plan-card" aria-labelledby="training-plan-title">
-      <header className="training-plan-header">
-        <div><p className="eyebrow">Semana {week.week} de 24 · {block.range}</p><h2 id="training-plan-title">{block.title}</h2></div>
-        <span className="count-chip">{modeCopy[mode].label}</span>
-      </header>
-      <p className="training-objective">{block.objective}</p>
-      <p className="training-objective">Muay Thai: {block.muayThai.objective}</p>
-      <div className="training-week-focus"><strong>{week.title}</strong><p>{week.focus}</p><span>Fortalecimento: {strengthFormat.circuits} circuito{strengthFormat.circuits === 1 ? '' : 's'} · descanso {strengthFormat.rest}</span><small>{strengthFormat.note}</small><span>Muay Thai: {muaySession.rounds ? `${muaySession.rounds} × ${muaySession.muay.roundDuration} · recuperação ${muaySession.muay.recovery}` : 'base confortável ou descanso'}</span><small>{mode === 'normal' ? muaySession.muay.progression : getMuayThaiGuide('muay-mon', trainingWeek, mode).steps[1].description}</small></div>
-      <div className="training-workout-actions" role="group" aria-label="Treinos da semana"><button type="button" className="secondary-button" onClick={() => onOpenTraining('muay-mon')}>Ver Muay Thai · segunda e quarta</button><button type="button" className="secondary-button" onClick={() => onOpenTraining('A')}>Ver treino A · terça</button><button type="button" className="secondary-button" onClick={() => onOpenTraining('B')}>Ver treino B · quinta</button><button type="button" className="secondary-button" onClick={() => onOpenTraining('muay-fri')}>Ver Muay Thai leve · sexta opcional</button></div>
-      <details className="training-criteria"><summary>Critérios para avançar, repetir ou regredir</summary><dl><div><dt>Avançar</dt><dd>{block.criteria.advance}</dd></div><div><dt>Repetir</dt><dd>{block.criteria.repeat}</dd></div><div><dt>Regredir ou interromper</dt><dd>{block.criteria.regress}</dd></div></dl></details>
-      <div className="training-week-actions"><button type="button" className="text-button" disabled={week.week === 1} onClick={() => onTrainingWeek(week.week - 1, `Retorno para a semana ${week.week - 1} salvo.`)}>Semana anterior</button><button type="button" className="secondary-button" onClick={() => onTrainingWeek(week.week, `Semana ${week.week} mantida para repetição.`)}>Repetir semana</button><button type="button" className="primary-button" disabled={week.week === 24} onClick={() => onTrainingWeek(week.week + 1, `Semana ${week.week + 1} iniciada.`)}>Avançar semana</button></div>
-    </section>
-
-    <details className="training-roadmap"><summary>Ver os seis blocos do plano</summary><ol>{trainingBlocks.map((item) => <li key={item.id} className={item.id === block.id ? 'current' : ''}><span>{item.range}</span><strong>{item.title}</strong><p>{item.objective}</p></li>)}</ol></details>
-  </>
-}
-
-function ProgressView({ planning, today, snapshots, completions, studyLogs, deliveryShifts, expenses, financialRecords, financialGoals, categoryBudgets, onFinance, progress, weeklySummary, onToggle }: { planning: FinancePlanningData; today: string; snapshots: DailyPlanSnapshot[]; completions: DailyCompletion[]; studyLogs: StudyLog[]; deliveryShifts: DeliveryShift[]; expenses: Expense[]; financialRecords: FinancialRecord[]; financialGoals: FinancialGoal[]; categoryBudgets: CategoryBudget[]; onFinance: () => void; progress: ThirtyDayProgress[]; weeklySummary: WeeklyProgressSummary; onToggle: (item: ThirtyDayProgress) => Promise<void> }) {
-  const { completedIds: completed, total, completedCount, percentage } = summarizePlanProgress(progress, progressPlan)
-  return <>
-    <PageTitle eyebrow="Evolução" title="Seu progresso continua" subtitle="Acompanhe a rotina e os passos do plano inicial. Os treinos estão na aba Treinos." />
-
-    <ProgressDashboard planning={planning} today={today} snapshots={snapshots} completions={completions} studyLogs={studyLogs} deliveryShifts={deliveryShifts} expenses={expenses} financialRecords={financialRecords} financialGoals={financialGoals} categoryBudgets={categoryBudgets} onFinance={onFinance} />
-
-    <section className="dashboard-existing-progress" aria-labelledby="existing-progress-title">
-      <div className="section-heading"><div><p className="eyebrow">Rotina preservada</p><h2 id="existing-progress-title">Progresso semanal e plano de 30 dias</h2><p className="section-description">Estas leituras permanecem separadas do dashboard mensal e anual.</p></div></div>
-
-      <WeeklyProgressCard summary={weeklySummary} />
-
-      <div className="section-heading progress-plan-heading"><div><h2>Plano inicial de 30 dias</h2><p className="section-description">O checklist original permanece separado e com todos os registros preservados.</p></div></div>
-      <section className="progress-summary"><div><strong>{completedCount} de {total} passos registrados</strong><span>Continue de onde fizer sentido.</span></div><div className="progress-track" role="progressbar" aria-label="Passos do plano concluídos" aria-valuenow={completedCount} aria-valuemin={0} aria-valuemax={total}><span style={{ width: `${percentage}%` }} /></div></section>
-      <div className="progress-weeks">{progressPlan.map((planWeek) => { const weekDone = planWeek.items.filter((_, index) => completed.has(`week-${planWeek.week}-${index}`)).length; return <section className="progress-card" key={planWeek.week}><header><span>Etapa {planWeek.week}</span><strong>{planWeek.title}</strong><small>{weekDone} de {planWeek.items.length}</small></header>{planWeek.items.map((text, index) => { const id = `week-${planWeek.week}-${index}`; const done = completed.has(id); return <label className="checklist-row" key={id}><input type="checkbox" checked={done} onChange={() => onToggle({ id, week: planWeek.week, item: text, state: done ? 'pending' : 'done', completedAt: done ? undefined : new Date().toISOString() })} /><span>{text}</span></label> })}</section> })}</div>
-      <div className="info-card"><strong>Uma leitura honesta</strong><p>Dados incompletos não permitem concluir que uma mudança de saúde ou renda ocorreu. Observe tendências e leve decisões clínicas ou financeiras importantes a profissionais habilitados.</p></div>
-    </section>
-  </>
-}
-
-function WeeklyProgressCard({ summary, today }: { summary: WeeklyProgressSummary; today?: DailyProgressSummary }) {
-  return <section className="progress-summary" role="region" aria-labelledby="weekly-progress-title" aria-live="polite">
-    <div><h2 id="weekly-progress-title">Progresso desta semana</h2><strong>{summary.completedDays} de {summary.plannedDays} dias concluídos</strong><span>{summary.completedRequiredActivities} de {summary.requiredActivities} atividades obrigatórias · {summary.activityPercentage}%</span></div>
-    {today && <p>{today.completed ? 'Dia concluído' : `${today.completedRequiredCount} de ${today.requiredCount} obrigatórias concluídas hoje`}</p>}
-    <div className="progress-track" role="progressbar" aria-label="Atividades obrigatórias concluídas na semana" aria-valuenow={summary.completedRequiredActivities} aria-valuemin={0} aria-valuemax={summary.requiredActivities}><span style={{ width: `${summary.activityPercentage}%` }} /></div>
-  </section>
-}
-
-function SettingsView({ settings, persistence, appearanceSaving, appearanceFeedback, onAppearance, onSettings, onMessage, onImported, onCleared }: { settings: AppSettings; persistence: StoragePersistence; appearanceSaving: boolean; appearanceFeedback: AppearanceFeedback; onAppearance: (theme: EffectiveTheme) => Promise<boolean>; onSettings: (settings: AppSettings) => Promise<void>; onMessage: (message: string) => void; onImported: () => void; onCleared: () => void }) {
-  const [draft, setDraft] = useState(settings)
-  const selectedTheme = effectiveTheme(settings.theme)
-  async function updateAppearance(nextTheme: EffectiveTheme) {
-    const previousTheme = selectedTheme
-    setDraft((current) => ({ ...current, theme: nextTheme, appearanceVersion: 2 }))
-    if (!await onAppearance(nextTheme)) setDraft((current) => ({ ...current, theme: previousTheme, appearanceVersion: 2 }))
-  }
-  function updateTime(item: RoutineItem, startTime: string) { setDraft((current) => withScheduleStart(current, item.id, startTime)) }
-  function toggleActive(id: string) { setDraft((current) => ({ ...current, disabledActivities: current.disabledActivities.includes(id) ? current.disabledActivities.filter((item) => item !== id) : [...current.disabledActivities, id] })) }
-  async function exportData() { try { const data = await repository.exportAll(); const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const anchor = document.createElement('a'); anchor.href = url; anchor.download = `ritmo-backup-${localDateKey()}.json`; document.body.appendChild(anchor); anchor.click(); anchor.remove(); window.setTimeout(() => URL.revokeObjectURL(url), 1000); onMessage('Backup JSON exportado.') } catch (error) { onMessage(readableError(error, 'Não foi possível exportar o backup.')) } }
-  async function importData(file: File) { try { if (file.size > MAX_BACKUP_BYTES) return window.alert('O backup excede o limite de 10 MB. Nenhum dado foi alterado.'); const parsed: unknown = JSON.parse(await file.text()); if (!validateBackup(parsed)) return window.alert('Backup inválido ou de versão incompatível. Nenhum dado foi alterado.'); if (!window.confirm('Importar este backup substituirá todos os dados atuais. Deseja continuar?')) return; await repository.importAll(parsed); onImported() } catch { onMessage('Não foi possível ler ou importar o arquivo. Nenhum dado foi alterado.') } }
-  async function clearData() { if (!window.confirm('Esta ação apagará permanentemente todos os registros deste aparelho e não pode ser desfeita. Continuar?')) return; try { await repository.clearAll(); onCleared() } catch (error) { onMessage(readableError(error, 'Não foi possível apagar os dados.')) } }
-  const storageText = persistence === 'granted' ? 'Proteção persistente concedida' : persistence === 'checking' ? 'Verificando…' : persistence === 'unsupported' ? 'O navegador não informa proteção persistente' : 'Sujeito a limpeza pelo navegador — faça backups periódicos'
-  return <><PageTitle eyebrow="Preferências e dados" title="Ajustes" subtitle="Sua rotina pode mudar junto com você." />
-    <section className="settings-section"><h2>Aparência</h2><p className="section-description">Escolha como o Ritmo aparece neste aparelho. A mudança é salva imediatamente.</p><div className="appearance-options" role="group" aria-label="Aparência">{([['light', 'Claro'], ['dark', 'Escuro']] as const).map(([value, label]) => <button key={value} type="button" aria-pressed={selectedTheme === value} className={selectedTheme === value ? 'selected' : ''} disabled={appearanceSaving} onClick={() => updateAppearance(value)}>{label}</button>)}</div><p className={`appearance-status ${appearanceFeedback.kind}`} role={appearanceFeedback.kind === 'error' ? 'alert' : 'status'} aria-live={appearanceFeedback.kind === 'error' ? 'assertive' : 'polite'} aria-atomic="true" aria-label="Status da aparência">{appearanceFeedback.message}</p></section>
-    <section className="settings-section"><div className="section-heading"><div><h2>Atividades e horários</h2><p className="section-description">Mostre o que importa e ajuste o início de cada atividade.</p></div></div><details className="settings-disclosure"><summary>Personalizar rotina <span>{routineItems.length} atividades</span></summary><div className="settings-list">{routineItems.map((item) => { const enabled = !draft.disabledActivities.includes(item.id); return <div className="setting-row" key={item.id}><button className={`toggle ${enabled ? 'on' : ''}`} role="switch" aria-checked={enabled} aria-label={`${enabled ? 'Desativar' : 'Ativar'} ${item.title}`} onClick={() => toggleActive(item.id)}><span /></button><div><strong>{item.title}</strong><small>{areaLabels[item.area]}</small></div><input aria-label={`Horário inicial de ${item.title}`} type="time" value={draft.scheduleOverrides[item.id]?.startTime ?? item.startTime ?? ''} onChange={(e) => updateTime(item, e.target.value)} /></div> })}</div></details><div className="settings-actions"><button className="primary-button" disabled={appearanceSaving} onClick={() => onSettings({ ...draft, theme: selectedTheme, appearanceVersion: 2 })}>Salvar ajustes</button><button className="text-button" onClick={() => { if (window.confirm('Restaurar atividades, horários, ritmo e semana do treino para os padrões? Salve para confirmar a mudança.')) setDraft({ ...defaultSettings(), theme: selectedTheme }) }}>Restaurar padrões</button></div></section>
-    <section className="settings-section"><h2>Dados neste aparelho</h2><div className="storage-status"><span className={persistence === 'granted' ? 'status-good' : 'status-warn'} aria-hidden="true" /><div><strong>Armazenamento local</strong><p>{storageText}</p></div></div><div className="action-grid"><button className="secondary-button" onClick={exportData}>Exportar backup JSON</button><label className="secondary-button file-button">Importar backup JSON<input type="file" accept="application/json,.json" onChange={(e) => e.target.files?.[0] && importData(e.target.files[0])} /></label></div><p className="fine-print">O app funciona sem conta e sem servidor. Guarde uma cópia do backup fora do celular periodicamente.</p></section>
-    <section className="danger-section"><h2>Apagar todos os dados</h2><p>Remove registros, progresso e ajustes somente deste aparelho.</p><button className="danger-button" onClick={clearData}>Apagar registros</button></section></>
-}
-
-function RecordList({ title, empty, children }: { title: string; empty: string; children: React.ReactNode }) { const hasChildren = Array.isArray(children) ? children.length > 0 : !!children; return <section className="record-list"><h2>{title}</h2>{hasChildren ? children : <div className="empty-state"><p>{empty}</p></div>}</section> }
 
 export default App

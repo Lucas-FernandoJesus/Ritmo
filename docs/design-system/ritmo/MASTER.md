@@ -40,7 +40,7 @@ linha do tempo — rotina restante
 navegação fixa — botão Menu; destinos no diálogo de tela inteira
 ```
 
-As demais telas repetem o cabeçalho abstrato sem ampliar a altura. Semana favorece orientação, Treinos reúne as sessões e a semana do plano, Registros mantém formulários e valores em superfícies opacas, Progresso usa marcos neutros e Ajustes agrupa controles. Nos modos Claro e Escuro, cards e cabeçalhos preservam contraste mínimo de 4.5:1 para texto normal.
+As demais telas repetem o cabeçalho abstrato sem ampliar a altura. Semana favorece orientação e reúne os checklists de preparo do fim de semana. Treinos reúne as sessões e a semana do plano. Registros distingue Delivery e Estudos e encaminha Despesas ao Financeiro. Progresso usa marcos neutros e mantém o plano inicial de 30 dias separado do Dashboard. Ajustes agrupa controles. Nos modos Claro e Escuro, cards e cabeçalhos preservam contraste mínimo de 4.5:1 para texto normal.
 
 Financeiro reutiliza as superfícies, campos e indicadores de Registros e Progresso. O período precede os cinco cards financeiros; delivery tem uma faixa própria de estimativas. Cadastro e histórico ficam em duas colunas no desktop e em sequência no celular. Análises ficam recolhidas inicialmente. Tipos usam texto e bordas distintas além de cor; filtros, valores e listas permanecem legíveis desde 320 px. Os campos monetários compartilham a mesma máscara brasileira, e os rótulos têm nomes acessíveis separados dos textos de ajuda.
 
