@@ -32,8 +32,8 @@ export function ExpenseForm({ accounts = [], today, shifts, initial, onSave, onC
       else setError('A despesa não foi salva. Confira os dados e tente novamente.')
     } finally { setSaving(false) }
   }
-  return <form className="form-card" aria-label="Registro de despesa" onSubmit={submit}>
-    <h2>{initial ? 'Editar despesa' : 'Nova despesa'}</h2>
+  return <form className="form-card" aria-label={initial ? 'Editar saída' : 'Registrar saída'} onSubmit={submit}>
+    <h2>{initial ? 'Editar saída' : 'Registrar saída'}</h2>
     <div className="form-grid"><Field label="Data"><input type="date" required value={form.localDate} onChange={(event) => setForm({ ...form, localDate: event.target.value })} /></Field><Field label="Categoria"><select value={form.category} onChange={(event) => setForm({ ...form, category: event.target.value as Expense['category'] })}>{expenseCategories.map((item) => <option key={item}>{item}</option>)}</select></Field></div>
     <Field label="Descrição"><input required maxLength={1000} pattern=".*\S.*" value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} placeholder="Ex.: mercado" /></Field>
     <Field label="Valor (R$)"><MoneyInput required value={form.amount} onChange={(amount) => setForm({ ...form, amount })} /></Field>
@@ -43,13 +43,13 @@ export function ExpenseForm({ accounts = [], today, shifts, initial, onSave, onC
     {accounts.length > 0 && <AccountField accounts={accounts} value={form.accountId} onChange={accountId => setForm({ ...form, accountId })} />}
     <Field label="Observação"><textarea maxLength={5000} value={form.note} onChange={(event) => setForm({ ...form, note: event.target.value })} /></Field>
     {error && <p className="warning-text" role="alert">{error}</p>}
-    <button className="primary-button" disabled={saving}>{saving ? 'Salvando despesa…' : initial ? 'Salvar alterações' : 'Salvar despesa'}</button>
+    <button className="primary-button" disabled={saving}>{saving ? 'Salvando saída…' : initial ? 'Salvar alterações' : 'Salvar saída'}</button>
     {initial && <button className="text-button" type="button" disabled={saving} onClick={onCancel}>Cancelar edição</button>}
   </form>
 }
 
-export function FinancialRecordForm({ accounts = [], today, shifts, initial, onSave, onCancel }: { accounts?: readonly AssetAccount[], today: string, shifts: readonly DeliveryShift[], initial?: FinancialRecord, onSave: (item: FinancialRecord) => Promise<boolean>, onCancel: () => void }) {
-  const [form, setForm] = useState({ localDate: initial?.localDate ?? today, description: initial?.description ?? '', category: initial?.category ?? 'Outros' as FinancialRecord['category'], type: initial?.type ?? 'entrada' as FinancialType, liabilityAccountId: initial?.liabilityAccountId ?? '', amount: initial?.amount ?? null as number | null, paymentMethod: initial?.paymentMethod ?? '' as PaymentMethod | '', deliveryShiftId: initial?.deliveryShiftId ?? '', deliveryCostKind: initial?.deliveryCostKind ?? '' as DeliveryCostKind | '', note: initial?.note ?? '', accountId: initial?.accountId ?? '' })
+export function FinancialRecordForm({ accounts = [], today, shifts, intent, initial, onSave, onCancel }: { accounts?: readonly AssetAccount[], today: string, shifts: readonly DeliveryShift[], intent: FinancialType, initial?: FinancialRecord, onSave: (item: FinancialRecord) => Promise<boolean>, onCancel: () => void }) {
+  const [form, setForm] = useState({ localDate: initial?.localDate ?? today, description: initial?.description ?? '', category: initial?.category ?? 'Outros' as FinancialRecord['category'], type: initial?.type ?? intent, liabilityAccountId: initial?.liabilityAccountId ?? '', amount: initial?.amount ?? null as number | null, paymentMethod: initial?.paymentMethod ?? '' as PaymentMethod | '', deliveryShiftId: initial?.deliveryShiftId ?? '', deliveryCostKind: initial?.deliveryCostKind ?? '' as DeliveryCostKind | '', note: initial?.note ?? '', accountId: initial?.accountId ?? '' })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   async function submit(event: FormEvent) {
@@ -64,10 +64,14 @@ export function FinancialRecordForm({ accounts = [], today, shifts, initial, onS
     } finally { setSaving(false) }
   }
   const hint = form.type === 'credito' ? 'Valor a receber. Não altera o saldo até o recebimento.' : form.type === 'pendencia' ? 'Valor a pagar. Não altera o saldo até o pagamento.' : form.type === 'entrada' ? 'Use a data em que o dinheiro foi recebido.' : 'Use a data em que o dinheiro foi pago.'
-  return <form className="form-card" aria-label="Movimentação financeira" onSubmit={submit}>
-    <h2>{initial ? 'Editar movimentação' : 'Nova movimentação'}</h2>
-    <p className="section-description">Registre aqui outras receitas, gastos e valores em aberto.</p>
-    <div className="form-grid"><Field label="Tipo"><select disabled={!!initial?.planningRef} value={form.type} onChange={(event) => { const type = event.target.value as FinancialType; setForm({ ...form, type, deliveryShiftId: type === 'saida' || type === 'pendencia' ? form.deliveryShiftId : '' }) }}>{Object.entries(financialTypeLabels).map(([type, label]) => <option key={type} value={type}>{label}</option>)}</select></Field><Field label="Data"><input type="date" required value={form.localDate} onChange={(event) => setForm({ ...form, localDate: event.target.value })} /></Field></div>
+  const labels = form.type === 'entrada' ? { form: 'Registrar entrada', title: 'Registrar entrada', save: 'Salvar entrada' }
+    : form.type === 'credito' ? { form: 'Registrar valor a receber', title: 'Registrar valor a receber', save: 'Salvar valor a receber' }
+      : form.type === 'pendencia' ? { form: 'Registrar conta a pagar', title: 'Registrar conta a pagar', save: 'Salvar conta a pagar' }
+        : { form: 'Editar saída existente', title: 'Editar saída existente', save: 'Salvar alterações' }
+  return <form className="form-card" aria-label={initial ? `Editar ${financialTypeLabels[form.type].toLocaleLowerCase('pt-BR')}` : labels.form} onSubmit={submit}>
+    <h2>{initial ? `Editar ${financialTypeLabels[form.type].toLocaleLowerCase('pt-BR')}` : labels.title}</h2>
+    <p className="section-description">{hint}</p>
+    <Field label="Data"><input type="date" required value={form.localDate} onChange={(event) => setForm({ ...form, localDate: event.target.value })} /></Field>
     <p className="fine-print">{hint} Para valores em aberto, a data é o vencimento previsto.</p>
     <Field label="Descrição"><input required maxLength={1000} pattern=".*\S.*" value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} placeholder="Ex.: salário, conta de luz" /></Field>
     <div className="form-grid"><Field label="Categoria"><select value={form.category} onChange={(event) => setForm({ ...form, category: event.target.value as FinancialRecord['category'] })}>{expenseCategories.map((item) => <option key={item}>{item}</option>)}</select></Field><Field label="Valor (R$)"><MoneyInput required disabled={!!initial?.planningRef} value={form.amount} onChange={(amount) => setForm({ ...form, amount })} /></Field></div>
@@ -78,7 +82,7 @@ export function FinancialRecordForm({ accounts = [], today, shifts, initial, onS
     {accounts.some(a => a.kind === 'liability') && (form.type === 'saida' || form.type === 'pendencia') && <AccountField accounts={accounts} value={form.liabilityAccountId} liability label="Dívida a reduzir após pagamento" onChange={liabilityAccountId => setForm({ ...form, liabilityAccountId })} />}
     <Field label="Observação"><textarea maxLength={5000} value={form.note} onChange={(event) => setForm({ ...form, note: event.target.value })} /></Field>
     {error && <p className="warning-text" role="alert">{error}</p>}
-    <button className="primary-button" disabled={saving}>{saving ? 'Salvando…' : initial ? 'Salvar alterações' : 'Salvar movimentação'}</button>
+    <button className="primary-button" disabled={saving}>{saving ? 'Salvando…' : initial ? 'Salvar alterações' : labels.save}</button>
     {initial && <button type="button" className="text-button" disabled={saving} onClick={onCancel}>Cancelar edição</button>}
   </form>
 }

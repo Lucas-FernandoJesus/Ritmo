@@ -1,5 +1,32 @@
 import { readFile } from 'node:fs/promises'
 import { expect, goToTab, openAppOnTuesday, openStoragePage, test } from './fixtures'
+import type { Page } from '@playwright/test'
+
+type FinanceArea = 'Visão geral' | 'Planejamento' | 'Análises'
+type RegistrationType = 'entrada' | 'saida' | 'credito' | 'pendencia'
+
+async function financeArea(page: Page, name: FinanceArea) {
+  await page.getByRole('navigation', { name: 'Áreas do Financeiro' }).getByRole('button', { name, exact: true }).click()
+}
+
+async function registerMovement(page: Page, type: RegistrationType, name: string, amount: string, date: string, category: string) {
+  const labels = {
+    entrada: { choice: 'Entrada', form: 'Registrar entrada', save: 'Salvar entrada' },
+    saida: { choice: 'Saída', form: 'Registrar saída', save: 'Salvar saída' },
+    credito: { choice: 'A receber', form: 'Registrar valor a receber', save: 'Salvar valor a receber' },
+    pendencia: { choice: 'A pagar', form: 'Registrar conta a pagar', save: 'Salvar conta a pagar' },
+  } as const
+  await financeArea(page, 'Visão geral')
+  await page.getByRole('button', { name: 'Registrar', exact: true }).click()
+  await page.getByRole('dialog', { name: 'Registrar' }).getByRole('button', { name: labels[type].choice, exact: true }).click()
+  const form = page.getByRole('form', { name: labels[type].form, exact: true })
+  await form.getByLabel('Descrição', { exact: true }).fill(name)
+  await form.getByLabel('Categoria', { exact: true }).selectOption(category)
+  await form.getByLabel('Data', { exact: true }).fill(date)
+  await form.getByLabel('Valor (R$)', { exact: true }).fill(amount)
+  await form.getByRole('button', { name: labels[type].save, exact: true }).click()
+  await expect(form).not.toBeVisible()
+}
 
 for (const theme of ['light', 'dark'] as const) {
   test(`planejamento financeiro completo, backup e offline no tema ${theme}`, async ({ page }, testInfo) => {
@@ -8,6 +35,7 @@ for (const theme of ['light', 'dark'] as const) {
     await goToTab(page, 'Ajustes')
     await page.getByRole('group', { name: 'Aparência' }).getByRole('button', { name: theme === 'light' ? 'Claro' : 'Escuro', exact: true }).click()
     await goToTab(page, 'Financeiro')
+    await page.getByRole('navigation', { name: 'Áreas do Financeiro' }).getByRole('button', { name: 'Planejamento', exact: true }).click()
     await page.getByRole('button', { name: 'Criar meta', exact: true }).click()
     const goal = page.getByRole('form', { name: 'Meta financeira', exact: true })
     await goal.getByLabel('Nome da meta', { exact: true }).fill('Renda mensal planejada')
@@ -21,24 +49,18 @@ for (const theme of ['light', 'dark'] as const) {
     await budget.getByLabel('Categoria do orçamento', { exact: true }).selectOption('Alimentação')
     await budget.getByLabel('Limite mensal (R$)', { exact: true }).fill('10000')
     await budget.getByRole('button', { name: 'Salvar orçamento', exact: true }).click()
-    const transaction = page.getByRole('form', { name: 'Movimentação financeira', exact: true })
     for (const [type, name, amount, date, category] of [
       ['entrada', 'Pagamento recebido', '80000', '2026-09-22', 'Outros'],
       ['saida', 'Alimentação paga', '12000', '2026-09-22', 'Alimentação'],
       ['pendencia', 'Conta a vencer', '200000', '2026-09-25', 'Moradia'],
       ['credito', 'Crédito futuro', '50000', '2026-09-26', 'Outros'],
-    ]) {
-      await transaction.getByLabel('Tipo', { exact: true }).selectOption(type)
-      await transaction.getByLabel('Descrição', { exact: true }).fill(name)
-      await transaction.getByLabel('Categoria', { exact: true }).selectOption(category)
-      await transaction.getByLabel('Data', { exact: true }).fill(date)
-      await transaction.getByLabel('Valor (R$)', { exact: true }).fill(amount)
-      await transaction.getByRole('button', { name: 'Salvar movimentação', exact: true }).click()
-      await expect(transaction.getByLabel('Descrição', { exact: true })).toHaveValue('')
-    }
+    ] as const) await registerMovement(page, type, name, amount, date, category)
+    await financeArea(page, 'Planejamento')
     await expect(planning.getByRole('progressbar', { name: 'Progresso de Renda mensal planejada' })).toHaveAttribute('aria-valuenow', '80')
     await expect(planning).toContainText('120% utilizado')
+    await financeArea(page, 'Visão geral')
     await expect(page.getByRole('region', { name: 'Alertas financeiros', exact: true })).toContainText('orçamento(s) ultrapassado(s)')
+    await financeArea(page, 'Análises')
     await page.locator('summary').filter({ hasText: /^Saldo projetado e fluxo futuro/ }).click()
     await expect(page.getByRole('table').filter({ has: page.locator('caption', { hasText: 'Fluxo futuro por horizonte' }) })).toContainText('Próximos 7 dias')
     await goToTab(page, 'Registros')
@@ -53,7 +75,9 @@ for (const theme of ['light', 'dark'] as const) {
     page.once('dialog', (dialog) => dialog.dismiss())
     await delivery.getByRole('button', { name: 'Salvar turno', exact: true }).click()
     await goToTab(page, 'Financeiro')
+    await financeArea(page, 'Planejamento')
     await expect(planning.getByRole('progressbar', { name: 'Progresso de Renda mensal planejada' })).toHaveAttribute('aria-valuenow', '100')
+    await financeArea(page, 'Análises')
     const deliveryInsight = page.getByRole('region', { name: 'Financeiro do delivery', exact: true })
     await deliveryInsight.locator('summary').filter({ hasText: 'Desempenho e custos do delivery' }).click()
     await expect(deliveryInsight.locator('dl').first()).toContainText('33,33')
@@ -76,6 +100,7 @@ for (const theme of ['light', 'dark'] as const) {
     expect(saved.financialGoals[0]).not.toHaveProperty('percentage')
     expect(saved.categoryBudgets[0]).not.toHaveProperty('spent')
     await goToTab(page, 'Financeiro')
+    await financeArea(page, 'Planejamento')
     await planning.getByRole('button', { name: 'Editar meta', exact: true }).click()
     await goal.getByLabel('Valor alvo (R$)', { exact: true }).fill('200000')
     await goal.getByRole('button', { name: 'Salvar meta', exact: true }).click()
@@ -90,6 +115,7 @@ for (const theme of ['light', 'dark'] as const) {
     await page.locator('input[type="file"]').setInputFiles({ name: 'planejamento.json', mimeType: 'application/json', buffer })
     await expect(page.getByRole('heading', { name: 'Um dia de cada vez.', exact: true })).toBeVisible()
     await goToTab(page, 'Financeiro')
+    await financeArea(page, 'Planejamento')
     await expect(planning).toContainText('120% utilizado')
     await page.evaluate(async () => navigator.serviceWorker.ready)
     await page.reload()
@@ -97,12 +123,14 @@ for (const theme of ['light', 'dark'] as const) {
     await page.context().setOffline(true)
     await page.reload()
     await goToTab(page, 'Financeiro')
+    await financeArea(page, 'Planejamento')
     await expect(planning).toContainText('Meta atingida')
     await expect(planning).toContainText('Orçamento ultrapassado')
     await page.clock.runFor(5000)
     await page.setViewportSize({ width: 390, height: 844 })
     await page.evaluate(() => { (document.activeElement as HTMLElement)?.blur(); scrollTo(0, 0) })
     await page.screenshot({ path: testInfo.outputPath(`resumo-${theme}-390.png`) })
+    await financeArea(page, 'Análises')
     for (const summary of await page.locator('.finance-analysis > summary, .finance-delivery > details > summary').all()) await summary.click()
     for (const width of [320, 390, 768, 1440]) {
       await page.setViewportSize({ width, height: 900 })
@@ -129,6 +157,7 @@ for (const theme of ['light', 'dark'] as const) {
       return (Math.max(a, b) + .05) / (Math.min(a, b) + .05)
     }))
     expect(contrast.every((value) => value >= 4.5)).toBe(true)
+    await financeArea(page, 'Planejamento')
     const create = page.getByRole('button', { name: 'Criar meta', exact: true })
     await create.focus()
     await page.keyboard.press('Enter')
@@ -150,30 +179,37 @@ test('classifica custo vinculado, limita orçamento específico e não duplica p
   }))
   await page.reload()
   await goToTab(page, 'Financeiro')
-  const form = page.getByRole('form', { name: 'Movimentação financeira', exact: true })
-  await form.getByLabel('Tipo', { exact: true }).selectOption('pendencia')
+  await page.getByRole('button', { name: 'Registrar', exact: true }).click()
+  await page.getByRole('dialog', { name: 'Registrar' }).getByRole('button', { name: 'A pagar', exact: true }).click()
+  const form = page.getByRole('form', { name: 'Registrar conta a pagar', exact: true })
   await form.getByLabel('Descrição', { exact: true }).fill('Taxa vinculada')
   await form.getByLabel('Valor (R$)', { exact: true }).fill('500')
   await form.getByLabel('Associar ao delivery', { exact: true }).selectOption('turn')
   await form.getByLabel('Tipo de custo do delivery', { exact: true }).selectOption('taxas')
-  await form.getByRole('button', { name: 'Salvar movimentação', exact: true }).click()
+  await form.getByRole('button', { name: 'Salvar conta a pagar', exact: true }).click()
+  await page.getByRole('navigation', { name: 'Áreas do Financeiro' }).getByRole('button', { name: 'Planejamento', exact: true }).click()
   await page.getByRole('button', { name: 'Definir orçamento', exact: true }).click()
   await page.getByLabel('Escopo do orçamento', { exact: true }).selectOption('taxas')
   await page.getByLabel('Limite mensal (R$)', { exact: true }).fill('400')
   await page.getByRole('button', { name: 'Salvar orçamento', exact: true }).click()
   const planning = page.getByRole('region', { name: 'Metas e orçamentos', exact: true })
   await expect(planning).toContainText('Sem gastos registrados nesta categoria')
+  await financeArea(page, 'Visão geral')
   const history = page.getByRole('region', { name: 'Histórico financeiro', exact: true })
   await history.getByRole('article').filter({ hasText: 'Taxa vinculada' }).getByRole('button', { name: 'Pagar', exact: true }).click()
-  await expect(planning).toContainText('125% utilizado')
   await expect(history.getByRole('article').filter({ hasText: 'Taxa vinculada' })).toHaveCount(1)
+  await financeArea(page, 'Planejamento')
+  await expect(planning).toContainText('125% utilizado')
+  await financeArea(page, 'Análises')
   const insight = page.getByRole('region', { name: 'Financeiro do delivery', exact: true })
   await expect(insight).toContainText('170,00')
   await insight.locator('summary').filter({ hasText: 'Desempenho e custos do delivery' }).click()
   await expect(insight.getByRole('table').filter({ has: page.locator('caption', { hasText: 'Custos pagos associados' }) }).getByRole('row').filter({ hasText: 'Taxas' })).toContainText('5,00')
   await page.reload()
   await goToTab(page, 'Financeiro')
+  await financeArea(page, 'Planejamento')
   await expect(planning).toContainText('125% utilizado')
+  await financeArea(page, 'Visão geral')
   await expect(history.getByRole('article').filter({ hasText: 'Taxa vinculada' })).toHaveCount(1)
 })
 
@@ -207,6 +243,7 @@ test('migra IndexedDB 3 para 5 preservando fontes e importa backup sem planejame
   expect(state).toEqual({ version: 5, goals: 0, budgets: 0 })
   await goToTab(page, 'Financeiro')
   await expect(page.getByRole('region', { name: 'Resumo financeiro', exact: true })).toContainText('90,00')
+  await page.getByRole('navigation', { name: 'Áreas do Financeiro' }).getByRole('button', { name: 'Planejamento', exact: true }).click()
   await page.getByRole('button', { name: 'Criar meta', exact: true }).click()
   await page.getByLabel('Nome da meta', { exact: true }).fill('Temporária')
   await page.getByLabel('Valor alvo (R$)', { exact: true }).fill('10000')
@@ -221,5 +258,6 @@ test('migra IndexedDB 3 para 5 preservando fontes e importa backup sem planejame
   await expect(page.getByRole('heading', { name: 'Um dia de cada vez.', exact: true })).toBeVisible()
   await goToTab(page, 'Financeiro')
   await expect(page.getByRole('region', { name: 'Resumo financeiro', exact: true })).toContainText('90,00')
+  await financeArea(page, 'Planejamento')
   await expect(page.getByRole('region', { name: 'Metas do período', exact: true })).toContainText('Nenhuma meta')
 })

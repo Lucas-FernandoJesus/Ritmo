@@ -3,7 +3,7 @@ import { moneyRatio, subtractMoney, sumMoney } from '../../core/money'
 import { planOccurrences, plannedMovements } from './finance-plans'
 import type { DeliveryCostKind, DeliveryShift, Expense, FinancialRecord, FinancialType, InstallmentPlan, PaymentMethod, RecurringPlan } from '../../core/types'
 
-export const financialTypeLabels: Record<FinancialType, string> = { entrada: 'Entrada', saida: 'Saída', credito: 'Crédito', pendencia: 'Pendência' }
+export const financialTypeLabels: Record<FinancialType, string> = { entrada: 'Entrada', saida: 'Saída', credito: 'A receber', pendencia: 'A pagar' }
 export type FinancialStatus = 'realizado' | 'aberto' | 'previsto' | 'reservado' | 'planejado'
 export const financialStatusLabels: Record<FinancialStatus, string> = { realizado: 'Realizado', aberto: 'Em aberto', previsto: 'Previsto', reservado: 'Reservado', planejado: 'Planejado · ainda não confirmado' }
 

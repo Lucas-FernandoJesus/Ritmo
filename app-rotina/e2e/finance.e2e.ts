@@ -1,6 +1,20 @@
 import { expect, goToTab, openAppOnTuesday, test } from './fixtures'
 import { readFile } from 'node:fs/promises'
 
+const registration = {
+  entrada: ['Entrada', 'Registrar entrada', 'Salvar entrada'],
+  saida: ['Saída', 'Registrar saída', 'Salvar saída'],
+  credito: ['A receber', 'Registrar valor a receber', 'Salvar valor a receber'],
+  pendencia: ['A pagar', 'Registrar conta a pagar', 'Salvar conta a pagar'],
+} as const
+
+async function openRegistration(page: import('@playwright/test').Page, type: keyof typeof registration) {
+  const [intent, formName] = registration[type]
+  await page.getByRole('button', { name: 'Registrar', exact: true }).click()
+  await page.getByRole('dialog', { name: 'Registrar' }).getByRole('button', { name: intent, exact: true }).click()
+  return page.getByRole('form', { name: formName, exact: true })
+}
+
 test('abre e atualiza um turno antigo fora dos oito registros recentes', async ({ page }) => {
   await openAppOnTuesday(page)
   await page.evaluate(async () => new Promise<void>((resolve, reject) => {
@@ -36,17 +50,16 @@ test('abre e atualiza um turno antigo fora dos oito registros recentes', async (
 test('cadastra os quatro tipos, mascara valores, baixa e edita sem duplicar', async ({ page }) => {
   await openAppOnTuesday(page)
   await goToTab(page, 'Financeiro')
-  const form = page.getByRole('form', { name: 'Movimentação financeira' })
   const summary = page.getByRole('region', { name: 'Resumo financeiro' })
   await expect(summary).toContainText('Sem dados')
-  expect(await form.getByLabel('Forma de pagamento', { exact: true }).locator('option:not([hidden])').allTextContents()).toEqual(['Cartão de crédito', 'Débito', 'Alimentação'])
-  for (const [type, description, digits] of [['entrada', 'Salário', '100000'], ['saida', 'Conta de luz', '20000'], ['credito', 'Serviço a receber', '5000'], ['pendencia', 'Internet a pagar', '10000']]) {
-    await form.getByLabel('Tipo', { exact: true }).selectOption(type)
+  for (const [type, description, digits] of [['entrada', 'Salário', '100000'], ['saida', 'Conta de luz', '20000'], ['credito', 'Serviço a receber', '5000'], ['pendencia', 'Internet a pagar', '10000']] as const) {
+    const form = await openRegistration(page, type)
+    expect(await form.getByLabel('Forma de pagamento', { exact: true }).locator('option:not([hidden])').allTextContents()).toEqual(['Cartão de crédito', 'Débito', 'Alimentação'])
     await form.getByLabel('Descrição', { exact: true }).fill(description)
     await form.getByLabel('Valor (R$)', { exact: true }).fill(digits)
     await form.getByLabel('Forma de pagamento', { exact: true }).selectOption(type === 'entrada' ? 'debito' : 'credito')
-    await form.getByRole('button', { name: 'Salvar movimentação', exact: true }).click()
-    await expect(form.getByLabel('Descrição', { exact: true })).toHaveValue('')
+    await form.getByRole('button', { name: registration[type][2], exact: true }).click()
+    await expect(form).not.toBeVisible()
   }
   await expect(summary.locator('article').filter({ hasText: /^Saldo/ })).toContainText('800,00')
   const history = page.getByRole('region', { name: 'Histórico financeiro' })
@@ -55,6 +68,7 @@ test('cadastra os quatro tipos, mascara valores, baixa e edita sem duplicar', as
   await history.getByRole('article').filter({ hasText: 'Internet a pagar' }).getByRole('button', { name: 'Pagar' }).click()
   await expect(summary.locator('article').filter({ hasText: /^Saldo/ })).toContainText('750,00')
   await history.getByRole('article').filter({ hasText: 'Salário' }).getByRole('button', { name: 'Editar' }).click()
+  const form = page.getByRole('form', { name: 'Editar entrada', exact: true })
   await expect(form.getByLabel('Forma de pagamento', { exact: true })).toHaveValue('debito')
   await form.getByLabel('Valor (R$)', { exact: true }).fill('123456')
   await expect(form.getByLabel('Valor (R$)', { exact: true })).toHaveValue(/R\$\s1\.234,56/)
@@ -69,9 +83,9 @@ test('cadastra os quatro tipos, mascara valores, baixa e edita sem duplicar', as
     const request = indexedDB.open('rotina-local')
     request.onsuccess = () => {
       const db = request.result
-      const tx = db.transaction('financialRecords', 'readonly')
-      const rows = tx.objectStore('financialRecords').getAll()
-      tx.oncomplete = () => { resolve(rows.result); db.close() }
+      const tx = db.transaction(['financialRecords', 'expenses'], 'readonly')
+      const records = tx.objectStore('financialRecords').getAll(), expenses = tx.objectStore('expenses').getAll()
+      tx.oncomplete = () => { resolve([...records.result, ...expenses.result]); db.close() }
       tx.onerror = () => reject(tx.error)
     }
     request.onerror = () => reject(request.error)
@@ -87,7 +101,7 @@ test('cadastra os quatro tipos, mascara valores, baixa e edita sem duplicar', as
 test('digitação em centavos e restauração do backup financeiro', async ({ page }) => {
   await openAppOnTuesday(page)
   await goToTab(page, 'Financeiro')
-  const form = page.getByRole('form', { name: 'Movimentação financeira' })
+  const form = await openRegistration(page, 'credito')
   const value = form.getByLabel('Valor (R$)', { exact: true })
   await value.pressSequentially('1')
   await expect(value).toHaveValue(/R\$\s0,01/)
@@ -97,9 +111,8 @@ test('digitação em centavos e restauração do backup financeiro', async ({ pa
   await expect(value).toHaveValue(/R\$\s0,10/)
   await value.fill('R$ 1.234,56')
   await form.getByLabel('Descrição', { exact: true }).fill('Crédito para backup')
-  await form.getByLabel('Tipo', { exact: true }).selectOption('credito')
-  await form.getByRole('button', { name: 'Salvar movimentação', exact: true }).click()
-  await expect(form.getByLabel('Descrição', { exact: true })).toHaveValue('')
+  await form.getByRole('button', { name: 'Salvar valor a receber', exact: true }).click()
+  await expect(form).not.toBeVisible()
   await goToTab(page, 'Ajustes')
   const pendingDownload = page.waitForEvent('download')
   await page.getByRole('button', { name: 'Exportar backup JSON' }).click()
@@ -118,7 +131,7 @@ test('digitação em centavos e restauração do backup financeiro', async ({ pa
   await goToTab(page, 'Financeiro')
   const history = page.getByRole('region', { name: 'Histórico financeiro' })
   await expect(history.getByRole('article')).toHaveCount(1)
-  await expect(history).toContainText('Crédito')
+  await expect(history).toContainText('A receber')
   await expect(history).toContainText('1.234,56')
   await expect(page.getByRole('region', { name: 'Resumo financeiro' }).locator('article').filter({ hasText: /^Saldo/ })).toContainText('Sem dados')
 })
@@ -139,17 +152,19 @@ test('integra delivery e despesas vinculadas, calcula madrugada e produtividade'
   await page.getByRole('button', { name: 'Salvar turno', exact: true }).click()
   await expect(page.getByRole('heading', { name: 'Últimos turnos' }).locator('..')).toContainText('165,00')
   await page.getByRole('group', { name: 'Tipo de registro' }).getByRole('button', { name: 'Despesas', exact: true }).click()
-  await page.getByLabel('Descrição', { exact: true }).fill('Refeição do turno')
-  await page.getByLabel('Valor (R$)', { exact: true }).fill('1500')
-  await page.getByRole('form', { name: 'Registro de despesa' }).getByLabel('Forma de pagamento', { exact: true }).selectOption('alimentacao')
-  await page.getByLabel('Associar ao delivery').selectOption({ index: 1 })
-  await page.getByRole('button', { name: 'Salvar despesa', exact: true }).click()
-  await goToTab(page, 'Financeiro')
+  const expenseForm = page.getByRole('form', { name: 'Registrar saída', exact: true })
+  await expenseForm.getByLabel('Descrição', { exact: true }).fill('Refeição do turno')
+  await expenseForm.getByLabel('Valor (R$)', { exact: true }).fill('1500')
+  await expenseForm.getByLabel('Forma de pagamento', { exact: true }).selectOption('alimentacao')
+  await expenseForm.getByLabel('Associar ao delivery').selectOption({ index: 1 })
+  await expenseForm.getByRole('button', { name: 'Salvar saída', exact: true }).click()
+  await expect(page.getByRole('region', { name: 'Resumo financeiro' })).toContainText('160,00')
+  await page.getByRole('navigation', { name: 'Áreas do Financeiro' }).getByRole('button', { name: 'Análises', exact: true }).click()
   const delivery = page.getByRole('region', { name: 'Financeiro do delivery' })
   await expect(delivery).toContainText('200,00')
   await expect(delivery).toContainText('40,00')
   await expect(delivery).toContainText('150,00')
-  await expect(page.getByRole('region', { name: 'Resumo financeiro' })).toContainText('160,00')
+  await page.getByRole('button', { name: 'Voltar à visão geral', exact: true }).click()
   const history = page.getByRole('region', { name: 'Histórico financeiro' })
   await expect(history.getByRole('article').filter({ hasText: 'Receita do turno' })).toContainText('Débito')
   await expect(history.getByRole('article').filter({ hasText: 'Refeição do turno' })).toContainText('Alimentação')
@@ -176,14 +191,24 @@ for (const theme of ['light', 'dark'] as const) {
     await goToTab(page, 'Ajustes')
     await page.getByRole('group', { name: 'Aparência' }).getByRole('button', { name: theme === 'light' ? 'Claro' : 'Escuro', exact: true }).click()
     await goToTab(page, 'Financeiro')
-    const form = page.getByRole('form', { name: 'Movimentação financeira' })
-    for (const [type, description, digits] of [['entrada', 'Pagamento recebido', '123456'], ['saida', 'Alimentação da semana', '23456'], ['credito', 'Serviço a receber', '53056'], ['pendencia', 'Conta de internet', '1056']]) {
-      await form.getByLabel('Tipo', { exact: true }).selectOption(type)
+    for (const [type, description, digits] of [['entrada', 'Pagamento recebido', '123456'], ['saida', 'Alimentação da semana', '23456'], ['credito', 'Serviço a receber', '53056'], ['pendencia', 'Conta de internet', '1056']] as const) {
+      const form = await openRegistration(page, type)
       await form.getByLabel('Descrição', { exact: true }).fill(description)
       await form.getByLabel('Valor (R$)', { exact: true }).fill(digits)
-      await form.getByRole('button', { name: 'Salvar movimentação', exact: true }).click()
-      await expect(form.getByLabel('Descrição', { exact: true })).toHaveValue('')
+      await form.getByRole('button', { name: registration[type][2], exact: true }).click()
+      await expect(form).not.toBeVisible()
     }
+    const contrasts = await page.locator('.finance-movement-heading, .finance-type, .finance-status, .finance-kpi-grid strong').evaluateAll((elements) => elements.map((element) => {
+      const color = getComputedStyle(element).color
+      let surface: Element | null = element
+      let background = ''
+      while (surface) { background = getComputedStyle(surface).backgroundColor; if (background !== 'rgba(0, 0, 0, 0)') break; surface = surface.parentElement }
+      const luminance = (text: string) => text.match(/[\d.]+/g)!.slice(0, 3).map(Number).map((channel) => channel / 255).map((channel) => channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4).reduce((sum, channel, index) => sum + channel * [0.2126, 0.7152, 0.0722][index], 0)
+      const a = luminance(color), b = luminance(background)
+      return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05)
+    }))
+    expect(contrasts.every((contrast) => contrast >= 4.5)).toBe(true)
+    await page.getByRole('navigation', { name: 'Áreas do Financeiro' }).getByRole('button', { name: 'Análises', exact: true }).click()
     await page.clock.runFor(5000)
     await page.locator('.finance-analysis > summary').filter({ hasText: /^Análises do período/ }).click()
     await page.getByLabel('Gráfico financeiro', { exact: true }).selectOption('balance')
@@ -198,27 +223,17 @@ for (const theme of ['light', 'dark'] as const) {
         await page.screenshot({ path: testInfo.outputPath(`financeiro-${theme}-${width}.png`), fullPage: true })
       }
     }
-    const contrasts = await page.locator('.finance-movement-heading, .finance-type, .finance-status, .finance-kpi-grid strong').evaluateAll((elements) => elements.map((element) => {
-      const color = getComputedStyle(element).color
-      let surface: Element | null = element
-      let background = ''
-      while (surface) { background = getComputedStyle(surface).backgroundColor; if (background !== 'rgba(0, 0, 0, 0)') break; surface = surface.parentElement }
-      const luminance = (text: string) => text.match(/[\d.]+/g)!.slice(0, 3).map(Number).map((channel) => channel / 255).map((channel) => channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4).reduce((sum, channel, index) => sum + channel * [0.2126, 0.7152, 0.0722][index], 0)
-      const a = luminance(color), b = luminance(background)
-      return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05)
-    }))
-    expect(contrasts.every((contrast) => contrast >= 4.5)).toBe(true)
   })
 }
 
 test('filtros, valores previstos e período da Dashboard, mobile e offline', async ({ page }) => {
   await openAppOnTuesday(page)
   await goToTab(page, 'Financeiro')
-  const form = page.getByRole('form', { name: 'Movimentação financeira' })
+  const form = await openRegistration(page, 'entrada')
   await form.getByLabel('Descrição', { exact: true }).fill('Pagamento futuro')
   await form.getByLabel('Data', { exact: true }).fill('2026-09-30')
   await form.getByLabel('Valor (R$)', { exact: true }).fill('10000')
-  await form.getByRole('button', { name: 'Salvar movimentação', exact: true }).click()
+  await form.getByRole('button', { name: 'Salvar entrada', exact: true }).click()
   await expect(page.getByRole('region', { name: 'Resumo financeiro' })).toContainText('Sem dados')
   await page.getByLabel('Status do histórico').selectOption('previsto')
   await expect(page.getByRole('region', { name: 'Histórico financeiro' }).getByRole('article')).toHaveCount(1)

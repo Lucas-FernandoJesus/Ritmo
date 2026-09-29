@@ -516,6 +516,20 @@ textarea { min-height: 86px; resize: vertical; }
 
 /* Financeiro compartilha superfícies, campos e indicadores com Registros e Progresso. */
 .finance-period { margin-bottom: 20px; }
+.finance-area-nav { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; margin-bottom: 20px; }
+.finance-area-nav button { min-width: 0; min-height: 48px; padding: 8px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface); }
+.finance-area-nav button[aria-current='page'] { border-color: var(--primary); background: var(--surface-soft); color: var(--primary-text); font-weight: 700; text-decoration: underline; text-underline-offset: 4px; }
+.finance-overview-actions { display: flex; justify-content: flex-end; margin-bottom: 12px; }
+.finance-overview-actions button { min-height: 48px; min-width: 132px; }
+.finance-area-heading { margin-bottom: 16px; }
+.finance-area-heading button { min-height: 44px; }
+.finance-form-close { width: 100%; min-height: 44px; margin-top: 8px; }
+.finance-register-dialog { width: min(calc(100% - 32px), 430px); padding: 0; border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--surface); color: var(--ink); box-shadow: 0 24px 60px rgba(2, 6, 23, .35); }
+.finance-register-dialog::backdrop { background: var(--scrim); }
+.finance-register-content { display: grid; gap: 8px; padding: 24px; }
+.finance-register-content h2 { margin-bottom: 8px; }
+.finance-register-content button { min-height: 48px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface-soft); }
+.finance-register-content .text-button { border: 0; background: transparent; }
 .finance-period .subnav { margin-bottom: 12px; }
 .finance-period .subnav button { min-width: 0; }
 .finance-summary { margin: 20px 0; }
@@ -604,6 +618,8 @@ textarea { min-height: 86px; resize: vertical; }
 .dashboard-finance-insight > .fine-print { margin-top: 12px; }
 
 @media (max-width: 620px) {
+  .finance-area-nav { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .finance-area-nav button:first-child { grid-column: 1 / -1; }
   .planning-columns { grid-template-columns: 1fr; gap: 20px; }
   .finance-period .subnav { display: flex; flex-wrap: wrap; }
   .finance-period .subnav button { flex: 1 1 75px; }
@@ -624,11 +640,11 @@ textarea { min-height: 86px; resize: vertical; }
 .main-menu { position: fixed; inset: 0; margin: 0; width: 100%; max-width: none; height: 100dvh; max-height: none; padding: max(24px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left)); border: 0; border-radius: 0; background: var(--menu-overlay); color: var(--ink); overflow-y: auto; overscroll-behavior: contain; backdrop-filter: blur(8px); }
 .main-menu[open] { display: grid; place-items: center; }
 .main-menu::backdrop { background: rgba(2, 6, 23, .36); }
-.main-menu-content { width: min(100%, 560px); margin: auto; }
+.main-menu-content { display: flex; flex-direction: column; width: min(100%, 560px); margin: auto; }
 .main-menu nav { display: flex; flex-direction: column; gap: 4px; }
 .main-menu nav button { width: 100%; min-height: 56px; padding: 12px; text-align: center; border: 0; border-radius: var(--radius-sm); background: transparent; font-size: clamp(1.25rem, 3vw, 1.6rem); overflow-wrap: anywhere; }
 .main-menu nav button[aria-current='page'] { color: var(--primary-text); font-weight: 700; text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 8px; }
-.main-menu-close { position: fixed; top: max(16px, env(safe-area-inset-top)); right: max(16px, env(safe-area-inset-right)); display: flex; align-items: center; justify-content: center; width: 48px; height: 48px; padding: 0; background: transparent; border: 0; border-radius: 50%; }
+.main-menu-close { display: flex; align-items: center; justify-content: center; align-self: center; width: 48px; height: 48px; margin-top: 16px; padding: 0; background: transparent; border: 0; border-radius: 50%; }
 .main-menu button:hover { background: var(--surface-soft); }
 .main-menu[open] .main-menu-content { animation: menu-arrive 180ms ease-out; }
 @keyframes menu-arrive { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
@@ -636,7 +652,8 @@ textarea { min-height: 86px; resize: vertical; }
 @media (max-height: 540px) {
   .main-menu { padding-top: max(12px, env(safe-area-inset-top)); padding-bottom: max(12px, env(safe-area-inset-bottom)); }
   .main-menu nav { gap: 0; }
-  .main-menu nav button { min-height: 48px; padding-block: 8px; font-size: 1.15rem; }
+  .main-menu nav button { min-height: 44px; padding-block: 4px; font-size: 1.15rem; }
+  .main-menu-close { margin-top: 8px; }
 }
 .finance-advanced { margin: 24px 0; }
 .finance-advanced > .subnav { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 24px; }

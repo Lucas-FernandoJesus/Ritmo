@@ -5,10 +5,9 @@ import { getMuayPractices } from './features/training/muay-exercises'
 import { dayNames, homeChecklist, mealPrepChecklist, progressPlan, routineItems } from './features/routine/data'
 import { calculateDelivery, createDailyPlanSnapshot, defaultSettings, filterRoutineForDay, findLinkedActivityId, formatMoney, localDateKey, MAX_BACKUP_BYTES, paymentMethodLabel, recentRecords, rideSafetyForDate, shiftDuration, summarizeDailyProgress, summarizePlanProgress, summarizeWeeklyProgress, upgradeAppearance, validateBackup, weekBounds, withScheduleStart } from './core/domain'
 import { ProgressDashboard } from './features/dashboard/components/ProgressDashboard'
-import { FinanceView } from './features/finance/components/FinanceView'
+import { FinanceView, type FinanceRegistrationRequest } from './features/finance/components/FinanceView'
 import { MainMenu } from './components/MainMenu'
 import { AccountField } from './features/finance/components/FinanceSchedules'
-import { ExpenseForm } from './features/finance/components/FinanceForms'
 import { PaymentMethodField } from './features/finance/components/PaymentMethodField'
 import { Field, PageTitle } from './components/FormPrimitives'
 import { MoneyInput } from './components/MoneyInput'
@@ -114,6 +113,7 @@ function App() {
   const [categoryBudgets, setCategoryBudgets] = useState<CategoryBudget[]>([])
   const [financePlanning, setFinancePlanning] = useState<FinancePlanningData>({ recurringPlans: [], installmentPlans: [], accounts: [], transfers: [] })
   const [recordKind, setRecordKind] = useState<RecordKind>('delivery')
+  const [financeRegistration, setFinanceRegistration] = useState<FinanceRegistrationRequest>()
   const [deliverySelection, setDeliverySelection] = useState<DeliverySelection>({ revision: 0 })
   const [studyLogs, setStudyLogs] = useState<StudyLog[]>([])
   const [progress, setProgress] = useState<ThirtyDayProgress[]>([])
@@ -455,11 +455,11 @@ function App() {
           {tab === 'hoje' && <TodayView key={dateKey} now={now} items={todayItems} mode={mode} modeSaving={modeSaving} onMode={changeMode} states={todayStates} savingIds={savingIds} dateKey={dateKey} checkIn={todayCheckIn} safety={safety} weeklySummary={weeklySummary} todaySummary={todaySummary} onCheckIn={saveCheckIn} onToggle={toggleCompletion} onSkip={toggleSkipped} onOpen={(item) => openActivity(item, now.getDay())} />}
           {tab === 'semana' && <WeekView settings={settings} selectedDay={selectedWeekDay} onSelectedDay={setSelectedWeekDay} onOpen={openActivity} />}
           {tab === 'treinos' && <TrainingHubView trainingWeek={clampTrainingWeek(settings.trainingWeek)} mode={mode} onTrainingWeek={changeTrainingWeek} onOpenTraining={openWorkout} />}
-          {tab === 'financeiro' && <FinanceView planning={financePlanning} operations={financeOperations} today={dateKey} shifts={deliveryShifts} expenses={expenses} records={financialRecords} goals={financialGoals} budgets={categoryBudgets} onGoal={saveFinancialGoal} onBudget={saveCategoryBudget} onDeleteGoal={(id) => removeFinancialPlan("goal", id)} onDeleteBudget={(id) => removeFinancialPlan("budget", id)} onSave={saveFinancialRecord} onExpense={saveLinkedExpense} onDelivery={(id) => { setDeliverySelection((current) => ({ id, revision: current.revision + 1 })); setRecordKind('delivery'); navigateTab('registros') }} />}
+          {tab === 'financeiro' && <FinanceView planning={financePlanning} operations={financeOperations} today={dateKey} shifts={deliveryShifts} expenses={expenses} records={financialRecords} goals={financialGoals} budgets={categoryBudgets} registrationRequest={financeRegistration} onGoal={saveFinancialGoal} onBudget={saveCategoryBudget} onDeleteGoal={(id) => removeFinancialPlan("goal", id)} onDeleteBudget={(id) => removeFinancialPlan("budget", id)} onSave={saveFinancialRecord} onExpense={saveLinkedExpense} onDelivery={(id) => { setDeliverySelection((current) => ({ id, revision: current.revision + 1 })); setRecordKind('delivery'); navigateTab('registros') }} />}
           {tab === 'progresso' && <ProgressView planning={financePlanning} today={dateKey} snapshots={dailySnapshots} completions={completions} studyLogs={studyLogs} deliveryShifts={deliveryShifts} expenses={expenses} financialRecords={financialRecords} financialGoals={financialGoals} categoryBudgets={categoryBudgets} onFinance={() => navigateTab('financeiro')} progress={progress} weeklySummary={weeklySummary} onToggle={async (item) => { try { await repository.saveProgress(item); setProgress((v) => [...v.filter((p) => p.id !== item.id), item]) } catch (error) { setMessage(readableError(error, 'Não foi possível salvar o progresso.')) } }} />}
           {tab === 'ajustes' && <SettingsView settings={settings} persistence={storagePersistence} appearanceSaving={appearanceSaving} appearanceFeedback={appearanceFeedback} onAppearance={changeAppearance} onSettings={async (next) => { const synchronizedNext: AppSettings = { ...next, theme: effectiveTheme(settings.theme), appearanceVersion: 2 }; const snapshotPlan = prepareWeekSnapshots(dailySnapshots, dateKey, synchronizedNext.preferredMode, synchronizedNext, dateKey); try { await repository.saveSettingsAndDailySnapshots(synchronizedNext, snapshotPlan.changed); setSettings(synchronizedNext); setMode(synchronizedNext.preferredMode); setDailySnapshots(snapshotPlan.all); setMessage('Ajustes salvos.') } catch (error) { setMessage(readableError(error, 'Não foi possível salvar os ajustes.')) } }} onMessage={setMessage} onImported={() => window.location.reload()} onCleared={() => window.location.reload()} />}
         </>}
-        <div hidden={tab !== 'registros' || !!trainingSelection}><RecordsView accounts={financePlanning.accounts} deliverySelection={deliverySelection} kind={recordKind} onKind={setRecordKind} dateKey={dateKey} shifts={deliveryShifts} expenses={expenses} financialRecords={financialRecords} studyLogs={studyLogs} completed={todayCompleted} onToggle={toggleCompletion} onShift={saveLinkedShift} onExpense={saveLinkedExpense} onStudy={saveLinkedStudy} /></div>
+        <div hidden={tab !== 'registros' || !!trainingSelection}><RecordsView accounts={financePlanning.accounts} deliverySelection={deliverySelection} kind={recordKind} onKind={setRecordKind} onExpenseRegistration={() => { setFinanceRegistration((current) => ({ intent: 'saida', revision: (current?.revision ?? 0) + 1 })); navigateTab('financeiro') }} dateKey={dateKey} shifts={deliveryShifts} expenses={expenses} financialRecords={financialRecords} studyLogs={studyLogs} completed={todayCompleted} onToggle={toggleCompletion} onShift={saveLinkedShift} onStudy={saveLinkedStudy} /></div>
       </main>
 
       <MainMenu items={navItems} current={trainingSelection ? 'treinos' : tab} onNavigate={navigateTab} />
@@ -649,12 +649,11 @@ function WeekView({ settings, selectedDay, onSelectedDay, onOpen }: { settings: 
   </>
 }
 
-function RecordsView({ accounts, deliverySelection, kind, onKind, dateKey, shifts, expenses, financialRecords, studyLogs, completed, onToggle, onShift, onExpense, onStudy }: { accounts: readonly AssetAccount[]; deliverySelection: DeliverySelection; kind: RecordKind; onKind: (kind: RecordKind) => void; dateKey: string; shifts: DeliveryShift[]; expenses: Expense[]; financialRecords: FinancialRecord[]; studyLogs: StudyLog[]; completed: Set<string>; onToggle: (id: string) => void; onShift: (item: DeliveryShift) => Promise<boolean>; onExpense: (item: Expense) => Promise<boolean>; onStudy: (item: StudyLog) => Promise<boolean> }) {
+function RecordsView({ accounts, deliverySelection, kind, onKind, onExpenseRegistration, dateKey, shifts, expenses, financialRecords, studyLogs, completed, onToggle, onShift, onStudy }: { accounts: readonly AssetAccount[]; deliverySelection: DeliverySelection; kind: RecordKind; onKind: (kind: RecordKind) => void; onExpenseRegistration: () => void; dateKey: string; shifts: DeliveryShift[]; expenses: Expense[]; financialRecords: FinancialRecord[]; studyLogs: StudyLog[]; completed: Set<string>; onToggle: (id: string) => void; onShift: (item: DeliveryShift) => Promise<boolean>; onStudy: (item: StudyLog) => Promise<boolean> }) {
   return <>
     <PageTitle eyebrow="Acompanhar sem culpa" title="Registros" subtitle="Dados simples para entender sua rotina real." />
-    <div className="subnav" role="group" aria-label="Tipo de registro">{([['delivery', 'Delivery'], ['despesa', 'Despesas'], ['estudo', 'Estudos'], ['checklists', 'Checklists']] as [RecordKind, string][]).map(([id, label]) => <button key={id} type="button" aria-pressed={kind === id} className={kind === id ? 'active' : ''} onClick={() => onKind(id)}>{label}</button>)}</div>
+    <div className="subnav" role="group" aria-label="Tipo de registro">{([['delivery', 'Delivery'], ['despesa', 'Despesas'], ['estudo', 'Estudos'], ['checklists', 'Checklists']] as [RecordKind, string][]).map(([id, label]) => <button key={id} type="button" aria-pressed={kind === id} className={kind === id ? 'active' : ''} onClick={() => id === 'despesa' ? onExpenseRegistration() : onKind(id)}>{label}</button>)}</div>
     <div hidden={kind !== 'delivery'}><DeliveryRecord accounts={accounts} key={deliverySelection.revision} initial={shifts.find((shift) => shift.id === deliverySelection.id)} dateKey={dateKey} shifts={shifts} expenses={expenses} financialRecords={financialRecords} onSave={onShift} /></div>
-    <div hidden={kind !== 'despesa'}><ExpenseRecord accounts={accounts} dateKey={dateKey} shifts={shifts} expenses={expenses} onSave={onExpense} /></div>
     <div hidden={kind !== 'estudo'}><StudyRecord dateKey={dateKey} logs={studyLogs} onSave={onStudy} /></div>
     <div hidden={kind !== 'checklists'}><ChecklistRecord completed={completed} onToggle={onToggle} /></div>
   </>
@@ -709,12 +708,6 @@ function DeliveryRecord({ accounts, initial, dateKey, shifts, expenses, financia
     </form>
     <RecordList title="Últimos turnos" empty="Nenhum turno registrado.">{latestShifts.map((item) => { const values = deliveryFinancials(item, expenses, financialRecords, dateKey); return <div className="record-row" key={item.id}><div><strong>{new Date(`${item.localDate}T12:00`).toLocaleDateString('pt-BR')}</strong><span>{item.startTime}–{item.endTime} · {values.hours ?? '—'}h · {item.kilometers ?? '—'} km</span><span>Bruta {formatMoney(item.grossRevenue)} · despesas e reserva {formatMoney(values.expenses)}</span><span>Forma de pagamento: {paymentMethodLabel(item.paymentMethod)}</span><span>Líquida estimada {formatMoney(values.net)} · {formatMoney(values.perHour)}/h</span><button type="button" className="text-button" onClick={() => edit(item)}>Editar turno</button></div><strong>{formatMoney(values.net)}</strong></div> })}</RecordList>
   </div>
-}
-
-function ExpenseRecord({ accounts, dateKey, shifts, expenses, onSave }: { accounts: readonly AssetAccount[]; dateKey: string; shifts: DeliveryShift[]; expenses: Expense[]; onSave: (item: Expense) => Promise<boolean> }) {
-  const [editing, setEditing] = useState<Expense | undefined>()
-  const latestExpenses = useMemo(() => recentRecords(expenses, 10), [expenses])
-  return <div className="records-layout"><ExpenseForm accounts={accounts} key={editing?.id ?? dateKey} today={dateKey} shifts={shifts} initial={editing} onSave={onSave} onCancel={() => setEditing(undefined)} /><RecordList title="Despesas recentes" empty="Nenhuma despesa registrada.">{latestExpenses.map((item) => <div className="record-row" key={item.id}><div><strong>{item.description}</strong><span>{item.category} · {new Date(`${item.localDate}T12:00`).toLocaleDateString('pt-BR')}{item.deliveryShiftId ? ' · Delivery' : ''}</span><span>Forma de pagamento: {paymentMethodLabel(item.paymentMethod)}</span><button type="button" className="text-button" onClick={() => setEditing(item)}>Editar despesa</button></div><strong>{formatMoney(item.amount)}</strong></div>)}</RecordList></div>
 }
 
 function StudyRecord({ dateKey, logs, onSave }: { dateKey: string; logs: StudyLog[]; onSave: (item: StudyLog) => Promise<boolean> }) {

@@ -3,7 +3,17 @@ import { expect, goToTab, openAppOnTuesday, openStoragePage, test } from './fixt
 import type { Page } from '@playwright/test'
 
 const today = '2026-09-22'
-async function tool(page: Page, name: string) { await page.getByRole('group', { name: 'Ferramentas financeiras' }).getByRole('button', { name, exact: true }).click() }
+async function financeArea(page: Page, name: 'Visão geral' | 'Planejamento' | 'Patrimônio' | 'Ferramentas') {
+  await page.getByRole('navigation', { name: 'Áreas do Financeiro' }).getByRole('button', { name, exact: true }).click()
+}
+async function tool(page: Page, name: string) {
+  if (name === 'Recorrências e parcelas') await financeArea(page, 'Planejamento')
+  else if (name === 'Patrimônio') await financeArea(page, 'Patrimônio')
+  else {
+    await financeArea(page, 'Ferramentas')
+    await page.getByRole('group', { name: 'Ferramentas financeiras' }).getByRole('button', { name, exact: true }).click()
+  }
+}
 async function addAccount(page: Page, name: string, balance: string, kind = 'bank') {
   await tool(page, 'Patrimônio')
   await page.getByRole('button', { name: 'Cadastrar conta ou dívida', exact: true }).click()
@@ -53,9 +63,12 @@ for (const theme of ['light', 'dark'] as const) test(`recorrências, parcelas, p
   await addAccount(page, 'Dívida original', '30000', 'liability')
   await expect(page.getByRole('region', { name: 'Patrimônio financeiro' })).toContainText('700,00')
   await recurrence(page, 'Renda mensal', 'entrada', '10000', 'Conta principal')
+  await financeArea(page, 'Visão geral')
   const summary = page.getByRole('region', { name: 'Resumo financeiro', exact: true })
   await expect(summary).toContainText('Sem dados')
+  await financeArea(page, 'Planejamento')
   await confirm(page, 'Renda mensal', true)
+  await financeArea(page, 'Visão geral')
   await expect(summary).toContainText('100,00')
   await recurrence(page, 'Conta fixa', 'saida', '5000', 'Conta principal')
   await confirm(page, 'Conta fixa')
@@ -70,6 +83,7 @@ for (const theme of ['light', 'dark'] as const) test(`recorrências, parcelas, p
   await installment.getByRole('button', { name: 'Salvar planejamento', exact: true }).click()
   await confirm(page, 'Compra parcelada parcela 1')
   await expect(page.getByRole('region', { name: 'Parcelamentos cadastrados' })).toContainText('1 paga(s) · 2 restante(s) · saldo restante R$ 66,66')
+  await financeArea(page, 'Visão geral')
   await expect(summary).toContainText('16,66')
   await tool(page, 'Patrimônio')
   const wealth = page.getByRole('region', { name: 'Patrimônio financeiro' })
@@ -83,6 +97,7 @@ for (const theme of ['light', 'dark'] as const) test(`recorrências, parcelas, p
   await transfer.getByLabel('Valor da transferência (R$)', { exact: true }).fill('10000')
   await transfer.getByRole('button', { name: 'Salvar transferência', exact: true }).click()
   await expect(wealth).toContainText('916,66')
+  await financeArea(page, 'Visão geral')
   await expect(summary).toContainText('16,66')
   await tool(page, 'Fechamento mensal')
   const closing = page.getByRole('region', { name: 'Fechamento mensal', exact: true })
@@ -98,6 +113,7 @@ for (const theme of ['light', 'dark'] as const) test(`recorrências, parcelas, p
   await simulator.getByLabel('Aumento de renda (R$)', { exact: true }).fill('10000')
   await simulator.getByLabel('Compra simulada (R$)', { exact: true }).fill('5000')
   await expect(simulator).toContainText('66,66')
+  await financeArea(page, 'Visão geral')
   await expect(summary).toContainText('16,66')
   await tool(page, 'Exportações')
   for (const [label, extension, header] of [['CSV', 'csv', '\uFEFF'], ['Excel', 'xlsx', 'PK'], ['PDF', 'pdf', '%PDF-1.4']] as const) {
@@ -127,6 +143,7 @@ for (const theme of ['light', 'dark'] as const) test(`recorrências, parcelas, p
   await page.reload()
   await goToTab(page, 'Financeiro')
   await expect(summary).toContainText('16,66')
+  await financeArea(page, 'Planejamento')
   await expect(page.getByRole('region', { name: 'Parcelamentos cadastrados' })).toContainText('66,66')
   await tool(page, 'Patrimônio')
   await expect(wealth).toContainText('750,00')
@@ -141,16 +158,19 @@ test('recorrências de crédito e pendência mantêm identidade após baixas e p
   await recurrence(page, 'Pendência recorrente', 'pendencia', '3000')
   await confirm(page, 'Crédito recorrente')
   await confirm(page, 'Pendência recorrente')
+  await financeArea(page, 'Visão geral')
   const history = page.getByRole('region', { name: 'Histórico financeiro' })
   await history.getByRole('button', { name: 'Receber', exact: true }).click()
   await history.getByRole('button', { name: 'Pagar', exact: true }).click()
   await expect(page.getByRole('region', { name: 'Resumo financeiro', exact: true })).toContainText('70,00')
+  await financeArea(page, 'Planejamento')
   await page.getByRole('button', { name: 'Pausar Crédito recorrente', exact: true }).click()
   await expect(page.getByRole('region', { name: 'Recorrências cadastradas' })).toContainText('Pausada')
   const data = await backup(page)
   expect(data.financialRecords).toHaveLength(2)
   expect(data.financialRecords.every((r: { planningRef?: unknown }) => !!r.planningRef)).toBe(true)
   await goToTab(page, 'Financeiro')
+  await financeArea(page, 'Planejamento')
   await page.getByRole('button', { name: 'Retomar Crédito recorrente', exact: true }).click()
   await expect(page.getByRole('region', { name: 'Ocorrências do período' }).getByRole('button', { name: /Confirmar Crédito/ })).toHaveCount(0)
 })
@@ -215,12 +235,14 @@ for (const theme of ['light', 'dark'] as const) test(`visão anual de gastos rec
 
   await page.reload()
   await goToTab(page, 'Financeiro')
+  await financeArea(page, 'Planejamento')
   await expect(page.getByRole('region', { name: 'Gastos recorrentes do ano' })).toContainText('R$ 50,00')
   await page.evaluate(async () => navigator.serviceWorker.ready)
   await expect.poll(() => page.evaluate(() => !!navigator.serviceWorker.controller)).toBe(true)
   await context.setOffline(true)
   await page.reload()
   await goToTab(page, 'Financeiro')
+  await financeArea(page, 'Planejamento')
   await expect(page.getByRole('region', { name: 'Gastos recorrentes do ano' })).toContainText('Conta anual')
 })
 
