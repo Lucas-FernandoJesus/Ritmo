@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { defaultSettings, isValidAssetAccount, isValidInstallmentPlan, isValidRecurringPlan, validateBackup } from '../../core/domain'
-import { accountBalances, calculateScenario, createOccurrenceRecord, financeSyncSnapshot, installmentAmounts, installmentProgress, planOccurrences, plannedMovements } from './finance-plans'
+import { accountBalances, buildRecurringAnnualOverview, calculateScenario, createOccurrenceRecord, financeSyncSnapshot, installmentAmounts, installmentProgress, planOccurrences, plannedMovements } from './finance-plans'
 import { buildMonthlyClosing } from './finance-closing'
 import { buildFinancialMovements, summarizeFinance } from './finance'
 import { calculateProjectedBalance } from './finance-analysis'
@@ -71,6 +71,89 @@ describe('planejamento recorrente e parcelas', () => {
     const rows = buildFinancialMovements({ ...sources, records: [record()], recurringPlans: [{ ...recurrence, startDate: '2026-09-20' }], installmentPlans: [] })
     expect(summarizeFinance(rows).balance).toBe(100)
     expect(calculateProjectedBalance(rows, sources.today, 7).projected).toBe(0)
+  })
+})
+
+describe('gastos recorrentes do ano', () => {
+  it('distribui uma recorrência mensal pelos 12 meses do ano civil', () => {
+    const overview = buildRecurringAnnualOverview([recurrence], [], 2026, '2026-09-22')
+    expect(overview.months).toHaveLength(12)
+    expect(overview.months.map(month => month.occurrenceCount)).toEqual(Array(12).fill(1))
+    expect(overview.months.map(month => month.planned)).toEqual(Array(12).fill(100))
+    expect(overview.planned).toBe(1200)
+    expect(overview.realized).toBe(0)
+    expect(overview.open).toBe(1200)
+  })
+
+  it('usa as datas civis reais nas recorrências semanais', () => {
+    const weekly = { ...recurrence, amount: 10, frequency: 'weekly' as const, startDate: '2026-01-01' }
+    const overview = buildRecurringAnnualOverview([weekly], [], 2026, '2026-09-22')
+    expect(overview.months[0].occurrenceCount).toBe(5)
+    expect(overview.months[1].occurrenceCount).toBe(4)
+    expect(overview.months[0].planned).toBe(50)
+    expect(overview.months[1].planned).toBe(40)
+  })
+
+  it('respeita início e término no meio do ano e identifica meses vazios', () => {
+    const bounded = { ...recurrence, startDate: '2026-04-15', endDate: '2026-06-15' }
+    const overview = buildRecurringAnnualOverview([bounded], [], 2026, '2026-09-22')
+    expect(overview.months.map(month => month.occurrenceCount)).toEqual([0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0])
+    expect(overview.months[0].state).toBe('sem-compromissos')
+  })
+
+  it('separa planejado, realizado, aberto e vencido sem realizar valores futuros', () => {
+    const plans: RecurringPlan[] = [
+      { ...recurrence, id: 'late', frequency: 'yearly', startDate: '2026-09-20' },
+      { ...recurrence, id: 'open', type: 'pendencia', frequency: 'yearly', startDate: '2026-09-30' },
+      { ...recurrence, id: 'paid', frequency: 'yearly', startDate: '2026-09-22' },
+      { ...recurrence, id: 'future', frequency: 'yearly', startDate: '2026-10-22' },
+    ]
+    const generated = planOccurrences(plans, [], [], { start: '2026-01-01', end: '2026-12-31' })
+    const paid = createOccurrenceRecord(generated.find(item => item.ref.planId === 'paid')!, '2026-09-22', stamp)
+    const open = createOccurrenceRecord(generated.find(item => item.ref.planId === 'open')!, '2026-09-22', stamp)
+    const overview = buildRecurringAnnualOverview(plans, [paid, open], 2026, '2026-09-22')
+    expect(overview.planned).toBe(400)
+    expect(overview.realized).toBe(100)
+    expect(overview.open).toBe(300)
+    expect(overview.months.flatMap(month => month.occurrences).map(item => item.state).sort()).toEqual(['aberto', 'planejado', 'realizado', 'vencido'])
+  })
+
+  it('reconcilia por planningRef sem duplicar a ocorrência', () => {
+    const january = planOccurrences([recurrence], [], [], { start: '2026-01-01', end: '2026-01-31' })[0]
+    const paid = createOccurrenceRecord(january, '2026-01-31', stamp)
+    const overview = buildRecurringAnnualOverview([recurrence], [paid], 2026, '2026-09-22')
+    expect(overview.months[0].occurrenceCount).toBe(1)
+    expect(overview.months[0].occurrences[0].record?.id).toBe(paid.id)
+  })
+
+  it('herda a forma de pagamento ao confirmar uma despesa recorrente', () => {
+    const plan = { ...recurrence, paymentMethod: 'credito' as const }
+    const occurrence = planOccurrences([plan], [], [], { start: '2026-01-01', end: '2026-01-31' })[0]
+    expect(createOccurrenceRecord(occurrence, occurrence.dueDate, stamp).paymentMethod).toBe('credito')
+  })
+
+  it('aceita recorrência legada sem forma de pagamento e rejeita forma de despesa em entradas', () => {
+    expect(isValidRecurringPlan(recurrence)).toBe(true)
+    expect(isValidRecurringPlan({ ...recurrence, paymentMethod: 'debito' })).toBe(true)
+    expect(isValidRecurringPlan({ ...recurrence, type: 'entrada', paymentMethod: 'debito' })).toBe(false)
+  })
+
+  it('preserva o valor e a forma históricos após edição do plano', () => {
+    const original = { ...recurrence, paymentMethod: 'credito' as const }
+    const january = planOccurrences([original], [], [], { start: '2026-01-01', end: '2026-01-31' })[0]
+    const paid = createOccurrenceRecord(january, january.dueDate, stamp)
+    const edited = { ...original, amount: 999, paymentMethod: 'alimentacao' as const }
+    const overview = buildRecurringAnnualOverview([edited], [paid], 2026, '2026-09-22')
+    expect(overview.months[0].occurrences[0]).toMatchObject({ amount: 100, paymentMethod: 'credito', state: 'realizado' })
+    expect(overview.months[1].occurrences[0]).toMatchObject({ amount: 999, paymentMethod: 'alimentacao', state: 'vencido' })
+  })
+
+  it('em plano pausado mantém somente ocorrências confirmadas, sem inventar histórico', () => {
+    const january = planOccurrences([recurrence], [], [], { start: '2026-01-01', end: '2026-01-31' })[0]
+    const paid = createOccurrenceRecord(january, january.dueDate, stamp)
+    const overview = buildRecurringAnnualOverview([{ ...recurrence, active: false }], [paid], 2026, '2026-09-22')
+    expect(overview.months[0].occurrenceCount).toBe(1)
+    expect(overview.months.slice(1).every(month => month.occurrenceCount === 0)).toBe(true)
   })
 })
 

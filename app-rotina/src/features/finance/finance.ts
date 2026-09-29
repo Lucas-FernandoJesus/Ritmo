@@ -1,7 +1,7 @@
 import { localDateKey, shiftDuration, weekBounds } from '../../core/domain'
 import { moneyRatio, subtractMoney, sumMoney } from '../../core/money'
 import { planOccurrences, plannedMovements } from './finance-plans'
-import type { DeliveryCostKind, DeliveryShift, Expense, FinancialRecord, FinancialType, InstallmentPlan, RecurringPlan } from '../../core/types'
+import type { DeliveryCostKind, DeliveryShift, Expense, FinancialRecord, FinancialType, InstallmentPlan, PaymentMethod, RecurringPlan } from '../../core/types'
 
 export const financialTypeLabels: Record<FinancialType, string> = { entrada: 'Entrada', saida: 'Saída', credito: 'Crédito', pendencia: 'Pendência' }
 export type FinancialStatus = 'realizado' | 'aberto' | 'previsto' | 'reservado' | 'planejado'
@@ -22,6 +22,7 @@ export interface FinancialMovement {
   deliveryCostKind?: DeliveryCostKind
   note?: string
   accountId?: string
+  paymentMethod?: PaymentMethod
 }
 
 export interface FinanceSources {
@@ -65,7 +66,7 @@ export function buildFinancialMovements({ shifts, expenses, records, today, recu
   const rows: FinancialMovement[] = []
   for (const shift of shifts) {
     const base = { sourceId: shift.id, source: 'delivery' as const, origin: 'Delivery' as const, localDate: shift.localDate, deliveryShiftId: shift.id, accountId: shift.accountId, note: shift.note }
-    rows.push({ ...base, id: `delivery:${shift.id}:grossRevenue`, description: `Receita do turno ${shift.startTime}–${shift.endTime}`, category: 'Delivery', type: 'entrada', amount: shift.grossRevenue, status: realizedStatus(shift.localDate, today) })
+    rows.push({ ...base, id: `delivery:${shift.id}:grossRevenue`, description: `Receita do turno ${shift.startTime}–${shift.endTime}`, category: 'Delivery', type: 'entrada', amount: shift.grossRevenue, status: realizedStatus(shift.localDate, today), paymentMethod: shift.paymentMethod })
     for (const [key, description, category] of [['fuelCost', 'Combustível do turno', 'Transporte'], ['otherExpenses', 'Outras despesas do turno', 'Outros'], ['maintenanceReserve', 'Reserva de manutenção', 'Transporte']] as const) {
       const reserved = key === 'maintenanceReserve'
       rows.push({ ...base, id: `delivery:${shift.id}:${key}`, description, category, deliveryCostKind: key === 'fuelCost' ? 'combustivel' : key === 'otherExpenses' ? 'outros' : undefined, type: reserved ? 'pendencia' : 'saida', amount: shift[key], status: reserved && shift.localDate <= today ? 'reservado' : realizedStatus(shift.localDate, today) })

@@ -14,19 +14,23 @@ async function addAccount(page: Page, name: string, balance: string, kind = 'ban
   await form.getByRole('button', { name: 'Salvar conta', exact: true }).click()
   await expect(form).not.toBeVisible()
 }
-async function recurrence(page: Page, name: string, type: string, amount: string, account = '') {
+async function recurrence(page: Page, name: string, type: string, amount: string, account = '', paymentMethod = '') {
   await tool(page, 'Recorrências e parcelas')
   await page.getByRole('button', { name: 'Criar recorrência', exact: true }).click()
   const form = page.getByRole('form', { name: 'Planejamento recorrente' })
   await form.getByLabel('Nome do planejamento', { exact: true }).fill(name)
   await form.getByLabel('Tipo da recorrência', { exact: true }).selectOption(type)
   await form.getByLabel('Valor recorrente (R$)', { exact: true }).fill(amount)
+  if (type === 'saida' || type === 'pendencia') {
+    expect(await form.getByLabel('Forma de pagamento', { exact: true }).locator('option:not([hidden])').allTextContents()).toEqual(['Cartão de crédito', 'Débito', 'Alimentação'])
+    if (paymentMethod) await form.getByLabel('Forma de pagamento', { exact: true }).selectOption(paymentMethod)
+  } else await expect(form.getByLabel('Forma de pagamento', { exact: true })).toHaveCount(0)
   if (account) await form.getByLabel('Conta prevista', { exact: true }).selectOption({ label: account })
   await form.getByRole('button', { name: 'Salvar planejamento', exact: true }).click()
   await expect(form).not.toBeVisible()
 }
 async function confirm(page: Page, name: string, double = false) {
-  await page.getByRole('button', { name: `Confirmar ${name} ${today}`, exact: true }).click()
+  await page.getByRole('region', { name: 'Ocorrências do período' }).getByRole('button', { name: `Confirmar ${name} ${today}`, exact: true }).click()
   const form = page.getByRole('form', { name: 'Confirmar ocorrência' })
   if (double) await form.evaluate(element => { element.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })); element.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })) })
   else await form.getByRole('button', { name: /Confirmar recebimento\/pagamento|Confirmar valor em aberto/ }).click()
@@ -149,6 +153,75 @@ test('recorrências de crédito e pendência mantêm identidade após baixas e p
   await goToTab(page, 'Financeiro')
   await page.getByRole('button', { name: 'Retomar Crédito recorrente', exact: true }).click()
   await expect(page.getByRole('region', { name: 'Ocorrências do período' }).getByRole('button', { name: /Confirmar Crédito/ })).toHaveCount(0)
+})
+
+for (const theme of ['light', 'dark'] as const) test(`visão anual de gastos recorrentes no tema ${theme}, responsiva, acessível e offline`, async ({ page, context }, testInfo) => {
+  await openAppOnTuesday(page)
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await goToTab(page, 'Ajustes')
+  await page.getByRole('button', { name: theme === 'light' ? 'Claro' : 'Escuro', exact: true }).click()
+  await goToTab(page, 'Financeiro')
+  await recurrence(page, 'Conta anual', 'saida', '5000', '', 'credito')
+
+  const annual = page.getByRole('region', { name: 'Gastos recorrentes do ano' })
+  await expect(annual).toContainText('Total anual planejado')
+  await expect(annual).toContainText('R$ 200,00')
+  await expect(annual.getByRole('button', { name: /^Janeiro de 2026/ })).toContainText('Sem compromissos')
+  await expect(annual.locator('.recurring-year-month')).toHaveCount(12)
+
+  const september = annual.getByRole('button', { name: /^Setembro de 2026/ })
+  await september.focus()
+  await expect(september).toBeFocused()
+  await september.press('Enter')
+  const details = annual.getByRole('region', { name: 'Ocorrências de Setembro de 2026' })
+  await expect(details).toContainText('Conta anual')
+  await expect(details).toContainText('Cartão de crédito')
+  await expect(details).toContainText('Planejado')
+  await details.getByRole('button', { name: 'Confirmar Conta anual 2026-09-22', exact: true }).click()
+  await page.getByRole('form', { name: 'Confirmar ocorrência' }).getByRole('button', { name: 'Confirmar recebimento/pagamento', exact: true }).click()
+  await expect(details).toContainText('Realizado')
+  await expect(annual).toContainText('Total anual realizado')
+  await expect(annual).toContainText('R$ 50,00')
+  const storedPayment = await page.evaluate(async () => new Promise<string | undefined>((resolve, reject) => {
+    const request = indexedDB.open('rotina-local')
+    request.onerror = () => reject(request.error)
+    request.onsuccess = () => {
+      const db = request.result, tx = db.transaction('financialRecords', 'readonly'), rows = tx.objectStore('financialRecords').getAll()
+      tx.oncomplete = () => { resolve(rows.result.find((row: { description: string }) => row.description === 'Conta anual')?.paymentMethod); db.close() }
+      tx.onerror = () => reject(tx.error)
+    }
+  }))
+  expect(storedPayment).toBe('credito')
+
+  await annual.getByRole('button', { name: 'Ano anterior', exact: true }).click()
+  await expect(annual.getByLabel('Ano civil', { exact: true })).toHaveValue('2025')
+  await annual.getByRole('button', { name: 'Ano seguinte', exact: true }).click()
+  await expect(annual.getByLabel('Ano civil', { exact: true })).toHaveValue('2026')
+
+  for (const width of [320, 390, 768, 1440]) {
+    await page.setViewportSize({ width, height: width === 768 ? 560 : 844 })
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+    const targets = await annual.locator('button').evaluateAll(elements => elements.map(element => ({ width: element.getBoundingClientRect().width, height: element.getBoundingClientRect().height })))
+    expect(targets.every(target => target.width >= 44 && target.height >= 44)).toBe(true)
+    if (width === 390 || width === 1440) await page.screenshot({ path: testInfo.outputPath(`gastos-recorrentes-${theme}-${width}.png`), fullPage: true })
+  }
+  const contrasts = await annual.locator('.recurring-year-month, .recurring-year-totals article, .recurring-year-details').evaluateAll(elements => elements.map(element => {
+    const color = getComputedStyle(element).color, background = getComputedStyle(element).backgroundColor
+    const luminance = (text: string) => text.match(/[\d.]+/g)!.slice(0, 3).map(Number).map(channel => channel / 255).map(channel => channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4).reduce((sum, channel, index) => sum + channel * [0.2126, 0.7152, 0.0722][index], 0)
+    const a = luminance(color), b = luminance(background)
+    return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05)
+  }))
+  expect(contrasts.every(contrast => contrast >= 4.5)).toBe(true)
+
+  await page.reload()
+  await goToTab(page, 'Financeiro')
+  await expect(page.getByRole('region', { name: 'Gastos recorrentes do ano' })).toContainText('R$ 50,00')
+  await page.evaluate(async () => navigator.serviceWorker.ready)
+  await expect.poll(() => page.evaluate(() => !!navigator.serviceWorker.controller)).toBe(true)
+  await context.setOffline(true)
+  await page.reload()
+  await goToTab(page, 'Financeiro')
+  await expect(page.getByRole('region', { name: 'Gastos recorrentes do ano' })).toContainText('Conta anual')
 })
 
 test('migração 4 para 5 preserva dados e backup antigo restaura novas coleções vazias', async ({ page }) => {

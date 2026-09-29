@@ -2,7 +2,7 @@ import { isLocalDate, isValidInstallmentPlan, isValidRecurringPlan } from '../..
 import { anchoredMonth, occurrenceId, recurringDate } from '../../core/finance-schedule'
 import { moneyRatio, subtractMoney, sumMoney } from '../../core/money'
 import type { FinancialMovement } from './finance'
-import type { AccountTransfer, AssetAccount, AssetKind, DeliveryShift, Expense, FinancialRecord, InstallmentPlan, PlanningReference, RecurringPlan } from '../../core/types'
+import type { AccountTransfer, AssetAccount, AssetKind, DeliveryShift, Expense, FinancialRecord, InstallmentPlan, PaymentMethod, PlanningReference, RecurringPlan } from '../../core/types'
 
 export const frequencyLabels = { weekly: 'Semanal', monthly: 'Mensal', yearly: 'Anual' }
 export const assetKindLabels: Record<AssetKind, string> = { cash: 'Dinheiro', bank: 'Conta', savings: 'Poupança', reserve: 'Reserva financeira', investment: 'Investimento', liability: 'Dívida / passivo' }
@@ -15,6 +15,7 @@ export interface PlanOccurrence {
   category: FinancialRecord['category']
   amount: number
   accountId?: string
+  paymentMethod?: PaymentMethod
   liabilityAccountId?: string
   record?: FinancialRecord
 }
@@ -33,7 +34,7 @@ export function planOccurrences(recurring: readonly RecurringPlan[], installment
   function append(ref: PlanningReference, plan: RecurringPlan | InstallmentPlan, amount: number, type: FinancialRecord['type']) {
     if (ref.dueDate < interval.start || ref.dueDate > interval.end) return
     const id = occurrenceId(ref)
-    result.push({ id, ref, dueDate: ref.dueDate, name: plan.name, amount, type, category: plan.category, accountId: plan.accountId, liabilityAccountId: plan.liabilityAccountId, record: byId.get(id) })
+    result.push({ id, ref, dueDate: ref.dueDate, name: plan.name, amount, type, category: plan.category, accountId: plan.accountId, paymentMethod: 'paymentMethod' in plan ? plan.paymentMethod : undefined, liabilityAccountId: plan.liabilityAccountId, record: byId.get(id) })
   }
   for (const plan of recurring) {
     if (!plan.active || !isValidRecurringPlan(plan)) continue
@@ -60,7 +61,79 @@ export function createOccurrenceRecord(occurrence: PlanOccurrence, date: string,
   if (!isLocalDate(date)) throw new Error('Data de confirmação inválida.')
   return { id: occurrence.id, planningRef: occurrence.ref, localDate: occurrence.type === 'credito' || occurrence.type === 'pendencia' ? occurrence.dueDate : date,
     description: occurrence.ref.kind === 'installment' ? `${occurrence.name} · parcela ${occurrence.ref.key}` : occurrence.name,
-    category: occurrence.category, type: occurrence.type, amount: occurrence.amount, accountId: occurrence.accountId, liabilityAccountId: occurrence.liabilityAccountId, createdAt: timestamp, updatedAt: timestamp }
+    category: occurrence.category, type: occurrence.type, amount: occurrence.amount, accountId: occurrence.accountId, paymentMethod: occurrence.paymentMethod, liabilityAccountId: occurrence.liabilityAccountId, createdAt: timestamp, updatedAt: timestamp }
+}
+
+export type RecurringAnnualState = 'planejado' | 'realizado' | 'aberto' | 'vencido'
+export interface RecurringAnnualOccurrence extends PlanOccurrence {
+  state: RecurringAnnualState
+  paymentMethod?: PaymentMethod
+}
+export interface RecurringAnnualMonth {
+  month: number
+  key: string
+  planned: number
+  realized: number
+  open: number
+  occurrenceCount: number
+  state: 'sem-compromissos' | 'planejado' | 'realizado' | 'em-aberto' | 'vencido'
+  occurrences: RecurringAnnualOccurrence[]
+}
+
+function annualOccurrence(occurrence: PlanOccurrence, today: string): RecurringAnnualOccurrence {
+  const record = occurrence.record
+  const realized = !!record && record.type === 'saida' && record.localDate <= today
+  const state: RecurringAnnualState = realized ? 'realizado'
+    : occurrence.dueDate < today ? 'vencido'
+      : record?.type === 'pendencia' ? 'aberto' : 'planejado'
+  return {
+    ...occurrence,
+    name: record?.description ?? occurrence.name,
+    category: record?.category ?? occurrence.category,
+    amount: record?.amount ?? occurrence.amount,
+    paymentMethod: record?.paymentMethod ?? occurrence.paymentMethod,
+    state,
+  }
+}
+
+export function buildRecurringAnnualOverview(recurringPlans: readonly RecurringPlan[], records: readonly FinancialRecord[], year: number, today: string) {
+  const start = `${year}-01-01`, end = `${year}-12-31`
+  if (!Number.isInteger(year) || year < 1000 || year > 9999 || !isLocalDate(today)) return { year, planned: 0, realized: 0, open: 0, months: [] as RecurringAnnualMonth[] }
+  const relevantPlans = recurringPlans.filter(plan => plan.type === 'saida' || plan.type === 'pendencia')
+  const planById = new Map(relevantPlans.map(plan => [plan.id, plan]))
+  const generated = planOccurrences(relevantPlans, [], records, { start, end })
+  const byId = new Map(generated.map(occurrence => [occurrence.id, occurrence]))
+
+  // Um plano pausado não permite reconstruir projeções passadas. Mantemos somente fatos já confirmados.
+  for (const record of records) {
+    const ref = record.planningRef
+    if (!ref || ref.kind !== 'recurring' || ref.dueDate < start || ref.dueDate > end || byId.has(record.id)) continue
+    const plan = planById.get(ref.planId)
+    if (!plan || (record.type !== 'saida' && record.type !== 'pendencia')) continue
+    byId.set(record.id, {
+      id: record.id, ref, dueDate: ref.dueDate, name: record.description, type: record.type, category: record.category,
+      amount: record.amount, accountId: record.accountId, paymentMethod: record.paymentMethod,
+      liabilityAccountId: record.liabilityAccountId, record,
+    })
+  }
+
+  const occurrences = [...byId.values()].map(occurrence => annualOccurrence(occurrence, today))
+    .sort((a, b) => a.dueDate.localeCompare(b.dueDate) || a.id.localeCompare(b.id))
+  const months: RecurringAnnualMonth[] = Array.from({ length: 12 }, (_, month) => {
+    const key = `${year}-${String(month + 1).padStart(2, '0')}`
+    const items = occurrences.filter(occurrence => occurrence.dueDate.startsWith(key))
+    const planned = sumMoney(items.map(item => item.amount)) ?? 0
+    const realized = sumMoney(items.filter(item => item.state === 'realizado').map(item => item.amount)) ?? 0
+    const open = subtractMoney(planned, realized) ?? 0
+    const state: RecurringAnnualMonth['state'] = !items.length ? 'sem-compromissos'
+      : items.some(item => item.state === 'vencido') ? 'vencido'
+        : items.every(item => item.state === 'realizado') ? 'realizado'
+          : items.some(item => item.state === 'aberto') ? 'em-aberto' : 'planejado'
+    return { month, key, planned, realized, open, occurrenceCount: items.length, state, occurrences: items }
+  })
+  const planned = sumMoney(months.map(month => month.planned)) ?? 0
+  const realized = sumMoney(months.map(month => month.realized)) ?? 0
+  return { year, planned, realized, open: subtractMoney(planned, realized) ?? 0, months }
 }
 
 export function plannedMovements(occurrences: readonly PlanOccurrence[]): FinancialMovement[] {

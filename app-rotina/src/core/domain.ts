@@ -1,4 +1,4 @@
-import type { AccountTransfer, AppSettings, AssetAccount, BackupData, CategoryBudget, DailyCheckIn, DailyCompletion, DailyPlanSnapshot, DailyProgressSummary, DeliveryShift, Expense, FinancialGoal, FinancialRecord, InstallmentPlan, RecurringPlan, RoutineItem, RoutineMode, StudyLog, ThirtyDayProgress, WeeklyProgressSummary } from './types'
+import type { AccountTransfer, AppSettings, AssetAccount, BackupData, CategoryBudget, DailyCheckIn, DailyCompletion, DailyPlanSnapshot, DailyProgressSummary, DeliveryShift, Expense, FinancialGoal, FinancialRecord, InstallmentPlan, PaymentMethod, RecurringPlan, RoutineItem, RoutineMode, StudyLog, ThirtyDayProgress, WeeklyProgressSummary } from './types'
 import { anchoredMonth, occurrenceId, recurringDate } from './finance-schedule'
 
 export const SCHEMA_VERSION = 1
@@ -8,6 +8,8 @@ const MAX_RECORDS_PER_STORE = 50_000
 const routineModes: RoutineMode[] = ['normal', 'reduzido', 'minimo']
 const expenseCategories = ['Moradia', 'Alimentação', 'Transporte', 'Saúde', 'Lazer', 'Desenvolvimento', 'Outros'] as const
 const deliveryCostKinds = ['combustivel', 'manutencao', 'alimentacao', 'taxas', 'outros'] as const
+export const paymentMethods = ['credito', 'debito', 'alimentacao'] as const satisfies readonly PaymentMethod[]
+export const paymentMethodLabels: Record<PaymentMethod, string> = { credito: 'Cartão de crédito', debito: 'Débito', alimentacao: 'Alimentação' }
 const financialGoalTypes = ['income', 'net-income', 'delivery-income', 'delivery-net', 'savings', 'expense-limit'] as const
 const studyAreas = ['Inglês', 'Programação', 'Leitura', 'Outro'] as const
 const armConditions = ['habitual', 'alterado', 'dor'] as const
@@ -351,7 +353,8 @@ export function isValidDeliveryShift(value: unknown): value is DeliveryShift {
     || (value.armCondition !== null && !isOneOf(value.armCondition, armConditions))
     || !isOptionalString(value.note)
     || !isDateTime(value.createdAt)
-    || (value.accountId !== undefined && !isSafeId(value.accountId))) return false
+    || (value.accountId !== undefined && !isSafeId(value.accountId))
+    || (value.paymentMethod !== undefined && !isOneOf(value.paymentMethod, paymentMethods))) return false
 
   const calculated = calculateDelivery(value as unknown as DeliveryShift)
   return sameCalculatedValue(value.estimatedResult as number | null, calculated.estimatedResult)
@@ -372,6 +375,7 @@ export function isValidExpense(value: unknown): value is Expense {
     && (value.deliveryCostKind === undefined || (isSafeId(value.deliveryShiftId) && isOneOf(value.deliveryCostKind, deliveryCostKinds)))
     && isOptionalString(value.note)
     && (value.accountId === undefined || isSafeId(value.accountId))
+    && (value.paymentMethod === undefined || isOneOf(value.paymentMethod, paymentMethods))
 }
 
 export function isValidFinancialRecord(value: unknown): value is FinancialRecord {
@@ -389,6 +393,7 @@ export function isValidFinancialRecord(value: unknown): value is FinancialRecord
     && isDateTime(value.createdAt)
     && (value.updatedAt === undefined || isDateTime(value.updatedAt))
     && (value.accountId === undefined || isSafeId(value.accountId))
+    && (value.paymentMethod === undefined || isOneOf(value.paymentMethod, paymentMethods))
     && (value.liabilityAccountId === undefined || (isSafeId(value.liabilityAccountId) && (value.type === 'saida' || value.type === 'pendencia')))
     && (value.planningRef === undefined || (isObject(value.planningRef)
       && isOneOf(value.planningRef.kind, ['recurring', 'installment'] as const)
@@ -414,6 +419,7 @@ export function isValidRecurringPlan(value: unknown): value is RecurringPlan {
     && isMoneyAmount(value.amount, true) && isOneOf(value.frequency, ['weekly', 'monthly', 'yearly'] as const)
     && isLocalDate(value.startDate) && (value.endDate === undefined || (isLocalDate(value.endDate) && value.endDate >= value.startDate))
     && typeof value.active === 'boolean' && validPlanAccounts(value)
+    && (value.paymentMethod === undefined || ((value.type === 'saida' || value.type === 'pendencia') && isOneOf(value.paymentMethod, paymentMethods)))
 }
 export function isValidInstallmentPlan(value: unknown): value is InstallmentPlan {
   return isObject(value) && isFinancialEntity(value) && isNonEmptyString(value.name, 200) && isOneOf(value.category, expenseCategories)
@@ -566,4 +572,8 @@ export function validateBackup(value: unknown): value is BackupData {
 
 export function formatMoney(value: number | null): string {
   return value == null || !Number.isFinite(value) ? '—' : value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+}
+
+export function paymentMethodLabel(value?: PaymentMethod): string {
+  return value ? paymentMethodLabels[value] : 'Sem informação'
 }

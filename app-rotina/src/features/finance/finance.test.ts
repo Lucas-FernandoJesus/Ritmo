@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { buildFinancialMovements, filterFinancialMovements, financialPeriod, summarizeFinance, deliveryFinancials, settleFinancialRecord } from './finance'
-import { shiftDuration, isValidFinancialRecord, validateBackup, defaultSettings } from '../../core/domain'
+import { shiftDuration, isValidDeliveryShift, isValidExpense, isValidFinancialRecord, validateBackup, defaultSettings } from '../../core/domain'
 import { moneyFromInput, moneyInputValue } from '../../core/money'
 import type { DeliveryShift, Expense, FinancialRecord } from '../../core/types'
 
@@ -12,6 +12,18 @@ const record = (id: string, type: FinancialRecord['type'], amount: number, extra
 const movements = (records: FinancialRecord[] = [], expenses: Expense[] = []) => buildFinancialMovements({ shifts: [shift], expenses, records, today })
 
 describe('Financeiro consolidado', () => {
+  it('leva a forma de pagamento das fontes ao histórico sem atribuí-la aos custos internos do turno', () => {
+    const paidShift = { ...shift, paymentMethod: 'debito' } as DeliveryShift
+    const paidExpense = { ...expense, paymentMethod: 'alimentacao' } as Expense
+    const paidIncome = record('salary', 'entrada', 1000, { paymentMethod: 'credito' } as Partial<FinancialRecord>)
+    const rows = buildFinancialMovements({ shifts: [paidShift], expenses: [paidExpense], records: [paidIncome], today })
+
+    expect(rows.find((row) => row.id === 'delivery:shift-1:grossRevenue')).toMatchObject({ paymentMethod: 'debito' })
+    expect(rows.find((row) => row.id === 'delivery:shift-1:fuelCost')).not.toHaveProperty('paymentMethod')
+    expect(rows.find((row) => row.id === 'expense:expense-1')).toMatchObject({ paymentMethod: 'alimentacao' })
+    expect(rows.find((row) => row.id === 'financial:salary')).toMatchObject({ paymentMethod: 'credito' })
+  })
+
   it('integra turnos, despesas e registros sem usar resultados armazenados', () => {
     const rows = movements([record('salary', 'entrada', 1000)], [expense])
     expect(new Set(rows.map((row) => row.id)).size).toBe(rows.length)
@@ -111,6 +123,20 @@ describe('validação e compatibilidade financeira', () => {
     expect(isValidFinancialRecord(record('bad', 'entrada', 1, { deliveryShiftId: shift.id }))).toBe(false)
     expect(isValidFinancialRecord(record('bad', 'saida', 1, { localDate: '2026-02-30' }))).toBe(false)
     expect(isValidFinancialRecord(record('bad', 'saida', 1, { description: ' ' }))).toBe(false)
+  })
+  it('aceita registros legados e rejeita formas de pagamento desconhecidas', () => {
+    const validShift = { ...shift, hours: 6, estimatedResult: 165, resultPerHour: 27.5, resultPerKilometer: 5.5 }
+    expect(isValidDeliveryShift(validShift)).toBe(true)
+    expect(isValidExpense(expense)).toBe(true)
+    expect(isValidFinancialRecord(record('legacy', 'entrada', 10))).toBe(true)
+    for (const paymentMethod of ['credito', 'debito', 'alimentacao']) {
+      expect(isValidDeliveryShift({ ...validShift, paymentMethod })).toBe(true)
+      expect(isValidExpense({ ...expense, paymentMethod })).toBe(true)
+      expect(isValidFinancialRecord({ ...record(paymentMethod, 'entrada', 10), paymentMethod })).toBe(true)
+    }
+    expect(isValidDeliveryShift({ ...validShift, paymentMethod: 'dinheiro' })).toBe(false)
+    expect(isValidExpense({ ...expense, paymentMethod: 'dinheiro' })).toBe(false)
+    expect(isValidFinancialRecord({ ...record('bad-method', 'entrada', 10), paymentMethod: 'dinheiro' })).toBe(false)
   })
   it('aceita backup antigo e novo, rejeita duplicatas e vínculos órfãos', () => {
     expect(validateBackup(backup())).toBe(true)

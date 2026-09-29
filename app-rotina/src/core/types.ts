@@ -107,6 +107,7 @@ export interface DeliveryShift {
   resultPerHour: number | null
   resultPerKilometer: number | null
   accountId?: string
+  paymentMethod?: PaymentMethod
   fatigueLevel: 0 | 1 | 2 | 3 | null
   armCondition: 'habitual' | 'alterado' | 'dor' | null
   note?: string
@@ -124,9 +125,11 @@ export interface Expense {
   deliveryCostKind?: DeliveryCostKind
   note?: string
   accountId?: string
+  paymentMethod?: PaymentMethod
 }
 
 export type FinancialType = 'entrada' | 'saida' | 'credito' | 'pendencia'
+export type PaymentMethod = 'credito' | 'debito' | 'alimentacao'
 
 export interface FinancialRecord {
   id: string
@@ -141,6 +144,7 @@ export interface FinancialRecord {
   createdAt: string
   updatedAt?: string
   accountId?: string
+  paymentMethod?: PaymentMethod
   liabilityAccountId?: string
   planningRef?: PlanningReference
 }
@@ -168,6 +172,7 @@ export interface RecurringPlan extends FinancialEntity {
   endDate?: string
   active: boolean
   accountId?: string
+  paymentMethod?: PaymentMethod
   liabilityAccountId?: string
 }
 export interface InstallmentPlan extends FinancialEntity {
