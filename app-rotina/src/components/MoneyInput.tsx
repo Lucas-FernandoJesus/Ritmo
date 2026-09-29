@@ -1,5 +1,5 @@
 import type { InputHTMLAttributes } from 'react'
-import { moneyFromInput, moneyInputValue } from '../money'
+import { moneyFromInput, moneyInputValue } from '../core/money'
 
 type MoneyInputProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange' | 'type'> & {
   value: number | null

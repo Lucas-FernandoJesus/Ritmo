@@ -3,6 +3,9 @@
 ## Estrutura e coordenação
 
 - `app-rotina` contém a aplicação React; `docs` contém regras e documentação do produto.
+- Em `app-rotina/src`, agrupe módulos e testes por funcionalidade em `features`; use `core` para regras/modelos compartilhados, `infrastructure` para persistência e `components` para UI reutilizável. Consulte `docs/estrutura.md`.
+- Mantenha a documentação visual em `docs/design-system`, skills locais em `.agents/skills` na raiz e o respectivo `skills-lock.json` na raiz.
+- Para skills do Ritmo, consulte `.agents/skills/README.md` e priorize a cópia local correspondente à tarefa. Preserve recursos/licenças e atualize `.agents/skills/manifest.json` ao alterar uma skill; não carregue a coleção inteira de uma vez.
 - Execute comandos npm dentro de `app-rotina`.
 - O agente principal é o único editor e integrador. Subagentes, quando usados, limitam-se a inspeção ou revisão com entregas delimitadas.
 - Nunca permita edições concorrentes nos mesmos arquivos.

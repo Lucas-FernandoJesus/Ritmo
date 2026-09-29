@@ -1,5 +1,5 @@
-import { exportFinancePdf } from '../src/finance-export'
-import { buildFinancialMovements } from '../src/finance'
+import { exportFinancePdf } from '../src/features/finance/finance-export'
+import { buildFinancialMovements } from '../src/features/finance/finance'
 import { expect, test } from './fixtures'
 
 test('PDF financeiro válido é renderizado pelo leitor nativo do Edge', async ({ page }, testInfo) => {

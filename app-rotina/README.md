@@ -4,10 +4,14 @@ PWA local-first para acompanhar uma rotina pessoal no celular. Funciona sem cont
 
 [Visão geral do repositório](../README.md).
 
+## Organização do código
+
+`src/features/` agrupa Financeiro, Dashboard, rotina e treinos com seus testes. `src/core/` contém modelos e regras compartilhadas; `src/infrastructure/` concentra persistência e serviço offline; `src/components/` mantém componentes reutilizáveis. Consulte o [mapa completo de pastas](../docs/estrutura.md) e o [sistema visual](../docs/design-system/ritmo/MASTER.md).
+
 ## Executar
 
 ```bash
-npm install
+npm ci
 npm run dev
 ```
 
@@ -45,7 +49,7 @@ Em **Ajustes**, selecione **Exportar backup JSON**. Guarde o arquivo fora do apa
 
 A aba **Financeiro** consolida automaticamente receitas e custos dos turnos de delivery, despesas de **Registros** e movimentações avulsas. Permite cadastrar entrada, saída, crédito e pendência; editar lançamentos; receber créditos ou pagar pendências sem criar cópias. O histórico oferece filtros por período, tipo, categoria, origem e status, além de busca por descrição. Hoje, semana civil, mês civil, ano civil e período personalizado atualizam os resumos e as análises. **Progresso** mostra um resumo financeiro correspondente ao mês ou ano selecionado na Dashboard.
 
-Metas têm progresso automático; orçamentos mensais acompanham o consumo por categoria ou custo específico do delivery. Comparações e tendências distinguem histórico ausente de zero. O fluxo dos próximos 7, 15 e 30 dias separa saldo realizado e projeção, incluindo alertas de vencimento e risco de saldo negativo. Delivery mostra bruto, despesas pagas, líquido operacional e resultado após reserva, além de taxas por hora, médias, custos e comparações de turnos. Metas e orçamentos são planejamento, nunca movimentações. A Dashboard destaca uma meta e os alertas prioritários. Tudo permanece offline, com IndexedDB 4 e backup compatível com versões anteriores.
+Metas têm progresso automático; orçamentos mensais acompanham o consumo por categoria ou custo específico do delivery. Comparações e tendências distinguem histórico ausente de zero. O fluxo dos próximos 7, 15 e 30 dias separa saldo realizado e projeção, incluindo alertas de vencimento e risco de saldo negativo. Delivery mostra bruto, despesas pagas, líquido operacional e resultado após reserva, além de taxas por hora, médias, custos e comparações de turnos. Metas e orçamentos são planejamento, nunca movimentações. A Dashboard destaca uma meta e os alertas prioritários. Tudo permanece offline, com IndexedDB 5 e backup compatível com versões anteriores.
 
 O saldo é entradas recebidas menos saídas pagas no período; não inclui saldo inicial de conta, créditos, pendências nem datas futuras. Sem registros realizados, aparece **Sem dados**. A reserva de manutenção do delivery permanece uma previsão: reduz a renda líquida estimada e aparece como valor reservado, sem simular um pagamento. Despesas adicionais entram no resultado do delivery quando vinculadas explicitamente a um turno; não registre novamente um gasto já informado nele.
 
@@ -56,6 +60,8 @@ Para executar os testes no Edge instalado, sem baixar o Chromium do Playwright:
 ```bash
 npm run test:e2e -- --config=playwright.edge.config.ts --workers=2
 ```
+
+`node scripts/visual-review.mjs` executa essa mesma suíte e gera as capturas em `test-results/`, sem exigir um navegador aberto manualmente.
 
 ## Progresso automático
 
@@ -69,7 +75,7 @@ Registros de estudo, delivery e despesa podem oferecer a conclusão da atividade
 
 Em **Hoje** ou **Semana**, a atividade de segunda/quarta abre o Muay Thai técnico, terça abre o fortalecimento A, quinta abre o fortalecimento B e sexta abre o Muay Thai leve opcional. A aba **Treinos** reúne esses quatro acessos e a escolha manual da semana do plano; **Progresso** mostra o andamento semanal e o checklist de 30 dias. O botão de retorno e o Voltar do navegador devolvem à tela anterior. Os endereços `?treino=A`, `?treino=B`, `?treino=muay-mon` e `?treino=muay-fri` também abrem as sessões diretamente.
 
-A tela segue a semana e o modo Normal, Reduzido ou Mínimo salvos no aparelho. Cada movimento de fortalecimento mostra a prescrição do plano, um exemplo prático em português e um link individual que abre o YouTube em outra aba. As práticas de Muay Thai são opções dentro dos rounds existentes, com instruções adaptadas e trechos das aulas pesquisadas. As fontes de Muay tiveram conteúdo verbal verificado; detalhes visuais dos trechos ainda devem ser conferidos no vídeo antes de copiar a técnica. As instruções continuam disponíveis offline; os vídeos exigem conexão. Os catálogos ficam em `src/exercise-demos.ts` e `src/muay-exercises.ts`, com pesquisa e limitações documentadas em `docs/muay-thai/`.
+A tela segue a semana e o modo Normal, Reduzido ou Mínimo salvos no aparelho. Cada movimento de fortalecimento mostra a prescrição do plano, um exemplo prático em português e um link individual que abre o YouTube em outra aba. As práticas de Muay Thai são opções dentro dos rounds existentes, com instruções adaptadas e trechos das aulas pesquisadas. As fontes de Muay tiveram conteúdo verbal verificado; detalhes visuais dos trechos ainda devem ser conferidos no vídeo antes de copiar a técnica. As instruções continuam disponíveis offline; os vídeos exigem conexão. Os catálogos ficam em `src/features/training/exercise-demos.ts` e `src/features/training/muay-exercises.ts`, com pesquisa e limitações documentadas em `docs/muay-thai/`.
 
 ## Fontes e destinos
 
@@ -92,6 +98,6 @@ A tela segue a semana e o modo Normal, Reduzido ou Mínimo salvos no aparelho. C
 
 Cada atividade padrão conserva `sourceFile` como caminho relativo à raiz do repositório em `docs/rotina/`. Backups antigos podem conservar apenas o nome do arquivo; os IDs das atividades permanecem iguais. A camada `repository.ts` concentra o acesso local para permitir uma implementação futura de sincronização sem reescrever as telas.
 
-As instruções gerais exibidas ao tocar nas outras atividades ficam em `src/activity-guides.ts`, incorporadas ao aplicativo para funcionar offline. A evolução dos exercícios durante 24 semanas fica estruturada em `src/training-plan.ts`; a semana atual é uma preferência local incluída no backup, sem substituir o checklist inicial de 30 dias. As descrições gerais dos movimentos do fortalecimento foram conferidas com orientações de [exercícios de força do NHS](https://www.nhs.uk/live-well/exercise/strength-exercises/), [exercícios em pé do University Hospitals Sussex NHS Foundation Trust](https://www.uhsussex.nhs.uk/resources/standing-exercises-2/), [fortalecimento do quadril do Cambridge University Hospitals NHS Foundation Trust](https://www.cuh.nhs.uk/patient-information/hip-strengthening-exercises/), [atividade física para adultos do CDC](https://www.cdc.gov/physical-activity-basics/guidelines/adults.html) e [recuperação de fraturas do antebraço da AAOS](https://orthoinfo.aaos.org/en/diseases--conditions/adult-forearm-fractures/); séries, progressões e critérios de segurança continuam alinhados ao arquivo `04_fortalecimento_e_cuidados_com_braco.txt`.
+As instruções gerais exibidas ao tocar nas outras atividades ficam em `src/features/routine/activity-guides.ts`, incorporadas ao aplicativo para funcionar offline. A evolução dos exercícios durante 24 semanas fica estruturada em `src/features/training/training-plan.ts`; a semana atual é uma preferência local incluída no backup, sem substituir o checklist inicial de 30 dias. As descrições gerais dos movimentos do fortalecimento foram conferidas com orientações de [exercícios de força do NHS](https://www.nhs.uk/live-well/exercise/strength-exercises/), [exercícios em pé do University Hospitals Sussex NHS Foundation Trust](https://www.uhsussex.nhs.uk/resources/standing-exercises-2/), [fortalecimento do quadril do Cambridge University Hospitals NHS Foundation Trust](https://www.cuh.nhs.uk/patient-information/hip-strengthening-exercises/), [atividade física para adultos do CDC](https://www.cdc.gov/physical-activity-basics/guidelines/adults.html) e [recuperação de fraturas do antebraço da AAOS](https://orthoinfo.aaos.org/en/diseases--conditions/adult-forearm-fractures/); séries, progressões e critérios de segurança continuam alinhados ao arquivo `04_fortalecimento_e_cuidados_com_braco.txt`.
 
 A pesquisa de Muay Thai está em [docs/muay-thai/pesquisa-e-plano.md](../docs/muay-thai/pesquisa-e-plano.md). O [inventário](../docs/muay-thai/inventario.md) registra todas as posições e limitações de acesso, e as [fichas](../docs/muay-thai/fichas.md) preservam as observações por vídeo verificado. A tela de Muay usa práticas selecionadas dessa pesquisa; rounds, duração e limites continuam definidos pelo plano de 24 semanas.

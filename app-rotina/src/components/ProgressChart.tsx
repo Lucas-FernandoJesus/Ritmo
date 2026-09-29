@@ -1,4 +1,4 @@
-import type { DashboardSeries, DashboardUnit, DashboardValue } from '../dashboard'
+import type { DashboardSeries, DashboardUnit, DashboardValue } from '../features/dashboard/dashboard'
 
 const numberFormatter = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 2 })
 const moneyFormatter = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })

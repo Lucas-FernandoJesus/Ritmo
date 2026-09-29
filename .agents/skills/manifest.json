@@ -1,0 +1,856 @@
+{
+  "schemaVersion": 1,
+  "purpose": "Colecao local de skills usadas ou consultadas no Ritmo; fontes originais preservadas",
+  "skills": [
+    {
+      "name": "find-skills",
+      "path": "find-skills",
+      "entrypoint": "find-skills/SKILL.md",
+      "status": "aplicada",
+      "usage": "Avaliacao das capacidades instaladas",
+      "evidence": "docs/financeiro.md",
+      "origin": {
+        "kind": "installed-global-snapshot",
+        "location": ".agents/skills/find-skills"
+      },
+      "files": [
+        {
+          "path": "SKILL.md",
+          "sha256": "c00eeea0e13e74fe4a9d84ba0a8542205a1b736d65f13134fe1a6647eb14976f",
+          "bytes": 5472
+        }
+      ]
+    },
+    {
+      "name": "frontend-design",
+      "path": "frontend-design",
+      "entrypoint": "frontend-design/SKILL.md",
+      "status": "aplicada",
+      "usage": "Identidade visual e componentes",
+      "evidence": "docs/financeiro.md",
+      "origin": {
+        "kind": "repository-local",
+        "location": ".agents/skills/frontend-design"
+      },
+      "files": [
+        {
+          "path": "LICENSE.txt",
+          "sha256": "eb3d7b5485466acbd81f2b496f595ab637d2792e268206b27d99e793bdb67549",
+          "bytes": 10351
+        },
+        {
+          "path": "SKILL.md",
+          "sha256": "b8009ae690dfa69edc7f08bb8715f32db8817112cfa4388741dbaf876c237df8",
+          "bytes": 9461
+        }
+      ]
+    },
+    {
+      "name": "pdf",
+      "path": "pdf",
+      "entrypoint": "pdf/SKILL.md",
+      "status": "consultada",
+      "usage": "Formatos e revisao visual de exportacoes",
+      "evidence": "docs/financeiro.md",
+      "origin": {
+        "kind": "openai-plugin-snapshot",
+        "plugin": "pdf",
+        "version": "26.909.11814"
+      },
+      "files": [
+        {
+          "path": "agents/openai.yaml",
+          "sha256": "5819dd168e544e3293d1501174130c56e139eb37c7d176884d8c6de4b9354f56",
+          "bytes": 302
+        },
+        {
+          "path": "assets/file-document.png",
+          "sha256": "bbb3c29874cb3bc706eef9ba4436c7ef8ef33462a173c4c3d4deeec774e4da79",
+          "bytes": 1550
+        },
+        {
+          "path": "container_tools/mark_artifact_operation_started.mjs",
+          "sha256": "968d66a7b491c7728f2ab009dcb54ac0025d6f474de6f3734f66b8809f6c18a8",
+          "bytes": 735
+        },
+        {
+          "path": "SKILL.md",
+          "sha256": "3cb7552d94f5d3c5216e80133b7471cd8780aad1633d41427406e304141e6869",
+          "bytes": 9516
+        }
+      ]
+    },
+    {
+      "name": "playwright-cli",
+      "path": "playwright-cli",
+      "entrypoint": "playwright-cli/SKILL.md",
+      "status": "aplicada",
+      "usage": "Orientacao da validacao com Playwright e Edge",
+      "evidence": "docs/financeiro.md",
+      "origin": {
+        "kind": "installed-global-snapshot",
+        "location": ".agents/skills/playwright-cli"
+      },
+      "files": [
+        {
+          "path": "references/element-attributes.md",
+          "sha256": "bf19aa4671e0a50a0fefa9c790f39124e803060eefe395042b723c29fcb7faa2",
+          "bytes": 665
+        },
+        {
+          "path": "references/playwright-tests.md",
+          "sha256": "c5b0719fef2cfdff50bd744051b2f9afc119775db4b48e9b2882c1cf3886797c",
+          "bytes": 1690
+        },
+        {
+          "path": "references/pr-attachments.md",
+          "sha256": "24b118e74598be72e73e24fe223d295b9099c85b1860a7c8f6e5690c9038fa2a",
+          "bytes": 2830
+        },
+        {
+          "path": "references/request-mocking.md",
+          "sha256": "54e801c9663fc2b6d68ceb058cb1c360724c2499f42acc7852a68e83e5b5f37c",
+          "bytes": 2182
+        },
+        {
+          "path": "references/running-code.md",
+          "sha256": "d95c539a5990b71d02d8bdf1d9414df16191eb6cff95b0063820518b7a13dcb2",
+          "bytes": 5642
+        },
+        {
+          "path": "references/session-management.md",
+          "sha256": "a4f16271f95d3eec7bc56e659d8adbb8f6ad7d603a6fa15efdcdd071a50c6ce3",
+          "bytes": 5929
+        },
+        {
+          "path": "references/storage-state.md",
+          "sha256": "9ac47f9ae4a1aedcd2077f8ac9ab1ba6bee1962cb83ff51adcd36fb6d83b5ec6",
+          "bytes": 5198
+        },
+        {
+          "path": "references/test-generation.md",
+          "sha256": "12f54cfa718d9e559bad918120a4ca4f11c933167713d1b9c5f99872eddaf749",
+          "bytes": 16114
+        },
+        {
+          "path": "references/tracing.md",
+          "sha256": "ef73e71bee792e341df9cd4f60529c929ade48b538ac76e033f4f20843e8dbda",
+          "bytes": 3456
+        },
+        {
+          "path": "references/video-recording.md",
+          "sha256": "1c800b897824cb54394c34265d8ebffdbb530adfc8d612c5d798b667a1799f48",
+          "bytes": 9388
+        },
+        {
+          "path": "SKILL.md",
+          "sha256": "85ef187460f776a4e9b44ffbf4a0293e5585d4192d0858c23fb011c72784f347",
+          "bytes": 15179
+        }
+      ]
+    },
+    {
+      "name": "prompt-master",
+      "path": "prompt-master",
+      "entrypoint": "prompt-master/SKILL.md",
+      "status": "lida",
+      "usage": "Leitura obrigatoria; escopo de engenharia de prompts preservado",
+      "evidence": "docs/financeiro.md",
+      "origin": {
+        "kind": "installed-global-snapshot",
+        "location": ".agents/skills/prompt-master"
+      },
+      "files": [
+        {
+          "path": "LICENSE",
+          "sha256": "0e1cb4fc0f3b84b7e0180246a2966cfedf5eaa84158d620f9bc0ceb8fa96431b",
+          "bytes": 1098
+        },
+        {
+          "path": "README.md",
+          "sha256": "5dd85ff95527fd1e566a49c488e0d5118cb003a8fb7354ed196aa7163d407b2d",
+          "bytes": 22701
+        },
+        {
+          "path": "references/patterns.md",
+          "sha256": "1ff8784bea22e4d583061f624df81f273db7431934dc8c2d41d434401f3ce919",
+          "bytes": 6194
+        },
+        {
+          "path": "references/templates.md",
+          "sha256": "98afecf29e9e96278de50f9df70bef39ce9ccd71efece1fb72357daf0884fe37",
+          "bytes": 16882
+        },
+        {
+          "path": "SKILL.md",
+          "sha256": "f38ec239af316a6129be35281973b69996b2deff07c74f3750ed218130232fa6",
+          "bytes": 32634
+        }
+      ]
+    },
+    {
+      "name": "skill-creator",
+      "path": "skill-creator",
+      "entrypoint": "skill-creator/SKILL.md",
+      "status": "aplicada-nesta-etapa",
+      "usage": "Formato e validacao da colecao local",
+      "evidence": ".agents/skills/README.md",
+      "origin": {
+        "kind": "codex-system-snapshot",
+        "location": ".codex/skills/.system/skill-creator"
+      },
+      "files": [
+        {
+          "path": "agents/openai.yaml",
+          "sha256": "b750627cdd588fdbb5b46e854d3384d1a504fad3b8ed73ca5d7ead3804df78b6",
+          "bytes": 188
+        },
+        {
+          "path": "assets/skill-creator-small.svg",
+          "sha256": "edb19a0c59f9a1b5253b9af6d2f9f03cac27b2fe6a0275ebccbbdbff07891a1a",
+          "bytes": 1322
+        },
+        {
+          "path": "assets/skill-creator.png",
+          "sha256": "a4024b0306ddb05847e1012879d37aaf1e658205199da596f5145ed7a88d9162",
+          "bytes": 1563
+        },
+        {
+          "path": "license.txt",
+          "sha256": "3ddf9be5c28fe27dad143a5dc76eea25222ad1dd68934a047064e56ed2fa40c5",
+          "bytes": 11560
+        },
+        {
+          "path": "references/openai_yaml.md",
+          "sha256": "7039d465b05342cbacf861f08d20192ab1eeee112bc5d8ff0fb66234756887a9",
+          "bytes": 2405
+        },
+        {
+          "path": "scripts/generate_openai_yaml.py",
+          "sha256": "30c73f1ea7d47dbab2b231bb92c5bf9026f1ad14ba8e3b3a4a544092c4d24ebe",
+          "bytes": 6900
+        },
+        {
+          "path": "scripts/init_skill.py",
+          "sha256": "74dfa9361a93bee6932d6cbb332ed19ac26a27ba3800e69fb07ba7512c1025f9",
+          "bytes": 10622
+        },
+        {
+          "path": "scripts/quick_validate.py",
+          "sha256": "6068513d924ed3559e186dfcdead7439129828dcf402167fd925c06dffbf2806",
+          "bytes": 4376
+        },
+        {
+          "path": "SKILL.md",
+          "sha256": "cccd291077ec57c6f50ca6529f0f3fb93212da09473effb2fcec808e81b21288",
+          "bytes": 15540
+        }
+      ]
+    },
+    {
+      "name": "skill-installer",
+      "path": "skill-installer",
+      "entrypoint": "skill-installer/SKILL.md",
+      "status": "consultada-nesta-etapa",
+      "usage": "Criterios de instalacao; nenhum download executado",
+      "evidence": ".agents/skills/README.md",
+      "origin": {
+        "kind": "codex-system-snapshot",
+        "location": ".codex/skills/.system/skill-installer"
+      },
+      "files": [
+        {
+          "path": "agents/openai.yaml",
+          "sha256": "bd64b4d6893138706b3e3540f266ab809ccdcd08375652ae9f9d1e029fe50d02",
+          "bytes": 226
+        },
+        {
+          "path": "assets/skill-installer-small.svg",
+          "sha256": "099e5a4b5e5f0f918a8de0d2059f0a86211da623dbb75f86f13dc9f7c08c778d",
+          "bytes": 926
+        },
+        {
+          "path": "assets/skill-installer.png",
+          "sha256": "d0a230b1a79b71b858b7c215a0fbb0768d6459c14ea4ef80c61592629bf0e605",
+          "bytes": 1086
+        },
+        {
+          "path": "LICENSE.txt",
+          "sha256": "3ddf9be5c28fe27dad143a5dc76eea25222ad1dd68934a047064e56ed2fa40c5",
+          "bytes": 11560
+        },
+        {
+          "path": "scripts/github_utils.py",
+          "sha256": "2f9702afb9f0da740181fa4a3214f663e460f80cd5cea2e7dcaab00ad269082e",
+          "bytes": 680
+        },
+        {
+          "path": "scripts/install-skill-from-github.py",
+          "sha256": "110cc7e4e395c2c9ba070d47db7d21be5164591c35015ae364fc9c9905b08de8",
+          "bytes": 12272
+        },
+        {
+          "path": "scripts/list-skills.py",
+          "sha256": "2cd6eecbaf9be7c86e80a14d7042f95d6abb83b6baee5f17dd075fa7a71c83de",
+          "bytes": 3054
+        },
+        {
+          "path": "SKILL.md",
+          "sha256": "2892d8b2fb11631132118f340aed80ae17e59d5a571fc2c4f4a4a7e73f139d52",
+          "bytes": 3425
+        }
+      ]
+    },
+    {
+      "name": "spreadsheets",
+      "path": "spreadsheets",
+      "entrypoint": "spreadsheets/SKILL.md",
+      "status": "consultada",
+      "usage": "Formatos e revisao de planilhas",
+      "evidence": "docs/financeiro.md",
+      "origin": {
+        "kind": "openai-plugin-snapshot",
+        "plugin": "spreadsheets",
+        "version": "26.909.11814"
+      },
+      "files": [
+        {
+          "path": "agents/openai.yaml",
+          "sha256": "18eb739db3a18e7d1bbd2c17b6884eff011f9b07814ab23216aba926b4de9cd7",
+          "bytes": 371
+        },
+        {
+          "path": "artifact_tool_docs/API_QUICK_START.md",
+          "sha256": "313e2256d212671638006006926bd80474ba04c9347d2caff7f575e9ea958ab2",
+          "bytes": 26274
+        },
+        {
+          "path": "artifact_tool_docs/DATA_TABLES.md",
+          "sha256": "627423c5c263a0df909c3f7b2253098d80a2c10f068c0756a828d68509d3021e",
+          "bytes": 3649
+        },
+        {
+          "path": "artifact_tool_docs/SPARKLINES.md",
+          "sha256": "284d40cb8624604c638bd3131b004db73fc193bce421e0a085959e0ea6f1afef",
+          "bytes": 1702
+        },
+        {
+          "path": "assets/file-spreadsheet.png",
+          "sha256": "3a1c5e6c52a1877942b8ef8654247fbe1c4a82f6df8ef464dc99983fc72cd6fb",
+          "bytes": 11988
+        },
+        {
+          "path": "container_tools/mark_artifact_operation_started.mjs",
+          "sha256": "fd95cb9918e52bbc2323ed1854fdc7510361f66cbe50446f6fcf0b9b21fa1ded",
+          "bytes": 765
+        },
+        {
+          "path": "domain_guidance/financial_models.md",
+          "sha256": "fb53fa81fd0b6acfa9fdfc3946af1f95312bd02c3367caae51f28bf68ca6bba6",
+          "bytes": 7043
+        },
+        {
+          "path": "domain_guidance/healthcare.md",
+          "sha256": "8edae030b3abb0ef178f5a38691f64d7d9f4a462a70c0656ae8650605363f921",
+          "bytes": 4736
+        },
+        {
+          "path": "domain_guidance/marketing_advertising.md",
+          "sha256": "b2e087facba8e407fb5d47d55505ea544ca7c7ff5d402fd6a535093df740d086",
+          "bytes": 3950
+        },
+        {
+          "path": "domain_guidance/scientific_research.md",
+          "sha256": "bad46ddb8561c02b5460cd8dcb9bc9018b8b24df03a6688af7b9a3977b5b298c",
+          "bytes": 3725
+        },
+        {
+          "path": "features/charts.md",
+          "sha256": "a5bb73e5a3c0f7ec44cf0737d5dc25ae690e420a99d37e23cf8144d8316f56a3",
+          "bytes": 5870
+        },
+        {
+          "path": "references/image-references.md",
+          "sha256": "7fe546860468950ed80f428c79eea269383aa30f421b957546666ee15161e6b8",
+          "bytes": 1072
+        },
+        {
+          "path": "references/read_only_qna.md",
+          "sha256": "993fa777f0f3003c2a1c3b2021a1f9d78f7a177620603e47cc9cff097cf156fd",
+          "bytes": 1102
+        },
+        {
+          "path": "references/template-elicitation.md",
+          "sha256": "3f87388cf81f6cbc72949a6842b614bbc373238bf0f52f7d43d25e9b4dab757a",
+          "bytes": 1501
+        },
+        {
+          "path": "routing/google_sheets.md",
+          "sha256": "187712ad3479ce82f0333d0843cb18de929f4dc8eba44a08923f2cee787b39c1",
+          "bytes": 1470
+        },
+        {
+          "path": "SKILL.md",
+          "sha256": "8815ade7bd0544d1c03deefd2627c9b0ba888ddf24d13a2d0bb3490f0c5505be",
+          "bytes": 65182
+        },
+        {
+          "path": "style_guidelines.md",
+          "sha256": "a0e328147991a4acc3d867d8e10a0a6697373ff2fe43eefd41646c83b29ad630",
+          "bytes": 10165
+        },
+        {
+          "path": "workflows/create_workflows.md",
+          "sha256": "b24cbf85c4358c2269352bf44002ad5a1e24174983010a836f5ead6e6c0b3958",
+          "bytes": 1575
+        },
+        {
+          "path": "workflows/edit_workflows.md",
+          "sha256": "d195ef03edbb07036706659bfc899b97afd0aa6121f7d607c1d1e0cd8a47f8e8",
+          "bytes": 2505
+        }
+      ]
+    },
+    {
+      "name": "ui-ux-pro-max",
+      "path": "ui-ux-pro-max",
+      "entrypoint": "ui-ux-pro-max/SKILL.md",
+      "status": "aplicada",
+      "usage": "React, UI/UX, acessibilidade, temas, formularios e graficos",
+      "evidence": "docs/financeiro.md",
+      "origin": {
+        "kind": "installed-global-snapshot",
+        "location": ".agents/skills/ui-ux-pro-max"
+      },
+      "files": [
+        {
+          "path": "data/app-interface.csv",
+          "sha256": "f502a372b25ebd186dc850a77462b1a7c0a95c02595122cd6d55a629739073af",
+          "bytes": 11079
+        },
+        {
+          "path": "data/catalog-summary.json",
+          "sha256": "804ceaa425ac951a2028fb1030ddd44d44f3c2ecccb1aa924f56b8fa6339e70e",
+          "bytes": 2470
+        },
+        {
+          "path": "data/charts.csv",
+          "sha256": "1fd649c00516a24b193940902548d2584381f1e3cfa048490c9f88cddcf65bb4",
+          "bytes": 23391
+        },
+        {
+          "path": "data/colors.csv",
+          "sha256": "1c7527d81842b386fbb066376e1e449b05c4bb5db72e6842b51db752801b6fc0",
+          "bytes": 38133
+        },
+        {
+          "path": "data/data-provenance.json",
+          "sha256": "f171af8a6981559f1feca34e65347515035dc6b983661e0ab1698078e12836d7",
+          "bytes": 38034
+        },
+        {
+          "path": "data/google-font-licenses.json",
+          "sha256": "7c35e410dd8b5853ca86c3e0e3d3cfb73db1ffa3d9a2fa688c182bc44cd9a8d7",
+          "bytes": 453312
+        },
+        {
+          "path": "data/google-fonts.csv",
+          "sha256": "d03194d2c35a2cdc4c6846ddde9beb54fdd1f81a3ddc80fead3c0ba2842b75fb",
+          "bytes": 749176
+        },
+        {
+          "path": "data/icons.csv",
+          "sha256": "272ccf0eb60e50ba7af55de3ef5c195d92e1862d411b6cb80d81dec4fe56deee",
+          "bytes": 58051
+        },
+        {
+          "path": "data/landing.csv",
+          "sha256": "9efd4568de12dc9e9e4c5b7c1743f3643243232d2dbb9257d30d88613d4bb8fc",
+          "bytes": 25484
+        },
+        {
+          "path": "data/motion.csv",
+          "sha256": "854b30af6fdd40a735eeed077eabec3a6917923627220bc5062ea8a15165ef6b",
+          "bytes": 14697
+        },
+        {
+          "path": "data/phosphor-icons-upstream.json",
+          "sha256": "81c37fb3583eb43a91e93f1a62c4da3b4ff089624c06bfe53950b8205b54974d",
+          "bytes": 856515
+        },
+        {
+          "path": "data/products.csv",
+          "sha256": "c3ef558cf2987e145e90ab22ff71dbe769d38d2c83999bfd63d7dd58b477f73d",
+          "bytes": 75816
+        },
+        {
+          "path": "data/react-performance.csv",
+          "sha256": "4dc9b897a2150a8f30b4ad18f67ebc62074d1706bde9849c189b7f511fb821d2",
+          "bytes": 15125
+        },
+        {
+          "path": "data/stacks/angular.csv",
+          "sha256": "9fc11f2b1c9efe6aac4e0416f2a022389c1ee005551523fc6a776cd39494eb2c",
+          "bytes": 19914
+        },
+        {
+          "path": "data/stacks/astro.csv",
+          "sha256": "85ddebda566b2814a6088140d06af2b729d582d5df73ba5f954a9009e17b3a5d",
+          "bytes": 14645
+        },
+        {
+          "path": "data/stacks/avalonia.csv",
+          "sha256": "a7ea4a448bb26e50b8eb69f8c191ecb374aaa4ddea6b39deadf2ad5d482e71d9",
+          "bytes": 27384
+        },
+        {
+          "path": "data/stacks/flutter.csv",
+          "sha256": "be5422f81892515ea4646460a7a77c95a4e22db0d112b05d5885757fd5c16016",
+          "bytes": 14245
+        },
+        {
+          "path": "data/stacks/html-tailwind.csv",
+          "sha256": "4004df03af7cf4cdd635d7a2127f6da4f94f6718af6556bee6bc2a14e6093cb8",
+          "bytes": 16611
+        },
+        {
+          "path": "data/stacks/javafx.csv",
+          "sha256": "f1d83197228e5265f80a8cb9598c03c76d4280bfb2804aca6eef841f5972b449",
+          "bytes": 33653
+        },
+        {
+          "path": "data/stacks/jetpack-compose.csv",
+          "sha256": "3e39065aa4c08e88117905558979a6bad799f691f72dc570b82b6d206b627a1d",
+          "bytes": 12348
+        },
+        {
+          "path": "data/stacks/laravel.csv",
+          "sha256": "2491ee000953ae99b929bcf9a3937672a8c4e0cc89d4737e12cb5fbe6d46d96d",
+          "bytes": 20214
+        },
+        {
+          "path": "data/stacks/nextjs.csv",
+          "sha256": "ece292708d2d4d41aaa6f339640f4ffc1adf5d052a7d633cc0201d5a79307c37",
+          "bytes": 18749
+        },
+        {
+          "path": "data/stacks/nuxt-ui.csv",
+          "sha256": "5b76f8506e34369d23ea70c79f96c6292db91d8c5df52cf6534c7b36b22a4127",
+          "bytes": 28777
+        },
+        {
+          "path": "data/stacks/nuxtjs.csv",
+          "sha256": "ebe9bfe54cb1ee6e26c6776d72fa2290e7ba289d116afd6857e4d68a21475bb4",
+          "bytes": 23082
+        },
+        {
+          "path": "data/stacks/react-native.csv",
+          "sha256": "1f7c99ea422ecd84ba3b0df5920c25f315ca9f3a15cf862a9a7183ed50e9a5e9",
+          "bytes": 14101
+        },
+        {
+          "path": "data/stacks/react.csv",
+          "sha256": "6a4cb8e26393afe21f5a5ec171c6ed1c9438b46a5330923cc3d83bc99406cee6",
+          "bytes": 21233
+        },
+        {
+          "path": "data/stacks/shadcn.csv",
+          "sha256": "14d303b0adef425c388367e6825b92808cacbc0846e554889507c288b9e8e53d",
+          "bytes": 23253
+        },
+        {
+          "path": "data/stacks/svelte.csv",
+          "sha256": "59af6ab78a0550313489441fffe17d7317de5a819aa992b1e2dca73ecb0a82d6",
+          "bytes": 15134
+        },
+        {
+          "path": "data/stacks/swiftui.csv",
+          "sha256": "29b62817abfc03a0789180247ce98ac6fe00b7e54632c328c71af707e68d6915",
+          "bytes": 15374
+        },
+        {
+          "path": "data/stacks/threejs.csv",
+          "sha256": "cb9f71f0aab510351adc0e67df84f00cb119f550ff70e08487b58c23ed6aff97",
+          "bytes": 46105
+        },
+        {
+          "path": "data/stacks/uno.csv",
+          "sha256": "a52939b4c3c0fa604ab91d32216b7dba28fcd7b4b03a2e7f46b79749e3241228",
+          "bytes": 30151
+        },
+        {
+          "path": "data/stacks/uwp.csv",
+          "sha256": "ba334d0f2f478d73a7d80528b940f9e2f4ec6a8a7acafae92d69f0fb10837170",
+          "bytes": 24748
+        },
+        {
+          "path": "data/stacks/vue.csv",
+          "sha256": "bb492b870b5bc7abff86dfebe73adad36c811a10907709f6a2da19c388f4edbf",
+          "bytes": 12863
+        },
+        {
+          "path": "data/stacks/winui.csv",
+          "sha256": "0a2b7a991adc8f126a31a953b8ad211a8162889fcc4e66c1484328847b206849",
+          "bytes": 27950
+        },
+        {
+          "path": "data/stacks/wpf.csv",
+          "sha256": "1b98ddc6354f7e3f05071679dae1c1f49dbda7639e48d5ceb2378e82cd3e2594",
+          "bytes": 24215
+        },
+        {
+          "path": "data/styles.csv",
+          "sha256": "667595149f49cc894ac4b7b3468e7b9c6b0c2795ebea26dce20ca3f92044d517",
+          "bytes": 149567
+        },
+        {
+          "path": "data/typography.csv",
+          "sha256": "5c32783790714baaa0f870131aacff021b865495008ed8ab65e7ddf894862581",
+          "bytes": 50072
+        },
+        {
+          "path": "data/ui-reasoning.csv",
+          "sha256": "8c45627a7ac18cc57b8abe909d840aae3cf9a9f3ef15b8a6e1bf6c64fb02ed64",
+          "bytes": 77553
+        },
+        {
+          "path": "data/ux-guidelines.csv",
+          "sha256": "0552e850d47fb5b5cf0b2e35784e1d44f6b2aea52c9255193f7eb2588c2c9f4b",
+          "bytes": 27636
+        },
+        {
+          "path": "references/pro-rules.md",
+          "sha256": "b64961a5f324bf0c480dd06c6154787298c4baa6d07fdcd8dab1fee7058c09f8",
+          "bytes": 11026
+        },
+        {
+          "path": "references/quick-reference.md",
+          "sha256": "b3ada267d3fa7c6237834683748bc0b486c7c15ebf6f0590ce38bf6b988595d5",
+          "bytes": 24782
+        },
+        {
+          "path": "scripts/core.py",
+          "sha256": "9169fdda39bf41c5e528caf04a996f8c943bc8838062967c725fc39522760a4e",
+          "bytes": 42229
+        },
+        {
+          "path": "scripts/design_system.py",
+          "sha256": "a8c6db4d9f1ead2383f744c7bf69b21e65d303d09d2987e524c3b6120ae8558a",
+          "bytes": 72580
+        },
+        {
+          "path": "scripts/reasoning_contract.py",
+          "sha256": "094c8d35e7e69b243f57c4be5d61096634f8e2144fa03afd2b18c5f97de1cffb",
+          "bytes": 5947
+        },
+        {
+          "path": "scripts/search.py",
+          "sha256": "0e106775eed61e2954c0af41e9ed73b816c3bfbb2de936e07957907db846b7d6",
+          "bytes": 9550
+        },
+        {
+          "path": "scripts/tests/fixtures/catalogs/google-api.json",
+          "sha256": "503a0d00ebf5621b70a1035425701d7204f18998b8a983b8aaf53e69848fcc8c",
+          "bytes": 1115
+        },
+        {
+          "path": "scripts/tests/fixtures/catalogs/google-catalog.json",
+          "sha256": "b83a59f0374fbb771b37288cacca3b9525a1c6c435c8b51f34da4e8f7315eb11",
+          "bytes": 1805
+        },
+        {
+          "path": "scripts/tests/fixtures/catalogs/google-existing.csv",
+          "sha256": "a897ec8bdccd93f416ec51797e7bd58ecb7009d0fb74b3bca615b1a073b50435",
+          "bytes": 483
+        },
+        {
+          "path": "scripts/tests/fixtures/catalogs/google-metadata.json",
+          "sha256": "12b4a4c05fdb56fa720a01bd83abc3da4a7dde2295998cab59d73a47b9428c10",
+          "bytes": 345
+        },
+        {
+          "path": "scripts/tests/fixtures/catalogs/google-overrides.json",
+          "sha256": "507032ab4482cc5079e427280e904ee89c9f255a0474ff7d32947cc0d75bc541",
+          "bytes": 104
+        },
+        {
+          "path": "scripts/tests/fixtures/catalogs/icons-curated.csv",
+          "sha256": "e04ac4ef7d95a09276fec3311759206675609c1358300ea4e960214d6c1accfc",
+          "bytes": 499
+        },
+        {
+          "path": "scripts/tests/fixtures/catalogs/phosphor-core.json",
+          "sha256": "d22fc37d9e2f7db33ee6284590b87adc6664a251748d9ff9a0f9f78eaee5de33",
+          "bytes": 594
+        },
+        {
+          "path": "scripts/tests/fixtures/catalogs/phosphor-package.json",
+          "sha256": "186bfa5abdd5dd1f1629be711dcee8c95edb5c0bd3679c05ce84bd4e927bfde7",
+          "bytes": 383
+        },
+        {
+          "path": "scripts/tests/fixtures/catalogs/phosphor-react-exports.json",
+          "sha256": "2818efb3acdcfb68632b483928458f500c470bb70b53461f426101bd95b0fa10",
+          "bytes": 91
+        },
+        {
+          "path": "scripts/tests/fixtures/catalogs/phosphor-react-package.json",
+          "sha256": "c46b8f1a61cbf9211d1b3b6ae6dfd781533e7bbd6c9808cc90fa89d72de4911e",
+          "bytes": 86
+        },
+        {
+          "path": "scripts/tests/fixtures/relevance-baseline.json",
+          "sha256": "d08367ab2991264bc7e6312768019fd95bee8f2ce499e010bf7ee635278d6f1e",
+          "bytes": 92799
+        },
+        {
+          "path": "scripts/tests/fixtures/relevance-cases.json",
+          "sha256": "9ebf970dd96c5ffb62e1c533f344362c7becf4c8773c2956554578986fb4ffb1",
+          "bytes": 36845
+        },
+        {
+          "path": "scripts/tests/fixtures/relevance-thresholds.json",
+          "sha256": "5d7b073fb60ab439c00589692a2c7188ccac2fedc209d0c30b4d2c02296d50da",
+          "bytes": 5179
+        },
+        {
+          "path": "scripts/tests/test_catalog_refresh.py",
+          "sha256": "8f006f97be04669a8c08aec20fcea3c02f54d0e047cbffb4f962b78d1f66a3f4",
+          "bytes": 19820
+        },
+        {
+          "path": "scripts/tests/test_catalog_summary_line_endings.py",
+          "sha256": "273e1843cf64e129b7ca964b36c44bf7bb364d83e30d0a14e9522c3980264ad6",
+          "bytes": 3025
+        },
+        {
+          "path": "scripts/tests/test_core.py",
+          "sha256": "2487a5d776ac2d8070d12686357124523dc0aec94d38acbfdd677e40c51a3857",
+          "bytes": 17023
+        },
+        {
+          "path": "scripts/tests/test_core_data_quality.py",
+          "sha256": "c1e58089471d86667656c2453da49b4adcac1e81d6e84eaddcc4a39fde509ee8",
+          "bytes": 9152
+        },
+        {
+          "path": "scripts/tests/test_data_contracts.py",
+          "sha256": "0dfa5544bd5a2bd06a93e9a027dd2bbae0ad6351c37e9b7fb64e5aea78d76aae",
+          "bytes": 19934
+        },
+        {
+          "path": "scripts/tests/test_design_system_mode.py",
+          "sha256": "198de51e07523c08dce12cb52dde6b81c7339b2f3488494af5347a11770f6de9",
+          "bytes": 7879
+        },
+        {
+          "path": "scripts/tests/test_design_system_stack.py",
+          "sha256": "0f9efc89b66a360933f0e748bbb0ff1a1845f74249632a29b50964825dbe3c6c",
+          "bytes": 2322
+        },
+        {
+          "path": "scripts/tests/test_native_desktop_stack_freshness.py",
+          "sha256": "da93e8baa0b6ed7d5a298df33e30f144993ffd05ffa94085d30edcd0173bdaf5",
+          "bytes": 8346
+        },
+        {
+          "path": "scripts/tests/test_relevance_evaluator.py",
+          "sha256": "b5aef6bbdefd7b72ca3d23f6331a13671cf40ecbe3fbb20cb735c201e78f8f5a",
+          "bytes": 8612
+        },
+        {
+          "path": "scripts/tests/test_skill_script_paths.py",
+          "sha256": "e9ddd562c16d577675707d9534a01b5237b6a4960a5fffa15c920d9a5b2858e2",
+          "bytes": 4387
+        },
+        {
+          "path": "scripts/tests/test_style_taxonomy.py",
+          "sha256": "1257b28c39f2173289214f9462b780cb296467ba93e382560d076a4792b0df90",
+          "bytes": 7600
+        },
+        {
+          "path": "scripts/tests/test_text_layout_resilience.py",
+          "sha256": "da649f4c3e7ca751b8b5c76495c411f9efd137b78f17ca6e4ad35d831a8326b7",
+          "bytes": 5994
+        },
+        {
+          "path": "scripts/tests/test_web_stack_freshness.py",
+          "sha256": "e35c8835c1c8bbef4c0996df749770ed4ba6598d85791cccfd04896d728bd5cd",
+          "bytes": 7878
+        },
+        {
+          "path": "scripts/validate_data.py",
+          "sha256": "0a40f854159a855133d08e73795abf94a8cb30f84c02f4d6e1d1c7a62225b2b6",
+          "bytes": 53325
+        },
+        {
+          "path": "SKILL.md",
+          "sha256": "88aadd21220542083a455e373bd162ffe7843266a71f06f4d837bb3b34f9c9c7",
+          "bytes": 16183
+        }
+      ]
+    },
+    {
+      "name": "youtube-report",
+      "path": "youtube-report",
+      "entrypoint": "youtube-report/SKILL.md",
+      "status": "avaliada",
+      "usage": "Pesquisa; nao gera transcricao por si so",
+      "evidence": "docs/muay-thai/pesquisa-e-plano.md",
+      "origin": {
+        "kind": "installed-global-snapshot",
+        "location": ".agents/skills/youtube-report"
+      },
+      "files": [
+        {
+          "path": "SKILL.md",
+          "sha256": "110f883a63e2de76c6ac532105326d5d18be89519fee9c5884ee7b291d4e1e58",
+          "bytes": 3741
+        }
+      ]
+    },
+    {
+      "name": "youtube-research",
+      "path": "youtube-research",
+      "entrypoint": "youtube-research/SKILL.md",
+      "status": "aplicada",
+      "usage": "Pesquisa de videos do Muay Thai",
+      "evidence": "docs/muay-thai/pesquisa-e-plano.md",
+      "origin": {
+        "kind": "repository-local",
+        "location": ".agents/skills/youtube-research"
+      },
+      "files": [
+        {
+          "path": "SKILL.md",
+          "sha256": "0f5ecdc787d03cae3118baff2573e4c2bc2e5b255d4ff1f2984b43cab7fb198c",
+          "bytes": 3260
+        }
+      ]
+    },
+    {
+      "name": "youtube-transcribe",
+      "path": "youtube-transcribe",
+      "entrypoint": "youtube-transcribe/SKILL.md",
+      "status": "avaliada",
+      "usage": "Pesquisa; transcricao nao executada por requisitos ausentes",
+      "evidence": "docs/muay-thai/pesquisa-e-plano.md",
+      "origin": {
+        "kind": "installed-global-snapshot",
+        "location": ".agents/skills/youtube-transcribe"
+      },
+      "files": [
+        {
+          "path": "scripts/transcribe.py",
+          "sha256": "2a09121b29aa5d193a7a157167e0af2c6b32c9355f2990a5cd81ab7da442e671",
+          "bytes": 21021
+        },
+        {
+          "path": "SKILL.md",
+          "sha256": "093872f9b061f99e8abb4f5ff7bba4057b7d45e9e984aa4d322f14f51c48185a",
+          "bytes": 3500
+        }
+      ]
+    }
+  ]
+}

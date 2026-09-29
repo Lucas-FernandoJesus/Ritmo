@@ -18,6 +18,8 @@ Categorias gerais continuam strings: Moradia, Alimentação, Transporte, Saúde,
 
 ## Arquitetura
 
+Os arquivos financeiros estão agrupados em `app-rotina/src/features/finance/`, com componentes em `components/` e testes unitários próximos dos módulos. Modelos, validação, máscara monetária e calendário compartilhados ficam em `src/core/`; o repositório fica em `src/infrastructure/`. Veja o [mapa de organização](estrutura.md). Essa realocação preserva o IndexedDB 5, migrations, backup e regras de cálculo.
+
 ```text
 Formulários → MoneyInput/números → validação → repository.ts → IndexedDB
                                                     ↓
@@ -255,15 +257,17 @@ Diálogo nativo `showModal()` ocupa a viewport por `100dvh`, respeita safe areas
 
 ## Skills e arquivos desta etapa
 
+As skills utilizadas e consultadas estão reunidas na [coleção local do projeto](../.agents/skills/README.md), com recursos completos, origem e integridade registradas no manifesto. Essa consolidação preserva as instalações globais e os workflows originais; não instala ferramentas de PDF, planilhas ou transcrição.
+
 `prompt-master` foi lida antes das alterações; por seu próprio escopo, esta implementação não foi substituída por um prompt. `ui-ux-pro-max` orientou React, formulários, foco, navegação, acessibilidade e revisão dos tokens. `frontend-design` orientou listas simples e separação de ferramentas, preservando a identidade. `playwright-cli` orientou validação com a suíte Playwright/Edge. `find-skills` orientou avaliar o catálogo: nenhuma capacidade adicional exigiu instalação, nem houve dependência nova. Orientações de PDF/planilhas foram consultadas para formatos e revisão; os workflows de artefatos isolados não substituem o gerador offline do aplicativo.
 
 Criados em `app-rotina`:
 
-- Domínio: `src/finance-schedule.ts`, `src/finance-plans.ts`, `src/finance-closing.ts`, `src/finance-export.ts`.
-- Interface: `src/components/FinanceAdvanced.tsx`, `FinanceSchedules.tsx`, `FinanceWealth.tsx`, `FinanceTools.tsx`, `MainMenu.tsx`, `finance-form-utils.ts`.
-- Testes: `src/finance-plans.test.ts`, `src/finance-export.test.ts`, `e2e/finance-operations.e2e.ts`, `e2e/menu.e2e.ts`, `e2e/finance-pdf.e2e.ts`.
+- Domínio: `src/core/finance-schedule.ts`, `src/features/finance/finance-plans.ts`, `src/features/finance/finance-closing.ts`, `src/features/finance/finance-export.ts`.
+- Interface financeira em `src/features/finance/components/`: `FinanceAdvanced.tsx`, `FinanceSchedules.tsx`, `FinanceWealth.tsx`, `FinanceTools.tsx` e `finance-form-utils.ts`. Menu compartilhado em `src/components/MainMenu.tsx`.
+- Testes: `src/features/finance/finance-plans.test.ts`, `src/features/finance/finance-export.test.ts`, `e2e/finance-operations.e2e.ts`, `e2e/menu.e2e.ts`, `e2e/finance-pdf.e2e.ts`.
 
-Alterados: `src/App.tsx`, `src/types.ts`, `src/domain.ts`, `src/repository.ts`, `src/finance.ts`, `src/finance-analysis.ts`, `src/components/FinanceView.tsx`, `FinanceForms.tsx`, `FinanceInsights.tsx`, `ProgressDashboard.tsx`, `src/index.css`, `src/repository-guards.test.ts`, `e2e/fixtures.ts`, `e2e/offline.e2e.ts`, `e2e/finance-intelligence.e2e.ts`, `README.md`, `design-system/ritmo/MASTER.md` e este documento. MoneyInput/money.ts e dependências foram preservados.
+Alterados: `src/App.tsx`, `src/core/types.ts`, `src/core/domain.ts`, `src/infrastructure/repository.ts`, `src/features/finance/finance.ts`, `src/features/finance/finance-analysis.ts`, `src/features/finance/components/FinanceView.tsx`, `FinanceForms.tsx`, `FinanceInsights.tsx`, `ProgressDashboard.tsx`, `src/index.css`, `src/infrastructure/repository-guards.test.ts`, `e2e/fixtures.ts`, `e2e/offline.e2e.ts`, `e2e/finance-intelligence.e2e.ts`, `README.md`, `docs/design-system/ritmo/MASTER.md` e este documento. MoneyInput/money.ts e dependências foram preservados.
 
 ## Validação final
 
