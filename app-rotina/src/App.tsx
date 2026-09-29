@@ -2,16 +2,22 @@ import { useEffect, useMemo, useRef, useState, type Dispatch, type FormEvent, ty
 import { activityGuides } from './activity-guides'
 import { getExerciseDemo } from './exercise-demos'
 import { getMuayPractices } from './muay-exercises'
-import { dayNames, expenseCategories, homeChecklist, mealPrepChecklist, progressPlan, routineItems } from './data'
-import { calculateDelivery, createDailyPlanSnapshot, defaultSettings, filterRoutineForDay, findLinkedActivityId, formatMoney, localDateKey, MAX_BACKUP_BYTES, recentRecords, rideSafetyForDate, summarizeDailyProgress, summarizePlanProgress, summarizeWeeklyProgress, upgradeAppearance, validateBackup, weekBounds, withScheduleStart } from './domain'
+import { dayNames, homeChecklist, mealPrepChecklist, progressPlan, routineItems } from './data'
+import { calculateDelivery, createDailyPlanSnapshot, defaultSettings, filterRoutineForDay, findLinkedActivityId, formatMoney, localDateKey, MAX_BACKUP_BYTES, recentRecords, rideSafetyForDate, shiftDuration, summarizeDailyProgress, summarizePlanProgress, summarizeWeeklyProgress, upgradeAppearance, validateBackup, weekBounds, withScheduleStart } from './domain'
 import { ProgressDashboard } from './components/ProgressDashboard'
+import { FinanceView } from './components/FinanceView'
+import { ExpenseForm } from './components/FinanceForms'
+import { Field, PageTitle } from './components/FormPrimitives'
+import { MoneyInput } from './components/MoneyInput'
+import { deliveryFinancials } from './finance'
 import { repository } from './repository'
 import { clampTrainingWeek, getMuaySession, getMuayThaiGuide, getStrengthSession, getTrainingActivityGuide, getTrainingPlanWeek, trainingBlocks, type MuayTrainingId, type TrainingDay } from './training-plan'
-import type { AppSettings, DailyCheckIn, DailyCompletion, DailyPlanSnapshot, DailyProgressSummary, DeliveryShift, Expense, RoutineArea, RoutineItem, RoutineMode, StoragePersistence, StudyLog, ThirtyDayProgress, WeeklyProgressSummary } from './types'
+import type { AppSettings, CategoryBudget, DailyCheckIn, DailyCompletion, DailyPlanSnapshot, DailyProgressSummary, DeliveryShift, Expense, FinancialGoal, FinancialRecord, RoutineArea, RoutineItem, RoutineMode, StoragePersistence, StudyLog, ThirtyDayProgress, WeeklyProgressSummary } from './types'
 
-type Tab = 'hoje' | 'semana' | 'treinos' | 'registros' | 'progresso' | 'ajustes'
+type Tab = 'hoje' | 'semana' | 'treinos' | 'registros' | 'financeiro' | 'progresso' | 'ajustes'
 type TrainingSelection = TrainingDay | MuayTrainingId
 type RecordKind = 'delivery' | 'despesa' | 'estudo' | 'checklists'
+type DeliverySelection = { id?: string; revision: number }
 type ActivitySelection = { item: RoutineItem; day: number }
 type LinkableRecord = { kind: 'study', area: StudyLog['area'] } | { kind: 'delivery', startTime: string, endTime: string } | { kind: 'expense' }
 type EffectiveTheme = 'light' | 'dark'
@@ -32,6 +38,7 @@ const navItems: { id: Tab; label: string }[] = [
   { id: 'semana', label: 'Semana' },
   { id: 'treinos', label: 'Treinos' },
   { id: 'registros', label: 'Registros' },
+  { id: 'financeiro', label: 'Financeiro' },
   { id: 'progresso', label: 'Progresso' },
   { id: 'ajustes', label: 'Ajustes' },
 ]
@@ -42,6 +49,7 @@ function Icon({ name }: { name: Tab }) {
     semana: <><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M7 3v4M17 3v4M3 10h18" /></>,
     treinos: <><path d="M3 9v6M6 7v10M18 7v10M21 9v6M6 12h12" /></>,
     registros: <><rect x="4" y="3" width="16" height="18" rx="2" /><path d="M8 8h8M8 12h8M8 16h5" /></>,
+    financeiro: <><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M3 9h18M15 14h3" /><circle cx="7" cy="14" r="1" /></>,
     progresso: <><path d="M4 19V5M4 19h16M7 15l4-4 3 2 5-6" /></>,
     ajustes: <><path d="M4 7h16M4 17h16" /><circle cx="9" cy="7" r="2" /><circle cx="16" cy="17" r="2" /></>,
   }
@@ -84,14 +92,14 @@ function prepareWeekSnapshots(existing: DailyPlanSnapshot[], localDate: string, 
   return { all: [...byDate.values()], changed }
 }
 
-function useRecordDate<T extends { localDate: string }>(dateKey: string, setForm: Dispatch<SetStateAction<T>>) {
+function useRecordDate<T extends { localDate: string }>(dateKey: string, setForm: Dispatch<SetStateAction<T>>, preserveDate = false) {
   const previousDate = useRef(dateKey)
   useEffect(() => {
     if (previousDate.current === dateKey) return
     const oldDate = previousDate.current
     previousDate.current = dateKey
-    setForm((form) => form.localDate === oldDate ? { ...form, localDate: dateKey } : form)
-  }, [dateKey, setForm])
+    if (!preserveDate) setForm((form) => form.localDate === oldDate ? { ...form, localDate: dateKey } : form)
+  }, [dateKey, setForm, preserveDate])
 }
 
 function App() {
@@ -111,6 +119,11 @@ function App() {
   const [checkIn, setCheckIn] = useState<DailyCheckIn | null>(null)
   const [deliveryShifts, setDeliveryShifts] = useState<DeliveryShift[]>([])
   const [expenses, setExpenses] = useState<Expense[]>([])
+  const [financialRecords, setFinancialRecords] = useState<FinancialRecord[]>([])
+  const [financialGoals, setFinancialGoals] = useState<FinancialGoal[]>([])
+  const [categoryBudgets, setCategoryBudgets] = useState<CategoryBudget[]>([])
+  const [recordKind, setRecordKind] = useState<RecordKind>('delivery')
+  const [deliverySelection, setDeliverySelection] = useState<DeliverySelection>({ revision: 0 })
   const [studyLogs, setStudyLogs] = useState<StudyLog[]>([])
   const [progress, setProgress] = useState<ThirtyDayProgress[]>([])
   const [loading, setLoading] = useState(true)
@@ -134,8 +147,8 @@ function App() {
     async function load() {
       try {
         await repository.initialize()
-        const [loadedSettings, loadedCompletions, loadedSnapshots, loadedCheckIn, shifts, loadedExpenses, logs, loadedProgress] = await Promise.all([
-          repository.getSettings(), repository.getCompletions(), repository.getDailySnapshots(), repository.getCheckIn(dateKey), repository.getDeliveryShifts(), repository.getExpenses(), repository.getStudyLogs(), repository.getProgress(),
+        const [loadedSettings, loadedCompletions, loadedSnapshots, loadedCheckIn, shifts, loadedExpenses, logs, loadedProgress, loadedFinancial, loadedGoals, loadedBudgets] = await Promise.all([
+          repository.getSettings(), repository.getCompletions(), repository.getDailySnapshots(), repository.getCheckIn(dateKey), repository.getDeliveryShifts(), repository.getExpenses(), repository.getStudyLogs(), repository.getProgress(), repository.getFinancialRecords(), repository.getFinancialGoals(), repository.getCategoryBudgets(),
         ])
         if (!active) return
         const upgradedSettings = upgradeAppearance(loadedSettings)
@@ -158,6 +171,9 @@ function App() {
         setCheckIn(loadedCheckIn ?? null)
         setDeliveryShifts(shifts)
         setExpenses(loadedExpenses)
+        setFinancialRecords(loadedFinancial)
+        setFinancialGoals(loadedGoals)
+        setCategoryBudgets(loadedBudgets)
         setStudyLogs(logs)
         setProgress(loadedProgress)
       } catch {
@@ -267,9 +283,9 @@ function App() {
   async function saveLinkedExpense(item: Expense) {
     try {
       await repository.saveExpense(item)
-      setExpenses((current) => [item, ...current])
+      setExpenses((current) => [item, ...current.filter((existing) => existing.id !== item.id)])
       setMessage('Despesa salva.')
-      await offerLinkedCompletion(item.localDate, { kind: 'expense' })
+      if (!expenses.some((existing) => existing.id === item.id)) await offerLinkedCompletion(item.localDate, { kind: 'expense' })
       return true
     } catch (error) { setMessage(readableError(error, 'Não foi possível salvar a despesa.')); return false }
   }
@@ -277,9 +293,9 @@ function App() {
   async function saveLinkedShift(item: DeliveryShift) {
     try {
       await repository.saveDeliveryShift(item)
-      setDeliveryShifts((current) => [item, ...current])
+      setDeliveryShifts((current) => [item, ...current.filter((existing) => existing.id !== item.id)])
       setMessage('Turno salvo. O resultado é estimado com os custos informados.')
-      await offerLinkedCompletion(item.localDate, { kind: 'delivery', startTime: item.startTime, endTime: item.endTime })
+      if (!deliveryShifts.some((existing) => existing.id === item.id)) await offerLinkedCompletion(item.localDate, { kind: 'delivery', startTime: item.startTime, endTime: item.endTime })
       return true
     } catch (error) { setMessage(readableError(error, 'Não foi possível salvar o turno.')); return false }
   }
@@ -292,6 +308,42 @@ function App() {
     try { await repository.saveSettingsAndDailySnapshots(nextSettings, snapshotPlan.changed); setSettings(nextSettings); setMode(next); setDailySnapshots(snapshotPlan.all) }
     catch { setMessage('Não foi possível salvar o modo. Tente novamente.') }
     finally { setModeSaving(false) }
+  }
+
+  async function saveFinancialRecord(item: FinancialRecord) {
+    try {
+      await repository.saveFinancialRecord(item)
+      setFinancialRecords((current) => [item, ...current.filter((existing) => existing.id !== item.id)])
+      setMessage('Movimentação financeira salva.')
+      return true
+    } catch (error) { setMessage(readableError(error, 'Não foi possível salvar a movimentação.')); return false }
+  }
+
+  async function saveFinancialGoal(item: FinancialGoal) {
+    try {
+      await repository.saveFinancialGoal(item)
+      setFinancialGoals((current) => [item, ...current.filter((existing) => existing.id !== item.id)])
+      setMessage('Meta financeira salva.')
+      return true
+    } catch (error) { setMessage(readableError(error, 'Não foi possível salvar a meta.')); return false }
+  }
+
+  async function saveCategoryBudget(item: CategoryBudget) {
+    try {
+      await repository.saveCategoryBudget(item)
+      setCategoryBudgets((current) => [item, ...current.filter((existing) => existing.id !== item.id)])
+      setMessage('Orçamento salvo.')
+      return true
+    } catch (error) { setMessage(readableError(error, 'Não foi possível salvar o orçamento.')); return false }
+  }
+
+  async function removeFinancialPlan(kind: 'goal' | 'budget', id: string) {
+    try {
+      if (kind === 'goal') { await repository.deleteFinancialGoal(id); setFinancialGoals((current) => current.filter((item) => item.id !== id)) }
+      else { await repository.deleteCategoryBudget(id); setCategoryBudgets((current) => current.filter((item) => item.id !== id)) }
+      setMessage('Planejamento excluído.')
+      return true
+    } catch (error) { setMessage(readableError(error, 'Não foi possível excluir o planejamento.')); return false }
   }
 
   async function changeTrainingWeek(next: number, successMessage: string) {
@@ -394,10 +446,11 @@ function App() {
           {tab === 'hoje' && <TodayView key={dateKey} now={now} items={todayItems} mode={mode} modeSaving={modeSaving} onMode={changeMode} states={todayStates} savingIds={savingIds} dateKey={dateKey} checkIn={todayCheckIn} safety={safety} weeklySummary={weeklySummary} todaySummary={todaySummary} onCheckIn={saveCheckIn} onToggle={toggleCompletion} onSkip={toggleSkipped} onOpen={(item) => openActivity(item, now.getDay())} />}
           {tab === 'semana' && <WeekView settings={settings} selectedDay={selectedWeekDay} onSelectedDay={setSelectedWeekDay} onOpen={openActivity} />}
           {tab === 'treinos' && <TrainingHubView trainingWeek={clampTrainingWeek(settings.trainingWeek)} mode={mode} onTrainingWeek={changeTrainingWeek} onOpenTraining={openWorkout} />}
-          {tab === 'progresso' && <ProgressView today={dateKey} snapshots={dailySnapshots} completions={completions} studyLogs={studyLogs} deliveryShifts={deliveryShifts} expenses={expenses} progress={progress} weeklySummary={weeklySummary} onToggle={async (item) => { try { await repository.saveProgress(item); setProgress((v) => [...v.filter((p) => p.id !== item.id), item]) } catch (error) { setMessage(readableError(error, 'Não foi possível salvar o progresso.')) } }} />}
+          {tab === 'financeiro' && <FinanceView today={dateKey} shifts={deliveryShifts} expenses={expenses} records={financialRecords} goals={financialGoals} budgets={categoryBudgets} onGoal={saveFinancialGoal} onBudget={saveCategoryBudget} onDeleteGoal={(id) => removeFinancialPlan("goal", id)} onDeleteBudget={(id) => removeFinancialPlan("budget", id)} onSave={saveFinancialRecord} onExpense={saveLinkedExpense} onDelivery={(id) => { setDeliverySelection((current) => ({ id, revision: current.revision + 1 })); setRecordKind('delivery'); navigateTab('registros') }} />}
+          {tab === 'progresso' && <ProgressView today={dateKey} snapshots={dailySnapshots} completions={completions} studyLogs={studyLogs} deliveryShifts={deliveryShifts} expenses={expenses} financialRecords={financialRecords} financialGoals={financialGoals} categoryBudgets={categoryBudgets} onFinance={() => navigateTab('financeiro')} progress={progress} weeklySummary={weeklySummary} onToggle={async (item) => { try { await repository.saveProgress(item); setProgress((v) => [...v.filter((p) => p.id !== item.id), item]) } catch (error) { setMessage(readableError(error, 'Não foi possível salvar o progresso.')) } }} />}
           {tab === 'ajustes' && <SettingsView settings={settings} persistence={storagePersistence} appearanceSaving={appearanceSaving} appearanceFeedback={appearanceFeedback} onAppearance={changeAppearance} onSettings={async (next) => { const synchronizedNext: AppSettings = { ...next, theme: effectiveTheme(settings.theme), appearanceVersion: 2 }; const snapshotPlan = prepareWeekSnapshots(dailySnapshots, dateKey, synchronizedNext.preferredMode, synchronizedNext, dateKey); try { await repository.saveSettingsAndDailySnapshots(synchronizedNext, snapshotPlan.changed); setSettings(synchronizedNext); setMode(synchronizedNext.preferredMode); setDailySnapshots(snapshotPlan.all); setMessage('Ajustes salvos.') } catch (error) { setMessage(readableError(error, 'Não foi possível salvar os ajustes.')) } }} onMessage={setMessage} onImported={() => window.location.reload()} onCleared={() => window.location.reload()} />}
         </>}
-        <div hidden={tab !== 'registros' || !!trainingSelection}><RecordsView dateKey={dateKey} shifts={deliveryShifts} expenses={expenses} studyLogs={studyLogs} completed={todayCompleted} onToggle={toggleCompletion} onShift={saveLinkedShift} onExpense={saveLinkedExpense} onStudy={saveLinkedStudy} /></div>
+        <div hidden={tab !== 'registros' || !!trainingSelection}><RecordsView deliverySelection={deliverySelection} kind={recordKind} onKind={setRecordKind} dateKey={dateKey} shifts={deliveryShifts} expenses={expenses} financialRecords={financialRecords} studyLogs={studyLogs} completed={todayCompleted} onToggle={toggleCompletion} onShift={saveLinkedShift} onExpense={saveLinkedExpense} onStudy={saveLinkedStudy} /></div>
       </main>
 
       <nav className="bottom-nav" aria-label="Navegação principal">
@@ -589,55 +642,70 @@ function WeekView({ settings, selectedDay, onSelectedDay, onOpen }: { settings: 
   </>
 }
 
-function RecordsView({ dateKey, shifts, expenses, studyLogs, completed, onToggle, onShift, onExpense, onStudy }: { dateKey: string; shifts: DeliveryShift[]; expenses: Expense[]; studyLogs: StudyLog[]; completed: Set<string>; onToggle: (id: string) => void; onShift: (item: DeliveryShift) => Promise<boolean>; onExpense: (item: Expense) => Promise<boolean>; onStudy: (item: StudyLog) => Promise<boolean> }) {
-  const [kind, setKind] = useState<RecordKind>('delivery')
+function RecordsView({ deliverySelection, kind, onKind, dateKey, shifts, expenses, financialRecords, studyLogs, completed, onToggle, onShift, onExpense, onStudy }: { deliverySelection: DeliverySelection; kind: RecordKind; onKind: (kind: RecordKind) => void; dateKey: string; shifts: DeliveryShift[]; expenses: Expense[]; financialRecords: FinancialRecord[]; studyLogs: StudyLog[]; completed: Set<string>; onToggle: (id: string) => void; onShift: (item: DeliveryShift) => Promise<boolean>; onExpense: (item: Expense) => Promise<boolean>; onStudy: (item: StudyLog) => Promise<boolean> }) {
   return <>
     <PageTitle eyebrow="Acompanhar sem culpa" title="Registros" subtitle="Dados simples para entender sua rotina real." />
-    <div className="subnav" role="group" aria-label="Tipo de registro">{([['delivery', 'Delivery'], ['despesa', 'Despesas'], ['estudo', 'Estudos'], ['checklists', 'Checklists']] as [RecordKind, string][]).map(([id, label]) => <button key={id} type="button" aria-pressed={kind === id} className={kind === id ? 'active' : ''} onClick={() => setKind(id)}>{label}</button>)}</div>
-    <div hidden={kind !== 'delivery'}><DeliveryRecord dateKey={dateKey} shifts={shifts} onSave={onShift} /></div>
-    <div hidden={kind !== 'despesa'}><ExpenseRecord dateKey={dateKey} expenses={expenses} onSave={onExpense} /></div>
+    <div className="subnav" role="group" aria-label="Tipo de registro">{([['delivery', 'Delivery'], ['despesa', 'Despesas'], ['estudo', 'Estudos'], ['checklists', 'Checklists']] as [RecordKind, string][]).map(([id, label]) => <button key={id} type="button" aria-pressed={kind === id} className={kind === id ? 'active' : ''} onClick={() => onKind(id)}>{label}</button>)}</div>
+    <div hidden={kind !== 'delivery'}><DeliveryRecord key={deliverySelection.revision} initial={shifts.find((shift) => shift.id === deliverySelection.id)} dateKey={dateKey} shifts={shifts} expenses={expenses} financialRecords={financialRecords} onSave={onShift} /></div>
+    <div hidden={kind !== 'despesa'}><ExpenseRecord dateKey={dateKey} shifts={shifts} expenses={expenses} onSave={onExpense} /></div>
     <div hidden={kind !== 'estudo'}><StudyRecord dateKey={dateKey} logs={studyLogs} onSave={onStudy} /></div>
     <div hidden={kind !== 'checklists'}><ChecklistRecord completed={completed} onToggle={onToggle} /></div>
   </>
 }
 
-function DeliveryRecord({ dateKey, shifts, onSave }: { dateKey: string; shifts: DeliveryShift[]; onSave: (item: DeliveryShift) => Promise<boolean> }) {
-  const blank = { localDate: dateKey, startTime: '', endTime: '', hours: '', kilometers: '', grossRevenue: '', fuelCost: '', maintenanceReserve: '', otherExpenses: '', fatigueLevel: '', armCondition: '', note: '' }
-  const [form, setForm] = useState(blank)
-  useRecordDate(dateKey, setForm)
+function deliveryForm(item: DeliveryShift | undefined, dateKey: string) {
+  return { localDate: item?.localDate ?? dateKey, startTime: item?.startTime ?? '', endTime: item?.endTime ?? '', kilometers: item?.kilometers == null ? '' : String(item.kilometers), grossRevenue: item?.grossRevenue ?? null, fuelCost: item?.fuelCost ?? null, maintenanceReserve: item?.maintenanceReserve ?? null, otherExpenses: item?.otherExpenses ?? null, fatigueLevel: item?.fatigueLevel == null ? '' : String(item.fatigueLevel), armCondition: item?.armCondition ?? '', note: item?.note ?? '' }
+}
+
+function DeliveryRecord({ initial, dateKey, shifts, expenses, financialRecords, onSave }: { initial?: DeliveryShift; dateKey: string; shifts: DeliveryShift[]; expenses: Expense[]; financialRecords: FinancialRecord[]; onSave: (item: DeliveryShift) => Promise<boolean> }) {
+  const blank = deliveryForm(undefined, dateKey)
+  const [form, setForm] = useState(() => deliveryForm(initial, dateKey))
+  const [editing, setEditing] = useState<DeliveryShift | null>(initial ?? null)
+  useRecordDate(dateKey, setForm, !!editing)
   const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
   const latestShifts = useMemo(() => recentRecords(shifts, 8), [shifts])
-  const set = (key: string, value: string) => setForm((current) => ({ ...current, [key]: value }))
-  const num = (value: string) => value === '' ? null : Number(value)
-  const calculation = calculateDelivery({ grossRevenue: num(form.grossRevenue), fuelCost: num(form.fuelCost), maintenanceReserve: num(form.maintenanceReserve), otherExpenses: num(form.otherExpenses), hours: num(form.hours), kilometers: num(form.kilometers) })
+  const set = (key: keyof typeof blank, value: string | number | null) => setForm((current) => ({ ...current, [key]: value }))
+  const hours = shiftDuration(form.startTime, form.endTime)
+  const kilometers = form.kilometers === '' ? null : Number(form.kilometers)
+  const calculation = calculateDelivery({ ...form, hours, kilometers })
+  const preview: DeliveryShift = { ...form, id: editing?.id ?? 'new', hours, kilometers, ...calculation, fatigueLevel: form.fatigueLevel === '' ? null : Number(form.fatigueLevel) as 0 | 1 | 2 | 3, armCondition: (form.armCondition || null) as DeliveryShift['armCondition'], createdAt: editing?.createdAt ?? new Date().toISOString() }
+  const display = deliveryFinancials(preview, expenses, financialRecords, dateKey)
   async function submit(event: FormEvent) {
     event.preventDefault()
     if (saving) return
-    const item: DeliveryShift = { id: uid(), localDate: form.localDate, startTime: form.startTime, endTime: form.endTime, hours: num(form.hours), kilometers: num(form.kilometers), grossRevenue: num(form.grossRevenue), fuelCost: num(form.fuelCost), maintenanceReserve: num(form.maintenanceReserve), otherExpenses: num(form.otherExpenses), ...calculation, fatigueLevel: form.fatigueLevel === '' ? null : Number(form.fatigueLevel) as 0 | 1 | 2 | 3, armCondition: (form.armCondition || null) as DeliveryShift['armCondition'], note: form.note, createdAt: new Date().toISOString() }
     setSaving(true)
-    try { if (await onSave(item)) setForm(blank) }
-    finally { setSaving(false) }
+    setError('')
+    try {
+      if (await onSave({ ...preview, id: editing?.id ?? uid() })) { setForm(blank); setEditing(null) }
+      else setError('O turno não foi salvo. Confira os dados e tente novamente.')
+    } finally { setSaving(false) }
+  }
+  function edit(item: DeliveryShift) {
+    setEditing(item)
+    setForm(deliveryForm(item, dateKey))
+    document.querySelector<HTMLFormElement>('[aria-label="Turno de delivery"]')?.scrollIntoView({ block: 'start' })
+    document.querySelector<HTMLInputElement>('[aria-label="Turno de delivery"] input')?.focus()
   }
   return <div className="records-layout">
-    <form className="form-card" onSubmit={submit}>
-      <h2>Novo turno</h2>
-      <fieldset className="form-group"><legend>Período e distância</legend><div className="form-grid"><Field label="Data"><input type="date" required value={form.localDate} onChange={(e) => set('localDate', e.target.value)} /></Field><Field label="Início"><input type="time" required value={form.startTime} onChange={(e) => set('startTime', e.target.value)} /></Field><Field label="Fim"><input type="time" required value={form.endTime} onChange={(e) => set('endTime', e.target.value)} /></Field><Field label="Horas em turno"><input type="number" min="0" step="0.1" required value={form.hours} onChange={(e) => set('hours', e.target.value)} /></Field><Field label="Quilômetros"><input type="number" min="0" step="0.1" required value={form.kilometers} onChange={(e) => set('kilometers', e.target.value)} /></Field></div></fieldset>
-      <fieldset className="form-group"><legend>Valores informados</legend><div className="form-grid"><Field label="Receita bruta (R$)"><input type="number" min="0" step="0.01" required value={form.grossRevenue} onChange={(e) => set('grossRevenue', e.target.value)} /></Field><Field label="Combustível (R$)"><input type="number" min="0" step="0.01" required value={form.fuelCost} onChange={(e) => set('fuelCost', e.target.value)} /></Field><Field label="Reserva manutenção (R$)"><input type="number" min="0" step="0.01" required value={form.maintenanceReserve} onChange={(e) => set('maintenanceReserve', e.target.value)} /></Field><Field label="Outras despesas (R$)"><input type="number" min="0" step="0.01" required value={form.otherExpenses} onChange={(e) => set('otherExpenses', e.target.value)} /></Field></div></fieldset>
-      <fieldset className="form-group"><legend>Como foi o turno</legend><div className="form-grid"><Field label="Cansaço"><select required value={form.fatigueLevel} onChange={(e) => set('fatigueLevel', e.target.value)}><option value="">Selecione</option><option value="0">Bem disposto</option><option value="1">Leve</option><option value="2">Cansado</option><option value="3">Muito cansado</option></select></Field><Field label="Braço"><select required value={form.armCondition} onChange={(e) => set('armCondition', e.target.value)}><option value="">Selecione</option><option value="habitual">Habitual</option><option value="alterado">Alterado</option><option value="dor">Dor</option></select></Field></div><Field label="Observação"><textarea value={form.note} onChange={(e) => set('note', e.target.value)} /></Field></fieldset>
-      <section className="calculation" aria-label="Valores calculados"><h3>Estimativa automática</h3><div className="result-strip"><div><span>Resultado estimado</span><strong>{formatMoney(calculation.estimatedResult)}</strong></div><div><span>Por hora</span><strong>{formatMoney(calculation.resultPerHour)}</strong></div><div><span>Por km</span><strong>{formatMoney(calculation.resultPerKilometer)}</strong></div></div><p className="fine-print">Estimativa baseada somente nos custos informados; não representa lucro líquido definitivo.</p></section>
-      <button className="primary-button" disabled={saving}>{saving ? 'Salvando turno…' : 'Salvar turno'}</button>
+    <form className="form-card" aria-label="Turno de delivery" onSubmit={submit}>
+      <h2>{editing ? 'Editar turno' : 'Novo turno'}</h2>
+      <fieldset className="form-group"><legend>Período e distância</legend><div className="form-grid"><Field label="Data"><input type="date" required value={form.localDate} onChange={(e) => set('localDate', e.target.value)} /></Field><Field label="Início"><input type="time" required value={form.startTime} onChange={(e) => set('startTime', e.target.value)} /></Field><Field label="Fim"><input type="time" required value={form.endTime} onChange={(e) => set('endTime', e.target.value)} /></Field><Field label="Horas em turno"><input type="number" readOnly value={hours ?? ''} /><small>Calculadas pelo início e fim; fim anterior ao início indica o dia seguinte.</small></Field><Field label="Quilômetros"><input type="number" min="0" step="0.1" required value={form.kilometers} onChange={(e) => set('kilometers', e.target.value)} /></Field></div></fieldset>
+      <fieldset className="form-group"><legend>Valores informados</legend><div className="form-grid"><Field label="Receita bruta (R$)"><MoneyInput required value={form.grossRevenue} onChange={(value) => set('grossRevenue', value)} /></Field><Field label="Combustível (R$)"><MoneyInput required value={form.fuelCost} onChange={(value) => set('fuelCost', value)} /></Field><Field label="Reserva manutenção (R$)"><MoneyInput required value={form.maintenanceReserve} onChange={(value) => set('maintenanceReserve', value)} /></Field><Field label="Outras despesas (R$)"><MoneyInput required value={form.otherExpenses} onChange={(value) => set('otherExpenses', value)} /></Field></div><p className="fine-print">Informe zero quando não houver custo. Despesas adicionais podem ser associadas em Despesas ou Financeiro; registre cada gasto uma única vez.</p></fieldset>
+      <fieldset className="form-group"><legend>Como foi o turno</legend><div className="form-grid"><Field label="Cansaço"><select required value={form.fatigueLevel} onChange={(e) => set('fatigueLevel', e.target.value)}><option value="">Selecione</option><option value="0">Bem disposto</option><option value="1">Leve</option><option value="2">Cansado</option><option value="3">Muito cansado</option></select></Field><Field label="Braço"><select required value={form.armCondition} onChange={(e) => set('armCondition', e.target.value)}><option value="">Selecione</option><option value="habitual">Habitual</option><option value="alterado">Alterado</option><option value="dor">Dor</option></select></Field></div><Field label="Observação"><textarea maxLength={5000} value={form.note} onChange={(e) => set('note', e.target.value)} /></Field></fieldset>
+      <section className="calculation" aria-label="Valores calculados"><h3>Estimativa automática</h3><div className="result-strip"><div><span>Renda bruta</span><strong>{formatMoney(form.grossRevenue)}</strong></div><div><span>Despesas pagas</span><strong>{formatMoney(display.operationalExpenses)}</strong></div><div><span>Renda líquida operacional</span><strong>{formatMoney(display.operationalNet)}</strong></div><div><span>Reserva estimada</span><strong>{formatMoney(form.maintenanceReserve)}</strong></div><div><span>Despesas e reserva</span><strong>{formatMoney(display.expenses)}</strong></div><div><span>Renda líquida estimada</span><strong>{formatMoney(display.net)}</strong></div><div><span>Por hora</span><strong>{formatMoney(display.perHour)}</strong></div><div><span>Por km</span><strong>{formatMoney(display.perKilometer)}</strong></div></div><p className="fine-print">Resultado estimado com os custos informados, reserva e despesas vinculadas já pagas. Pendências abertas não são descontadas até o pagamento.</p><dl className="financial-metrics"><div><dt>Bruto / hora</dt><dd>{formatMoney(display.grossPerHour)}/h</dd></div><div><dt>Despesas / hora</dt><dd>{formatMoney(display.expensesPerHour)}/h</dd></div><div><dt>Líquido operacional / hora</dt><dd>{formatMoney(display.operationalNetPerHour)}/h</dd></div><div><dt>Resultado após reserva / hora</dt><dd>{formatMoney(display.perHour)}/h</dd></div></dl></section>
+      {error && <p className="warning-text" role="alert">{error}</p>}
+      <button className="primary-button" disabled={saving}>{saving ? 'Salvando turno…' : editing ? 'Salvar alterações do turno' : 'Salvar turno'}</button>
+      {editing && <button type="button" className="text-button" disabled={saving} onClick={() => { setEditing(null); setForm(blank) }}>Cancelar edição</button>}
     </form>
-    <RecordList title="Últimos turnos" empty="Nenhum turno registrado.">{latestShifts.map((item) => <div className="record-row" key={item.id}><div><strong>{new Date(`${item.localDate}T12:00`).toLocaleDateString('pt-BR')}</strong><span>{item.hours ?? '—'}h · {item.kilometers ?? '—'} km</span></div><strong>{formatMoney(item.estimatedResult)}</strong></div>)}</RecordList>
+    <RecordList title="Últimos turnos" empty="Nenhum turno registrado.">{latestShifts.map((item) => { const values = deliveryFinancials(item, expenses, financialRecords, dateKey); return <div className="record-row" key={item.id}><div><strong>{new Date(`${item.localDate}T12:00`).toLocaleDateString('pt-BR')}</strong><span>{item.startTime}–{item.endTime} · {values.hours ?? '—'}h · {item.kilometers ?? '—'} km</span><span>Bruta {formatMoney(item.grossRevenue)} · despesas e reserva {formatMoney(values.expenses)}</span><span>Líquida estimada {formatMoney(values.net)} · {formatMoney(values.perHour)}/h</span><button type="button" className="text-button" onClick={() => edit(item)}>Editar turno</button></div><strong>{formatMoney(values.net)}</strong></div> })}</RecordList>
   </div>
 }
 
-function ExpenseRecord({ dateKey, expenses, onSave }: { dateKey: string; expenses: Expense[]; onSave: (item: Expense) => Promise<boolean> }) {
-  const [form, setForm] = useState({ localDate: dateKey, description: '', category: 'Alimentação', amount: '' })
-  useRecordDate(dateKey, setForm)
-  const [saving, setSaving] = useState(false)
+function ExpenseRecord({ dateKey, shifts, expenses, onSave }: { dateKey: string; shifts: DeliveryShift[]; expenses: Expense[]; onSave: (item: Expense) => Promise<boolean> }) {
+  const [editing, setEditing] = useState<Expense | undefined>()
   const latestExpenses = useMemo(() => recentRecords(expenses, 10), [expenses])
-  async function submit(event: FormEvent) { event.preventDefault(); if (saving) return; const item: Expense = { id: uid(), localDate: form.localDate, description: form.description, category: form.category as Expense['category'], amount: Number(form.amount), createdAt: new Date().toISOString() }; setSaving(true); try { if (await onSave(item)) setForm({ ...form, description: '', amount: '' }) } finally { setSaving(false) } }
-  return <div className="records-layout"><form className="form-card" onSubmit={submit}><h2>Nova despesa</h2><div className="form-grid"><Field label="Data"><input type="date" required value={form.localDate} onChange={(e) => setForm({ ...form, localDate: e.target.value })} /></Field><Field label="Categoria"><select value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}>{expenseCategories.map((item) => <option key={item}>{item}</option>)}</select></Field></div><Field label="Descrição"><input required value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Ex.: mercado" /></Field><Field label="Valor (R$)"><input type="number" min="0" step="0.01" required value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} /></Field><button className="primary-button" disabled={saving}>{saving ? 'Salvando despesa…' : 'Salvar despesa'}</button></form><RecordList title="Despesas recentes" empty="Nenhuma despesa registrada.">{latestExpenses.map((item) => <div className="record-row" key={item.id}><div><strong>{item.description}</strong><span>{item.category} · {new Date(`${item.localDate}T12:00`).toLocaleDateString('pt-BR')}</span></div><strong>{formatMoney(item.amount)}</strong></div>)}</RecordList></div>
+  return <div className="records-layout"><ExpenseForm key={editing?.id ?? dateKey} today={dateKey} shifts={shifts} initial={editing} onSave={onSave} onCancel={() => setEditing(undefined)} /><RecordList title="Despesas recentes" empty="Nenhuma despesa registrada.">{latestExpenses.map((item) => <div className="record-row" key={item.id}><div><strong>{item.description}</strong><span>{item.category} · {new Date(`${item.localDate}T12:00`).toLocaleDateString('pt-BR')}{item.deliveryShiftId ? ' · Delivery' : ''}</span><button type="button" className="text-button" onClick={() => setEditing(item)}>Editar despesa</button></div><strong>{formatMoney(item.amount)}</strong></div>)}</RecordList></div>
 }
 
 function StudyRecord({ dateKey, logs, onSave }: { dateKey: string; logs: StudyLog[]; onSave: (item: StudyLog) => Promise<boolean> }) {
@@ -678,12 +746,12 @@ function TrainingHubView({ trainingWeek, mode, onTrainingWeek, onOpenTraining }:
   </>
 }
 
-function ProgressView({ today, snapshots, completions, studyLogs, deliveryShifts, expenses, progress, weeklySummary, onToggle }: { today: string; snapshots: DailyPlanSnapshot[]; completions: DailyCompletion[]; studyLogs: StudyLog[]; deliveryShifts: DeliveryShift[]; expenses: Expense[]; progress: ThirtyDayProgress[]; weeklySummary: WeeklyProgressSummary; onToggle: (item: ThirtyDayProgress) => Promise<void> }) {
+function ProgressView({ today, snapshots, completions, studyLogs, deliveryShifts, expenses, financialRecords, financialGoals, categoryBudgets, onFinance, progress, weeklySummary, onToggle }: { today: string; snapshots: DailyPlanSnapshot[]; completions: DailyCompletion[]; studyLogs: StudyLog[]; deliveryShifts: DeliveryShift[]; expenses: Expense[]; financialRecords: FinancialRecord[]; financialGoals: FinancialGoal[]; categoryBudgets: CategoryBudget[]; onFinance: () => void; progress: ThirtyDayProgress[]; weeklySummary: WeeklyProgressSummary; onToggle: (item: ThirtyDayProgress) => Promise<void> }) {
   const { completedIds: completed, total, completedCount, percentage } = summarizePlanProgress(progress, progressPlan)
   return <>
     <PageTitle eyebrow="Evolução" title="Seu progresso continua" subtitle="Acompanhe a rotina e os passos do plano inicial. Os treinos estão na aba Treinos." />
 
-    <ProgressDashboard today={today} snapshots={snapshots} completions={completions} studyLogs={studyLogs} deliveryShifts={deliveryShifts} expenses={expenses} />
+    <ProgressDashboard today={today} snapshots={snapshots} completions={completions} studyLogs={studyLogs} deliveryShifts={deliveryShifts} expenses={expenses} financialRecords={financialRecords} financialGoals={financialGoals} categoryBudgets={categoryBudgets} onFinance={onFinance} />
 
     <section className="dashboard-existing-progress" aria-labelledby="existing-progress-title">
       <div className="section-heading"><div><p className="eyebrow">Rotina preservada</p><h2 id="existing-progress-title">Progresso semanal e plano de 30 dias</h2><p className="section-description">Estas leituras permanecem separadas do dashboard mensal e anual.</p></div></div>
@@ -727,8 +795,6 @@ function SettingsView({ settings, persistence, appearanceSaving, appearanceFeedb
     <section className="danger-section"><h2>Apagar todos os dados</h2><p>Remove registros, progresso e ajustes somente deste aparelho.</p><button className="danger-button" onClick={clearData}>Apagar registros</button></section></>
 }
 
-function PageTitle({ eyebrow, title, subtitle }: { eyebrow: string; title: string; subtitle: string }) { return <header className="page-title"><p className="eyebrow">{eyebrow}</p><h1>{title}</h1><p>{subtitle}</p></header> }
-function Field({ label, children }: { label: string; children: React.ReactNode }) { return <label className="field"><span>{label}</span>{children}</label> }
 function RecordList({ title, empty, children }: { title: string; empty: string; children: React.ReactNode }) { const hasChildren = Array.isArray(children) ? children.length > 0 : !!children; return <section className="record-list"><h2>{title}</h2>{hasChildren ? children : <div className="empty-state"><p>{empty}</p></div>}</section> }
 
 export default App

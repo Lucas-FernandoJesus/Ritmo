@@ -7,6 +7,7 @@ test('navega pelas áreas principais sem recarregar a aplicação', async ({ pag
     ['Semana', 'Sua semana'],
     ['Treinos', 'Treinos'],
     ['Registros', 'Registros'],
+    ['Financeiro', 'Financeiro'],
     ['Progresso', 'Seu progresso continua'],
     ['Ajustes', 'Ajustes'],
     ['Hoje', 'Um dia de cada vez.'],

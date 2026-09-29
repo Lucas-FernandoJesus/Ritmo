@@ -1,4 +1,4 @@
-import type { AppSettings, BackupData, DailyCheckIn, DailyCompletion, DailyPlanSnapshot, DailyProgressSummary, DeliveryShift, Expense, RoutineItem, RoutineMode, StudyLog, ThirtyDayProgress, WeeklyProgressSummary } from './types'
+import type { AppSettings, BackupData, CategoryBudget, DailyCheckIn, DailyCompletion, DailyPlanSnapshot, DailyProgressSummary, DeliveryShift, Expense, FinancialGoal, FinancialRecord, RoutineItem, RoutineMode, StudyLog, ThirtyDayProgress, WeeklyProgressSummary } from './types'
 
 export const SCHEMA_VERSION = 1
 export const MAX_BACKUP_BYTES = 10 * 1024 * 1024
@@ -6,6 +6,8 @@ const MAX_RECORDS_PER_STORE = 50_000
 
 const routineModes: RoutineMode[] = ['normal', 'reduzido', 'minimo']
 const expenseCategories = ['Moradia', 'Alimentação', 'Transporte', 'Saúde', 'Lazer', 'Desenvolvimento', 'Outros'] as const
+const deliveryCostKinds = ['combustivel', 'manutencao', 'alimentacao', 'taxas', 'outros'] as const
+const financialGoalTypes = ['income', 'net-income', 'delivery-income', 'delivery-net', 'savings', 'expense-limit'] as const
 const studyAreas = ['Inglês', 'Programação', 'Leitura', 'Outro'] as const
 const armConditions = ['habitual', 'alterado', 'dor'] as const
 const completionStates = ['done', 'skipped'] as const
@@ -214,6 +216,13 @@ export function rideSafetyForDate(checkIn: DailyCheckIn | null, localDate: strin
 
 const nonNegativeOrNull = (value: number | null | undefined) => value == null || !Number.isFinite(value) || value < 0 ? null : value
 
+export function shiftDuration(startTime: string, endTime: string): number | null {
+  if (!isTime(startTime) || !isTime(endTime)) return null
+  const minutes = (time: string) => Number(time.slice(0, 2)) * 60 + Number(time.slice(3))
+  const difference = minutes(endTime) - minutes(startTime)
+  return (difference < 0 ? difference + 24 * 60 : difference) / 60
+}
+
 export function calculateDelivery(input: Pick<DeliveryShift, 'grossRevenue' | 'fuelCost' | 'maintenanceReserve' | 'otherExpenses' | 'hours' | 'kilometers'>) {
   const revenue = nonNegativeOrNull(input.grossRevenue)
   const costs = [input.fuelCost, input.maintenanceReserve, input.otherExpenses].map(nonNegativeOrNull)
@@ -355,6 +364,47 @@ export function isValidExpense(value: unknown): value is Expense {
     && isNonEmptyString(value.description)
     && isOneOf(value.category, expenseCategories)
     && isNonNegativeNumber(value.amount)
+    && Number.isSafeInteger(Math.round(value.amount * 100))
+    && isDateTime(value.createdAt)
+    && (value.deliveryShiftId === undefined || isSafeId(value.deliveryShiftId))
+    && (value.deliveryCostKind === undefined || (isSafeId(value.deliveryShiftId) && isOneOf(value.deliveryCostKind, deliveryCostKinds)))
+    && isOptionalString(value.note)
+}
+
+export function isValidFinancialRecord(value: unknown): value is FinancialRecord {
+  return isObject(value)
+    && isSafeId(value.id)
+    && isLocalDate(value.localDate)
+    && isNonEmptyString(value.description)
+    && isOneOf(value.category, expenseCategories)
+    && isOneOf(value.type, ['entrada', 'saida', 'credito', 'pendencia'] as const)
+    && isNonNegativeNumber(value.amount)
+    && Number.isSafeInteger(Math.round(value.amount * 100))
+    && (value.deliveryShiftId === undefined || (isSafeId(value.deliveryShiftId) && (value.type === 'saida' || value.type === 'pendencia')))
+    && (value.deliveryCostKind === undefined || (isSafeId(value.deliveryShiftId) && isOneOf(value.deliveryCostKind, deliveryCostKinds) && (value.type === 'saida' || value.type === 'pendencia')))
+    && isOptionalString(value.note)
+    && isDateTime(value.createdAt)
+}
+
+export function categoryBudgetId(month: string, category: CategoryBudget['category'], costKind?: CategoryBudget['deliveryCostKind']): string {
+  return `budget:${month}:${costKind ? `delivery-${costKind}` : `category-${expenseCategories.indexOf(category)}`}`
+}
+
+export function isValidFinancialGoal(value: unknown): value is FinancialGoal {
+  return isObject(value) && isSafeId(value.id) && isNonEmptyString(value.name, 200)
+    && isOneOf(value.type, financialGoalTypes) && isNonNegativeNumber(value.target) && value.target > 0
+    && Number.isSafeInteger(Math.round(value.target * 100)) && Math.round(value.target * 100) > 0
+    && isLocalDate(value.startDate) && isLocalDate(value.endDate) && value.startDate <= value.endDate
+    && isDateTime(value.createdAt)
+}
+
+export function isValidCategoryBudget(value: unknown): value is CategoryBudget {
+  return isObject(value) && typeof value.month === 'string' && isLocalDate(`${value.month}-01`)
+    && isOneOf(value.category, expenseCategories)
+    && (value.deliveryCostKind === undefined || isOneOf(value.deliveryCostKind, deliveryCostKinds))
+    && value.id === categoryBudgetId(value.month, value.category, value.deliveryCostKind as CategoryBudget['deliveryCostKind'])
+    && isNonNegativeNumber(value.limit) && value.limit > 0
+    && Number.isSafeInteger(Math.round(value.limit * 100)) && Math.round(value.limit * 100) > 0
     && isDateTime(value.createdAt)
 }
 
@@ -391,25 +441,39 @@ export function validateBackup(value: unknown): value is BackupData {
     || !Array.isArray(value.expenses)
     || !Array.isArray(value.studyLogs)
     || !Array.isArray(value.progress)
+    || (value.financialRecords !== undefined && !Array.isArray(value.financialRecords))
+    || (value.financialGoals !== undefined && !Array.isArray(value.financialGoals))
+    || (value.categoryBudgets !== undefined && !Array.isArray(value.categoryBudgets))
     || (value.dailySnapshots !== undefined && !Array.isArray(value.dailySnapshots))
     || !isValidSettings(value.settings)) return false
 
   const dailySnapshots = value.dailySnapshots ?? []
-  const groups = [value.completions, dailySnapshots, value.checkIns, value.deliveryShifts, value.expenses, value.studyLogs, value.progress]
+  const financialRecords = value.financialRecords ?? []
+  const financialGoals = value.financialGoals ?? []
+  const categoryBudgets = value.categoryBudgets ?? []
+  const groups = [value.completions, dailySnapshots, value.checkIns, value.deliveryShifts, value.expenses, financialRecords, financialGoals, categoryBudgets, value.studyLogs, value.progress]
   if (groups.some((items) => items.length > MAX_RECORDS_PER_STORE)) return false
   if (!value.completions.every(isValidCompletion)
     || !dailySnapshots.every(isValidDailyPlanSnapshot)
     || !value.checkIns.every(isValidCheckIn)
     || !value.deliveryShifts.every(isValidDeliveryShift)
     || !value.expenses.every(isValidExpense)
+    || !financialRecords.every(isValidFinancialRecord)
+    || !financialGoals.every(isValidFinancialGoal)
+    || !categoryBudgets.every(isValidCategoryBudget)
     || !value.studyLogs.every(isValidStudyLog)
     || !value.progress.every(isValidProgress)) return false
 
+  const shiftIds = new Set(value.deliveryShifts.map((item) => item.id))
+  if ([...value.expenses, ...financialRecords].some((item) => item.deliveryShiftId !== undefined && !shiftIds.has(item.deliveryShiftId))) return false
   return hasUnique(value.completions, (item) => item.id)
     && hasUnique(dailySnapshots, (item) => item.id)
     && hasUnique(value.checkIns, (item) => item.localDate)
     && hasUnique(value.deliveryShifts, (item) => item.id)
     && hasUnique(value.expenses, (item) => item.id)
+    && hasUnique(financialRecords, (item) => item.id)
+    && hasUnique(financialGoals, (item) => item.id)
+    && hasUnique(categoryBudgets, (item) => item.id)
     && hasUnique(value.studyLogs, (item) => item.id)
     && hasUnique(value.progress, (item) => item.id)
 }

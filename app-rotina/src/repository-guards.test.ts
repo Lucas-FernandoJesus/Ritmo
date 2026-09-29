@@ -1,13 +1,21 @@
 import { describe, expect, it } from 'vitest'
 import { defaultSettings } from './domain'
 import { repository } from './repository'
-import type { BackupData, DeliveryShift, Expense } from './types'
+import type { BackupData, DeliveryShift, Expense, FinancialRecord } from './types'
 
 const snapshotRepository = repository as unknown as {
   saveDailySnapshot: (snapshot: unknown) => Promise<void>
 }
 
 describe('barreiras do repositório', () => {
+  it('rejeita meta e orçamento inválidos antes de abrir o banco', () => {
+    expect(() => repository.saveFinancialGoal({ id: 'bad', name: '', type: 'income', target: 100, startDate: '2026-09-01', endDate: '2026-09-30', createdAt: '2026-09-24T18:00:00.000Z' })).toThrow('Meta financeira inválida')
+    expect(() => repository.saveCategoryBudget({ id: 'bad', month: '2026-09', category: 'Outros', limit: 0, createdAt: '2026-09-24T18:00:00.000Z' })).toThrow('Orçamento inválido')
+  })
+  it('rejeita movimentação financeira inválida antes de acessar a IndexedDB', () => {
+    const item: FinancialRecord = { id: 'bad', localDate: '2026-09-24', description: 'Inválida', category: 'Outros', type: 'credito', amount: -1, createdAt: '2026-09-24T18:00:00.000Z' }
+    expect(() => repository.saveFinancialRecord(item)).toThrow('Movimentação financeira inválida')
+  })
   it('rejeita despesa inválida antes de acessar a IndexedDB', () => {
     const expense: Expense = { id: 'expense-1', localDate: '2026-09-24', description: 'Inválida', category: 'Outros', amount: -1, createdAt: '2026-09-24T18:00:00.000Z' }
     expect(() => repository.saveExpense(expense)).toThrow('Despesa inválida')

@@ -1,7 +1,7 @@
-import { expect, test } from './fixtures'
+import { expect, openStoragePage, test } from './fixtures'
 
 test('adiciona snapshots sem apagar conclusões de um IndexedDB legado', async ({ page }) => {
-  await page.goto('/sw.js')
+  await openStoragePage(page)
   await page.evaluate(async () => {
     await new Promise<void>((resolve, reject) => {
       const deletion = indexedDB.deleteDatabase('rotina-local')
@@ -66,5 +66,6 @@ test('adiciona snapshots sem apagar conclusões de um IndexedDB legado', async (
     }
   }))
   expect(databaseState.stores).toContain('dailySnapshots')
+  expect(databaseState.stores).toContain('financialRecords')
   expect(databaseState.snapshots).toBe(7)
 })

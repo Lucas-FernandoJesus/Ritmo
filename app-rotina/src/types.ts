@@ -119,6 +119,46 @@ export interface Expense {
   category: ExpenseCategory
   amount: number
   createdAt: string
+  deliveryShiftId?: string
+  deliveryCostKind?: DeliveryCostKind
+  note?: string
+}
+
+export type FinancialType = 'entrada' | 'saida' | 'credito' | 'pendencia'
+
+export interface FinancialRecord {
+  id: string
+  localDate: string
+  description: string
+  category: ExpenseCategory
+  type: FinancialType
+  amount: number
+  deliveryShiftId?: string
+  deliveryCostKind?: DeliveryCostKind
+  note?: string
+  createdAt: string
+}
+
+export type DeliveryCostKind = 'combustivel' | 'manutencao' | 'alimentacao' | 'taxas' | 'outros'
+export type FinancialGoalType = 'income' | 'net-income' | 'delivery-income' | 'delivery-net' | 'savings' | 'expense-limit'
+
+export interface FinancialGoal {
+  id: string
+  name: string
+  type: FinancialGoalType
+  target: number
+  startDate: string
+  endDate: string
+  createdAt: string
+}
+
+export interface CategoryBudget {
+  id: string
+  month: string
+  category: ExpenseCategory
+  deliveryCostKind?: DeliveryCostKind
+  limit: number
+  createdAt: string
 }
 
 export type ExpenseCategory =
@@ -167,6 +207,9 @@ export interface BackupData {
   checkIns: DailyCheckIn[]
   deliveryShifts: DeliveryShift[]
   expenses: Expense[]
+  financialRecords?: FinancialRecord[]
+  financialGoals?: FinancialGoal[]
+  categoryBudgets?: CategoryBudget[]
   studyLogs: StudyLog[]
   progress: ThirtyDayProgress[]
   settings: AppSettings

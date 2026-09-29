@@ -35,6 +35,22 @@ Os dados ficam no IndexedDB do navegador de cada aparelho: não são enviados ao
 
 Em **Ajustes**, selecione **Exportar backup JSON**. Guarde o arquivo fora do aparelho. Para restaurar, use **Importar backup JSON**; o formato e a versão são validados antes da confirmação. Backups novos incluem os snapshots diários usados no progresso semanal, enquanto backups antigos sem esse campo continuam aceitos.
 
+## Financeiro
+
+A aba **Financeiro** consolida automaticamente receitas e custos dos turnos de delivery, despesas de **Registros** e movimentações avulsas. Permite cadastrar entrada, saída, crédito e pendência; editar lançamentos; receber créditos ou pagar pendências sem criar cópias. O histórico oferece filtros por período, tipo, categoria, origem e status, além de busca por descrição. Hoje, semana civil, mês civil, ano civil e período personalizado atualizam os resumos e as análises. **Progresso** mostra um resumo financeiro correspondente ao mês ou ano selecionado na Dashboard.
+
+Metas têm progresso automático; orçamentos mensais acompanham o consumo por categoria ou custo específico do delivery. Comparações e tendências distinguem histórico ausente de zero. O fluxo dos próximos 7, 15 e 30 dias separa saldo realizado e projeção, incluindo alertas de vencimento e risco de saldo negativo. Delivery mostra bruto, despesas pagas, líquido operacional e resultado após reserva, além de taxas por hora, médias, custos e comparações de turnos. Metas e orçamentos são planejamento, nunca movimentações. A Dashboard destaca uma meta e os alertas prioritários. Tudo permanece offline, com IndexedDB 4 e backup compatível com versões anteriores.
+
+O saldo é entradas recebidas menos saídas pagas no período; não inclui saldo inicial de conta, créditos, pendências nem datas futuras. Sem registros realizados, aparece **Sem dados**. A reserva de manutenção do delivery permanece uma previsão: reduz a renda líquida estimada e aparece como valor reservado, sem simular um pagamento. Despesas adicionais entram no resultado do delivery quando vinculadas explicitamente a um turno; não registre novamente um gasto já informado nele.
+
+O turno calcula as horas automaticamente pelo início e fim, inclusive após a meia-noite. Todos os campos monetários usam máscara brasileira durante a digitação: `123456` vira `R$ 1.234,56`, persistido como número `1234.56`. Os backups incluem os novos lançamentos, e a atualização do IndexedDB preserva as coleções anteriores. Consulte [a arquitetura e as regras financeiras](../docs/financeiro.md).
+
+Para executar os testes no Edge instalado, sem baixar o Chromium do Playwright:
+
+```bash
+npm run test:e2e -- --config=playwright.edge.config.ts --workers=2
+```
+
 ## Progresso automático
 
 Ao abrir a aplicação, o Ritmo salva no IndexedDB um snapshot das atividades previstas de segunda a domingo e do modo aplicável. Mudanças de modo atualizam somente o dia atual e os dias seguintes; dias anteriores permanecem associados ao planejamento que estava registrado.

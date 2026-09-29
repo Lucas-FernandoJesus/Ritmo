@@ -1,5 +1,6 @@
-import { calculateDelivery } from './domain'
-import type { DailyCompletion, DailyPlanSnapshot, DeliveryShift, Expense, StudyLog } from './types'
+import { shiftDuration } from './domain'
+import { deliveryFinancials } from './finance'
+import type { DailyCompletion, DailyPlanSnapshot, DeliveryShift, Expense, FinancialRecord, StudyLog } from './types'
 
 export type DashboardCategory = 'tarefas' | 'treinos' | 'estudos' | 'delivery' | 'renda'
 export type DashboardPeriod = 'month' | 'year'
@@ -91,6 +92,7 @@ export interface DashboardInput {
   studyLogs: readonly StudyLog[]
   deliveryShifts: readonly DeliveryShift[]
   expenses: readonly Expense[]
+  financialRecords?: readonly FinancialRecord[]
 }
 
 interface CivilDateParts {
@@ -133,6 +135,7 @@ interface FinancialValues {
   fuelCost: DashboardValue
   maintenanceReserve: DashboardValue
   otherExpenses: DashboardValue
+  linkedExpenses: DashboardValue
   registeredCosts: DashboardValue
   estimatedResult: DashboardValue
   revenuePerHour: DashboardValue
@@ -416,7 +419,7 @@ function ratio(numerator: DashboardValue, denominator: DashboardValue, unit: Das
   return available(unit, numerator.value / denominator.value)
 }
 
-function financialValues(shifts: readonly DeliveryShift[], emptyStatus: 'no-data' | 'future'): FinancialValues {
+function financialValues(shifts: readonly DeliveryShift[], emptyStatus: 'no-data' | 'future', expenses: readonly Expense[], records: readonly FinancialRecord[], today: string): FinancialValues {
   if (!shifts.length) {
     return {
       shifts: dashboardValue('count', emptyStatus),
@@ -426,6 +429,7 @@ function financialValues(shifts: readonly DeliveryShift[], emptyStatus: 'no-data
       fuelCost: dashboardValue('BRL', emptyStatus),
       maintenanceReserve: dashboardValue('BRL', emptyStatus),
       otherExpenses: dashboardValue('BRL', emptyStatus),
+      linkedExpenses: dashboardValue('BRL', emptyStatus),
       registeredCosts: dashboardValue('BRL', emptyStatus),
       estimatedResult: dashboardValue('BRL', emptyStatus),
       revenuePerHour: dashboardValue('BRL/hour', emptyStatus),
@@ -434,17 +438,16 @@ function financialValues(shifts: readonly DeliveryShift[], emptyStatus: 'no-data
     }
   }
 
-  const hours = completeSum(shifts, 'hours', (item) => item.hours)
+  const hours = completeSum(shifts, 'hours', (item) => shiftDuration(item.startTime, item.endTime))
   const kilometers = completeSum(shifts, 'kilometers', (item) => item.kilometers)
   const grossRevenue = completeSum(shifts, 'BRL', (item) => item.grossRevenue)
   const fuelCost = completeSum(shifts, 'BRL', (item) => item.fuelCost)
   const maintenanceReserve = completeSum(shifts, 'BRL', (item) => item.maintenanceReserve)
   const otherExpenses = completeSum(shifts, 'BRL', (item) => item.otherExpenses)
-  const calculated = shifts.map((item) => calculateDelivery(item))
-  const estimatedResult = completeSum(calculated, 'BRL', (item) => item.estimatedResult)
-  const registeredCosts = fuelCost.status === 'available' && maintenanceReserve.status === 'available' && otherExpenses.status === 'available'
-    ? available('BRL', (fuelCost.value ?? 0) + (maintenanceReserve.value ?? 0) + (otherExpenses.value ?? 0))
-    : dashboardValue('BRL', 'unavailable')
+  const calculated = shifts.map((item) => deliveryFinancials(item, expenses, records, today))
+  const estimatedResult = completeSum(calculated, 'BRL', (item) => item.net)
+  const registeredCosts = completeSum(calculated, 'BRL', (item) => item.expenses)
+  const linkedExpenses = completeSum(calculated, 'BRL', (item) => item.linkedExpenses)
 
   return {
     shifts: available('count', shifts.length),
@@ -454,6 +457,7 @@ function financialValues(shifts: readonly DeliveryShift[], emptyStatus: 'no-data
     fuelCost,
     maintenanceReserve,
     otherExpenses,
+    linkedExpenses,
     registeredCosts,
     estimatedResult,
     revenuePerHour: ratio(grossRevenue, hours, 'BRL/hour'),
@@ -468,6 +472,7 @@ function financialKpis(values: FinancialValues, category: 'delivery' | 'renda'):
     metric('fuel-cost', 'Combustível', values.fuelCost),
     metric('maintenance-reserve', 'Reserva de manutenção', values.maintenanceReserve),
     metric('other-expenses', 'Outros custos do turno', values.otherExpenses),
+    metric('linked-expenses', 'Despesas vinculadas', values.linkedExpenses),
     metric('registered-costs', 'Custos registrados nos turnos', values.registeredCosts),
     metric('estimated-result', 'Resultado estimado', values.estimatedResult),
   ]
@@ -491,7 +496,7 @@ function aggregateFinancial(
 ): CategoryAggregate {
   const shifts = input.deliveryShifts.filter((item) => inRealizedInterval(item.localDate, interval, input.today))
   const future = interval.start > input.today
-  const values = financialValues(shifts, future ? 'future' : 'no-data')
+  const values = financialValues(shifts, future ? 'future' : 'no-data', input.expenses, input.financialRecords ?? [], input.today)
   const kpis = financialKpis(values, category)
   const configs = category === 'renda'
     ? [
@@ -516,12 +521,12 @@ function aggregateFinancial(
     points: bucketsFor(input.period, interval).map((bucket) => {
       const bucketFuture = bucket.start > input.today
       const bucketShifts = shifts.filter((item) => item.localDate >= bucket.start && item.localDate <= bucket.end)
-      return seriesPoint(bucket, financialValues(bucketShifts, bucketFuture ? 'future' : 'no-data')[key])
+      return seriesPoint(bucket, financialValues(bucketShifts, bucketFuture ? 'future' : 'no-data', input.expenses, input.financialRecords ?? [], input.today)[key])
     }),
   })) : []
 
   const incomplete = shifts.some((item) => [
-    item.hours,
+    shiftDuration(item.startTime, item.endTime),
     item.kilometers,
     item.grossRevenue,
     item.fuelCost,
@@ -538,10 +543,11 @@ function aggregateFinancial(
       metric('fuel-cost', 'Combustível', values.fuelCost),
       metric('maintenance-reserve', 'Reserva de manutenção', values.maintenanceReserve),
       metric('other-expenses', 'Outros custos do turno', values.otherExpenses),
+      metric('linked-expenses', 'Despesas vinculadas', values.linkedExpenses),
     ],
   }] : []
 
-  // Despesas gerais não participam desta agregação para evitar dupla contagem com custos do turno.
+  // Somente despesas explicitamente vinculadas participam do resultado dos turnos.
   return { hasData: future ? false : shifts.length > 0, kpis, series: timeSeries, breakdown, warnings }
 }
 

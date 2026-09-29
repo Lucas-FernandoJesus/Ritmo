@@ -334,6 +334,19 @@ describe('categorias do dashboard', () => {
     expect(kpi(withGeneralExpenses, 'registered-costs')).toEqual(kpi(withoutGeneralExpenses, 'registered-costs'))
   })
 
+  it('recalcula horas pela madrugada e inclui despesas pagas vinculadas de ambas as fontes', () => {
+    const model = buildDashboard({
+      ...emptyInput('delivery', 'month', '2026-03-31'),
+      deliveryShifts: [shift('night', '2026-03-01', { startTime: '20:00', endTime: '02:00', hours: 99 })],
+      expenses: [{ ...expense('meal', '2026-03-01', 10), deliveryShiftId: 'night' }, expense('rent', '2026-03-01', 1000)],
+      financialRecords: [{ id: 'fee', localDate: '2026-03-01', description: 'Taxa', type: 'saida', category: 'Outros', amount: 5, deliveryShiftId: 'night', createdAt: '2026-03-01T21:00:00.000Z' }, { id: 'open', localDate: '2026-03-01', description: 'Pendente', type: 'pendencia', category: 'Outros', amount: 100, deliveryShiftId: 'night', createdAt: '2026-03-01T21:00:00.000Z' }],
+    })
+    expect(kpi(model, 'hours').value).toBe(6)
+    expect(kpi(model, 'registered-costs').value).toBe(30)
+    expect(kpi(model, 'estimated-result').value).toBe(70)
+    expect(kpi(model, 'result-per-hour').value).toBeCloseTo(70 / 6)
+  })
+
   it('mantém séries anuais com 12 meses sem misturar unidades', () => {
     const model = buildDashboard({
       ...emptyInput('renda', 'year', '2026-12-31', '2026-12-31'),

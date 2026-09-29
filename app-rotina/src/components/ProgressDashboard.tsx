@@ -1,6 +1,10 @@
 import { useMemo, useState } from 'react'
 import { buildDashboard, type DashboardCategory, type DashboardComparisonMetric, type DashboardPeriod, type DashboardUnit, type DashboardValue } from '../dashboard'
-import type { DailyCompletion, DailyPlanSnapshot, DeliveryShift, Expense, StudyLog } from '../types'
+import type { CategoryBudget, DailyCompletion, DailyPlanSnapshot, DeliveryShift, Expense, FinancialGoal, FinancialRecord, StudyLog } from '../types'
+import { buildFinanceAnalysis, numberLabel, percentLabel } from '../finance-analysis'
+import { FinanceSummary } from './FinanceSummary'
+import { FinanceAlerts } from './FinanceInsights'
+import { PlanningProgress } from './FinancePlanning'
 import { ProgressChart } from './ProgressChart'
 
 interface ProgressDashboardProps {
@@ -10,6 +14,10 @@ interface ProgressDashboardProps {
   studyLogs: readonly StudyLog[]
   deliveryShifts: readonly DeliveryShift[]
   expenses: readonly Expense[]
+  financialRecords: readonly FinancialRecord[]
+  financialGoals: readonly FinancialGoal[]
+  categoryBudgets: readonly CategoryBudget[]
+  onFinance: () => void
 }
 
 const categories: Array<{ id: DashboardCategory, label: string }> = [
@@ -129,7 +137,7 @@ function Comparison({ metric, previousLabel, status }: { metric: DashboardCompar
   </section>
 }
 
-export function ProgressDashboard({ today, snapshots, completions, studyLogs, deliveryShifts, expenses }: ProgressDashboardProps) {
+export function ProgressDashboard({ today, snapshots, completions, studyLogs, deliveryShifts, expenses, financialRecords, financialGoals, categoryBudgets, onFinance }: ProgressDashboardProps) {
   const [category, setCategory] = useState<DashboardCategory>('renda')
   const [period, setPeriod] = useState<DashboardPeriod>('month')
   const [referenceDate, setReferenceDate] = useState(today)
@@ -144,7 +152,11 @@ export function ProgressDashboard({ today, snapshots, completions, studyLogs, de
     studyLogs,
     deliveryShifts,
     expenses,
-  }), [category, period, referenceDate, today, snapshots, completions, studyLogs, deliveryShifts, expenses])
+    financialRecords,
+  }), [category, period, referenceDate, today, snapshots, completions, studyLogs, deliveryShifts, expenses, financialRecords])
+  const finance = useMemo(() => buildFinanceAnalysis({ shifts: deliveryShifts, expenses, records: financialRecords, today, goals: financialGoals, budgets: categoryBudgets, interval: { start: dashboard.interval.start, end: dashboard.interval.end }, period }), [deliveryShifts, expenses, financialRecords, today, financialGoals, categoryBudgets, dashboard.interval.start, dashboard.interval.end, period])
+  const balanceComparison = finance.comparison.metrics.find((metric) => metric.id === 'balance')!
+  const highlightedGoal = [...finance.goals].filter((goal) => goal.status === 'active' || goal.status === 'near' || goal.status === 'achieved').sort((a, b) => a.goal.endDate.localeCompare(b.goal.endDate) || a.goal.createdAt.localeCompare(b.goal.createdAt))[0]
 
   const label = categoryLabels[dashboard.category]
   const series = dashboard.series.find((item) => item.id === preferredSeries[dashboard.category]) ?? dashboard.series[0]
@@ -174,6 +186,8 @@ export function ProgressDashboard({ today, snapshots, completions, studyLogs, de
       </div>
     </div>
 
+    <FinanceSummary rows={finance.periodRows} compact onOpen={onFinance} />
+    <section className="form-card dashboard-finance-insight" aria-label="Planejamento financeiro na Dashboard"><p>Saldo versus período anterior: <strong>{percentLabel(balanceComparison.percentage)}</strong>{finance.comparison.partial && <small>Período atual em andamento; anterior completo.</small>}</p>{highlightedGoal && <div><h3>Meta em destaque: {highlightedGoal.goal.name}</h3><PlanningProgress name={`Meta em destaque ${highlightedGoal.goal.name}`} percentage={highlightedGoal.percentage} detail={`${numberLabel(highlightedGoal.percentage)}% do alvo; realizado atualizado automaticamente`} /></div>}<p className="fine-print">Pendências e projeções abaixo consideram hoje, mesmo ao consultar um período histórico.</p><FinanceAlerts alerts={finance.alerts} compact /><button className="text-button" type="button" onClick={onFinance}>Acompanhar no Financeiro</button></section>
     <div key={`${dashboard.category}-${dashboard.period}-${dashboard.interval.start}`} className="dashboard-selection-content">
       <section className="dashboard-kpis" role="region" aria-label={`Indicadores de ${label}`}>
         <div className="dashboard-section-heading"><div><p className="eyebrow">Resumo</p><h3>Indicadores de {label}</h3></div><span>{dashboard.kpis.length} indicadores</span></div>

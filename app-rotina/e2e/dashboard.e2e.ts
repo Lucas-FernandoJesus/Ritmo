@@ -1,4 +1,4 @@
-import { expect, goToTab, test } from './fixtures'
+import { expect, goToTab, openStoragePage, test } from './fixtures'
 import type { Page } from '@playwright/test'
 
 const DASHBOARD_NOW = '2026-09-22T10:00:00-03:00'
@@ -94,7 +94,7 @@ const dashboardSeed = {
 }
 
 async function seedDashboard(page: Page, theme: 'light' | 'dark' = 'dark') {
-  await page.goto('/sw.js')
+  await openStoragePage(page)
   await page.evaluate(async ({ seed, storedTheme }) => {
     await new Promise<void>((resolve, reject) => {
       const deletion = indexedDB.deleteDatabase('rotina-local')

@@ -1,9 +1,9 @@
-import { defaultSettings, isValidCheckIn, isValidCompletion, isValidDailyPlanSnapshot, isValidDeliveryShift, isValidExpense, isValidProgress, isValidSettings, isValidStudyLog, SCHEMA_VERSION, validateBackup } from './domain'
-import type { AppSettings, BackupData, DailyCheckIn, DailyCompletion, DailyPlanSnapshot, DeliveryShift, Expense, StudyLog, ThirtyDayProgress } from './types'
+import { defaultSettings, isValidCategoryBudget, isValidCheckIn, isValidCompletion, isValidDailyPlanSnapshot, isValidDeliveryShift, isValidExpense, isValidFinancialGoal, isValidFinancialRecord, isValidProgress, isValidSettings, isValidStudyLog, SCHEMA_VERSION, validateBackup } from './domain'
+import type { AppSettings, BackupData, CategoryBudget, DailyCheckIn, DailyCompletion, DailyPlanSnapshot, DeliveryShift, Expense, FinancialGoal, FinancialRecord, StudyLog, ThirtyDayProgress } from './types'
 
 const DB_NAME = 'rotina-local'
-const DB_VERSION = 2
-const stores = ['completions', 'dailySnapshots', 'checkIns', 'deliveryShifts', 'expenses', 'studyLogs', 'progress', 'settings'] as const
+const DB_VERSION = 4
+const stores = ['completions', 'dailySnapshots', 'checkIns', 'deliveryShifts', 'expenses', 'financialRecords', 'financialGoals', 'categoryBudgets', 'studyLogs', 'progress', 'settings'] as const
 type StoreName = typeof stores[number]
 
 function requestResult<T>(request: IDBRequest<T>): Promise<T> {
@@ -67,6 +67,17 @@ function assertValid(value: unknown, validator: (candidate: unknown) => boolean,
   if (!validator(value)) throw new Error(`${message} Nenhum dado foi gravado.`)
 }
 
+async function putFinancialSource(store: 'expenses' | 'financialRecords', value: Expense | FinancialRecord): Promise<void> {
+  if (!value.deliveryShiftId) return put(store, value)
+  const db = await openDatabase()
+  const tx = db.transaction([store, 'deliveryShifts'], 'readwrite')
+  const done = transactionDone(tx)
+  await Promise.all([done, requestResult(tx.objectStore('deliveryShifts').get(value.deliveryShiftId)).then((shift) => {
+    if (!shift) throw new Error('O turno associado não existe. Nenhum dado foi gravado.')
+    tx.objectStore(store).put(value)
+  })])
+}
+
 export const repository = {
   async initialize() {
     await openDatabase()
@@ -97,7 +108,15 @@ export const repository = {
   getDeliveryShifts: () => getAll<DeliveryShift>('deliveryShifts'),
   saveDeliveryShift: (shift: DeliveryShift) => { assertValid(shift, isValidDeliveryShift, 'Turno de delivery inválido.'); return put('deliveryShifts', shift) },
   getExpenses: () => getAll<Expense>('expenses'),
-  saveExpense: (expense: Expense) => { assertValid(expense, isValidExpense, 'Despesa inválida.'); return put('expenses', expense) },
+  saveExpense: (expense: Expense) => { assertValid(expense, isValidExpense, 'Despesa inválida.'); return putFinancialSource('expenses', expense) },
+  getFinancialRecords: () => getAll<FinancialRecord>('financialRecords'),
+  saveFinancialRecord: (record: FinancialRecord) => { assertValid(record, isValidFinancialRecord, 'Movimentação financeira inválida.'); return putFinancialSource('financialRecords', record) },
+  getFinancialGoals: () => getAll<FinancialGoal>('financialGoals'),
+  saveFinancialGoal: (goal: FinancialGoal) => { assertValid(goal, isValidFinancialGoal, 'Meta financeira inválida.'); return put('financialGoals', goal) },
+  deleteFinancialGoal: (id: string) => remove('financialGoals', id),
+  getCategoryBudgets: () => getAll<CategoryBudget>('categoryBudgets'),
+  saveCategoryBudget: (budget: CategoryBudget) => { assertValid(budget, isValidCategoryBudget, 'Orçamento inválido.'); return put('categoryBudgets', budget) },
+  deleteCategoryBudget: (id: string) => remove('categoryBudgets', id),
   getStudyLogs: () => getAll<StudyLog>('studyLogs'),
   saveStudyLog: (log: StudyLog) => { assertValid(log, isValidStudyLog, 'Registro de estudo inválido.'); return put('studyLogs', log) },
   getProgress: () => getAll<ThirtyDayProgress>('progress'),
@@ -111,6 +130,9 @@ export const repository = {
       checkIns: (await getAll<{ id: string } & DailyCheckIn>('checkIns')).map(({ id: _id, ...item }) => item),
       deliveryShifts: await getAll('deliveryShifts'),
       expenses: await getAll('expenses'),
+      financialRecords: await getAll('financialRecords'),
+      financialGoals: await getAll('financialGoals'),
+      categoryBudgets: await getAll('categoryBudgets'),
       studyLogs: await getAll('studyLogs'),
       progress: await getAll('progress'),
       settings: await repository.getSettings(),
@@ -128,6 +150,9 @@ export const repository = {
     for (const item of data.checkIns) tx.objectStore('checkIns').put({ ...item, id: item.localDate })
     for (const item of data.deliveryShifts) tx.objectStore('deliveryShifts').put(item)
     for (const item of data.expenses) tx.objectStore('expenses').put(item)
+    for (const item of data.financialRecords ?? []) tx.objectStore('financialRecords').put(item)
+    for (const item of data.financialGoals ?? []) tx.objectStore('financialGoals').put(item)
+    for (const item of data.categoryBudgets ?? []) tx.objectStore('categoryBudgets').put(item)
     for (const item of data.studyLogs) tx.objectStore('studyLogs').put(item)
     for (const item of data.progress) tx.objectStore('progress').put(item)
     tx.objectStore('settings').put(data.settings)

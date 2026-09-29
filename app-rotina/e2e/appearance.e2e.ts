@@ -1,5 +1,5 @@
 import type { Page } from '@playwright/test'
-import { expect, goToTab, openAppAt, test } from './fixtures'
+import { expect, goToTab, openAppAt, openStoragePage, test } from './fixtures'
 
 const APPEARANCE_NOW = '2026-09-22T10:00:00-03:00'
 type StoredTheme = 'system' | 'light' | 'dark'
@@ -32,7 +32,7 @@ const expectedTokens = {
 } as const
 
 async function seedAppearance(page: Page, theme: StoredTheme) {
-  await page.goto('/sw.js')
+  await openStoragePage(page)
   await page.evaluate(async (storedTheme) => {
     await new Promise<void>((resolve, reject) => {
       const deletion = indexedDB.deleteDatabase('rotina-local')
@@ -90,7 +90,7 @@ async function openSeededApp(page: Page, theme: StoredTheme, colorScheme: 'light
 
 async function storedTheme(page: Page): Promise<StoredTheme> {
   return page.evaluate(() => new Promise<StoredTheme>((resolve, reject) => {
-    const request = indexedDB.open('rotina-local', 2)
+    const request = indexedDB.open('rotina-local')
     request.onerror = () => reject(request.error)
     request.onsuccess = () => {
       const database = request.result

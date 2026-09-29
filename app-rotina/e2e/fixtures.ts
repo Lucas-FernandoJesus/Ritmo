@@ -11,7 +11,7 @@ export const test = base.extend<BrowserDiagnostics>({
     const errors: string[] = []
 
     page.on('console', (message) => {
-      if (message.type() === 'error') errors.push(`[console] ${message.text()}`)
+      if (message.type() === 'error' || message.type() === 'warning' && /React|Invalid hook|Each child/i.test(message.text())) errors.push(`[console] ${message.text()}`)
     })
     page.on('pageerror', (error) => errors.push(`[pageerror] ${error.message}`))
 
@@ -29,6 +29,12 @@ export const test = base.extend<BrowserDiagnostics>({
 
 export { expect }
 
+// Documento neutro na mesma origem para preparar bancos legados, sem inicializar o app.
+export async function openStoragePage(page: Page) {
+  await page.route('**/__storage_seed__', (route) => route.fulfill({ contentType: 'text/html', body: '<!doctype html><html><head><link rel="icon" href="data:,"></head><body>Dados de teste</body></html>' }))
+  await page.goto('/__storage_seed__')
+}
+
 export async function openAppOnTuesday(page: Page) {
   await openAppAt(page, TUESDAY_MORNING)
 }
@@ -39,7 +45,7 @@ export async function openAppAt(page: Page, time: Date | string) {
   await expect(page.getByRole('heading', { name: 'Um dia de cada vez.', exact: true })).toBeVisible()
 }
 
-export async function goToTab(page: Page, name: 'Hoje' | 'Semana' | 'Treinos' | 'Registros' | 'Progresso' | 'Ajustes') {
+export async function goToTab(page: Page, name: 'Hoje' | 'Semana' | 'Treinos' | 'Registros' | 'Financeiro' | 'Progresso' | 'Ajustes') {
   const navigation = page.getByRole('navigation', { name: 'Navegação principal' })
   const button = navigation.getByRole('button', { name, exact: true })
   await button.click()
