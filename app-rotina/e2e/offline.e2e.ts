@@ -1,4 +1,4 @@
-import { expect, openAppOnTuesday, test } from './fixtures'
+import { expect, goToTab, openAppOnTuesday, test } from './fixtures'
 
 const strengthActivity = 'Fortalecimento de corpo inteiro'
 
@@ -24,8 +24,7 @@ test('mantém navegação e orientações disponíveis offline', async ({ contex
     await expect(page.getByRole('button', { name: `Desmarcar ${strengthActivity}`, exact: true })).toBeVisible()
     await expect(page.getByRole('region', { name: 'Progresso desta semana' })).toContainText('1 de 84 atividades obrigatórias')
 
-    const navigation = page.getByRole('navigation', { name: 'Navegação principal' })
-    await navigation.getByRole('button', { name: 'Semana', exact: true }).click()
+    await goToTab(page, 'Semana')
     await expect(page.getByRole('heading', { name: 'Sua semana', exact: true })).toBeVisible()
 
     await page.getByRole('group', { name: 'Escolher dia da semana' })
@@ -35,7 +34,7 @@ test('mantém navegação e orientações disponíveis offline', async ({ contex
     await expect(page.getByText('Você está offline. As instruções continuam disponíveis aqui; os vídeos precisam de internet.')).toBeVisible()
     await page.getByRole('button', { name: '← Voltar à rotina' }).click()
 
-    await navigation.getByRole('button', { name: 'Progresso', exact: true }).click()
+    await goToTab(page, 'Progresso')
     await expect(page.getByRole('heading', { name: 'Seu progresso continua', exact: true })).toBeVisible()
   } finally {
     await context.setOffline(false)

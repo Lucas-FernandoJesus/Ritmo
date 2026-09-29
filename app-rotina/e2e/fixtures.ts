@@ -46,8 +46,11 @@ export async function openAppAt(page: Page, time: Date | string) {
 }
 
 export async function goToTab(page: Page, name: 'Hoje' | 'Semana' | 'Treinos' | 'Registros' | 'Financeiro' | 'Progresso' | 'Ajustes') {
-  const navigation = page.getByRole('navigation', { name: 'Navegação principal' })
-  const button = navigation.getByRole('button', { name, exact: true })
+  await page.getByRole('button', { name: 'Abrir menu principal', exact: true }).click()
+  const navigation = page.getByRole('navigation', { name: 'Navegação principal', includeHidden: true })
+  const button = navigation.getByRole('button', { name, exact: true, includeHidden: true })
   await button.click()
+  await expect(page.getByRole('dialog', { name: 'Menu principal' })).not.toBeVisible()
   await expect(button).toHaveAttribute('aria-current', 'page')
+  await expect(page.locator('#main-content')).toBeFocused()
 }

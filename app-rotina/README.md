@@ -31,11 +31,17 @@ Abra o endereço publicado no navegador do celular **com internet uma vez** e ag
 
 Os dados ficam no IndexedDB do navegador de cada aparelho: não são enviados ao GitHub e não sincronizam automaticamente. Apagar os dados do navegador pode removê-los. Faça backups JSON regularmente. O site e os arquivos publicados pelo GitHub Pages são públicos; não inclua backups ou informações pessoais no repositório.
 
+## Navegação
+
+O rodapé mantém somente **Menu**. Ao abrir, a lista vertical ocupa toda a tela e apresenta Hoje, Semana, Treinos, Registros, Financeiro, Progresso e Ajustes. Escolher uma opção navega sem recarregar; o X ou Esc fecha mantendo a tela atual. O diálogo controla foco, bloqueia o fundo e funciona offline nos dois temas.
+
 ## Backup
 
 Em **Ajustes**, selecione **Exportar backup JSON**. Guarde o arquivo fora do aparelho. Para restaurar, use **Importar backup JSON**; o formato e a versão são validados antes da confirmação. Backups novos incluem os snapshots diários usados no progresso semanal, enquanto backups antigos sem esse campo continuam aceitos.
 
 ## Financeiro
+
+**Planejar próximos passos** reúne recorrências semanais/mensais/anuais, compras parceladas com centavos reconciliados, patrimônio com saldo inicial e transferências, fechamento mensal e simulações sem alterar os registros. Ocorrências só viram lançamentos quando confirmadas e não se duplicam nas projeções. CSV, Excel (.xlsx) e PDF reais podem ser exportados pelo período. IndexedDB versão 5 preserva dados antigos e inclui todas as novas estruturas no backup; não há backend ou sincronização externa.
 
 A aba **Financeiro** consolida automaticamente receitas e custos dos turnos de delivery, despesas de **Registros** e movimentações avulsas. Permite cadastrar entrada, saída, crédito e pendência; editar lançamentos; receber créditos ou pagar pendências sem criar cópias. O histórico oferece filtros por período, tipo, categoria, origem e status, além de busca por descrição. Hoje, semana civil, mês civil, ano civil e período personalizado atualizam os resumos e as análises. **Progresso** mostra um resumo financeiro correspondente ao mês ou ano selecionado na Dashboard.
 

@@ -8,6 +8,13 @@ const snapshotRepository = repository as unknown as {
 }
 
 describe('barreiras do repositório', () => {
+  it('rejeita novas estruturas inválidas antes de abrir IndexedDB', () => {
+    const stamp = '2026-09-22T13:00:00.000Z'
+    expect(() => repository.saveRecurringPlan({ id: 'r', name: 'Teste', type: 'saida', amount: 0, category: 'Outros', frequency: 'monthly', startDate: '2026-09-22', active: true, createdAt: stamp, updatedAt: stamp })).toThrow('Recorrência inválida')
+    expect(() => repository.saveInstallmentPlan({ id: 'p', name: 'Teste', total: .01, count: 2, category: 'Outros', firstDueDate: '2026-09-22', active: true, createdAt: stamp, updatedAt: stamp })).toThrow('Parcelamento inválido')
+    expect(() => repository.saveAssetAccount({ id: 'a', name: '', kind: 'bank', openingBalance: 0, openingDate: '2026-09-22', createdAt: stamp, updatedAt: stamp })).toThrow('Conta patrimonial inválida')
+    expect(() => repository.saveAccountTransfer({ id: 't', fromAccountId: 'same', toAccountId: 'same', amount: 10, localDate: '2026-09-22', createdAt: stamp, updatedAt: stamp })).toThrow('Transferência inválida')
+  })
   it('rejeita meta e orçamento inválidos antes de abrir o banco', () => {
     expect(() => repository.saveFinancialGoal({ id: 'bad', name: '', type: 'income', target: 100, startDate: '2026-09-01', endDate: '2026-09-30', createdAt: '2026-09-24T18:00:00.000Z' })).toThrow('Meta financeira inválida')
     expect(() => repository.saveCategoryBudget({ id: 'bad', month: '2026-09', category: 'Outros', limit: 0, createdAt: '2026-09-24T18:00:00.000Z' })).toThrow('Orçamento inválido')

@@ -1,16 +1,17 @@
 import { localDateKey, shiftDuration, weekBounds } from './domain'
 import { moneyRatio, subtractMoney, sumMoney } from './money'
-import type { DeliveryCostKind, DeliveryShift, Expense, FinancialRecord, FinancialType } from './types'
+import { planOccurrences, plannedMovements } from './finance-plans'
+import type { DeliveryCostKind, DeliveryShift, Expense, FinancialRecord, FinancialType, InstallmentPlan, RecurringPlan } from './types'
 
 export const financialTypeLabels: Record<FinancialType, string> = { entrada: 'Entrada', saida: 'Saída', credito: 'Crédito', pendencia: 'Pendência' }
-export type FinancialStatus = 'realizado' | 'aberto' | 'previsto' | 'reservado'
-export const financialStatusLabels: Record<FinancialStatus, string> = { realizado: 'Realizado', aberto: 'Em aberto', previsto: 'Previsto', reservado: 'Reservado' }
+export type FinancialStatus = 'realizado' | 'aberto' | 'previsto' | 'reservado' | 'planejado'
+export const financialStatusLabels: Record<FinancialStatus, string> = { realizado: 'Realizado', aberto: 'Em aberto', previsto: 'Previsto', reservado: 'Reservado', planejado: 'Planejado · ainda não confirmado' }
 
 export interface FinancialMovement {
   id: string
   sourceId: string
-  source: 'delivery' | 'expense' | 'financial'
-  origin: 'Delivery' | 'Despesas' | 'Financeiro'
+  source: 'delivery' | 'expense' | 'financial' | 'planning'
+  origin: 'Delivery' | 'Despesas' | 'Financeiro' | 'Recorrências' | 'Parcelamentos'
   localDate: string
   description: string
   category: string
@@ -20,6 +21,7 @@ export interface FinancialMovement {
   deliveryShiftId?: string
   deliveryCostKind?: DeliveryCostKind
   note?: string
+  accountId?: string
 }
 
 export interface FinanceSources {
@@ -27,6 +29,9 @@ export interface FinanceSources {
   expenses: readonly Expense[]
   records: readonly FinancialRecord[]
   today: string
+  recurringPlans?: readonly RecurringPlan[]
+  installmentPlans?: readonly InstallmentPlan[]
+  planningInterval?: { start: string; end: string }
 }
 
 export type FinancialPeriod = 'today' | 'week' | 'month' | 'year' | 'custom'
@@ -56,10 +61,10 @@ function sum(items: readonly FinancialMovement[]): number | null {
 const realizedStatus = (localDate: string, today: string): FinancialStatus => localDate > today ? 'previsto' : 'realizado'
 
 // Projeções das fontes: nenhuma linha de delivery/despesa é copiada para outra coleção.
-export function buildFinancialMovements({ shifts, expenses, records, today }: FinanceSources): FinancialMovement[] {
+export function buildFinancialMovements({ shifts, expenses, records, today, recurringPlans = [], installmentPlans = [], planningInterval }: FinanceSources): FinancialMovement[] {
   const rows: FinancialMovement[] = []
   for (const shift of shifts) {
-    const base = { sourceId: shift.id, source: 'delivery' as const, origin: 'Delivery' as const, localDate: shift.localDate, deliveryShiftId: shift.id, note: shift.note }
+    const base = { sourceId: shift.id, source: 'delivery' as const, origin: 'Delivery' as const, localDate: shift.localDate, deliveryShiftId: shift.id, accountId: shift.accountId, note: shift.note }
     rows.push({ ...base, id: `delivery:${shift.id}:grossRevenue`, description: `Receita do turno ${shift.startTime}–${shift.endTime}`, category: 'Delivery', type: 'entrada', amount: shift.grossRevenue, status: realizedStatus(shift.localDate, today) })
     for (const [key, description, category] of [['fuelCost', 'Combustível do turno', 'Transporte'], ['otherExpenses', 'Outras despesas do turno', 'Outros'], ['maintenanceReserve', 'Reserva de manutenção', 'Transporte']] as const) {
       const reserved = key === 'maintenanceReserve'
@@ -68,6 +73,9 @@ export function buildFinancialMovements({ shifts, expenses, records, today }: Fi
   }
   for (const expense of expenses) rows.push({ ...expense, id: `expense:${expense.id}`, sourceId: expense.id, source: 'expense', origin: 'Despesas', type: 'saida', status: realizedStatus(expense.localDate, today) })
   for (const record of records) rows.push({ ...record, id: `financial:${record.id}`, sourceId: record.id, source: 'financial', origin: 'Financeiro', status: record.type === 'credito' || record.type === 'pendencia' ? 'aberto' : realizedStatus(record.localDate, today) })
+  const futureEnd = new Date(`${today}T12:00:00`); futureEnd.setDate(futureEnd.getDate() + 30)
+  const firstStart = [today, ...recurringPlans.map(p => p.startDate), ...installmentPlans.map(p => p.firstDueDate)].sort()[0]
+  rows.push(...plannedMovements(planOccurrences(recurringPlans, installmentPlans, records, planningInterval ?? { start: firstStart, end: localDateKey(futureEnd) })))
   return rows.sort((a, b) => b.localDate.localeCompare(a.localDate) || a.id.localeCompare(b.id))
 }
 
@@ -93,8 +101,8 @@ export function summarizeFinance(rows: readonly FinancialMovement[]) {
   const operationalExpenses = delivery.length ? sum(delivery.filter((row) => row.type === 'saida')) : null
   return {
     hasData, hasRealizedData, hasDeliveryData: delivery.length > 0, entries, exits,
-    credits: hasData ? sum(rows.filter((row) => row.type === 'credito')) : null,
-    pending: hasData ? sum(rows.filter((row) => row.type === 'pendencia')) : null,
+    credits: hasData ? sum(rows.filter((row) => row.type === 'credito' && row.status !== 'planejado')) : null,
+    pending: hasData ? sum(rows.filter((row) => row.type === 'pendencia' && row.status !== 'planejado')) : null,
     payablePending: hasData ? sum(rows.filter((row) => row.type === 'pendencia' && row.status === 'aberto')) : null,
     balance: entries === null || exits === null ? null : (cents(entries) - cents(exits)) / 100,
     deliveryGross, deliveryExpenses,
@@ -120,7 +128,7 @@ export function deliveryFinancials(shift: DeliveryShift, expenses: readonly Expe
     perHour: moneyRatio(net, hours), perKilometer: moneyRatio(net, shift.kilometers) }
 }
 
-export function settleFinancialRecord(record: FinancialRecord, localDate: string): FinancialRecord {
+export function settleFinancialRecord(record: FinancialRecord, localDate: string, updatedAt?: string): FinancialRecord {
   if (record.type !== 'credito' && record.type !== 'pendencia') throw new Error('Esta movimentação já está realizada.')
-  return { ...record, type: record.type === 'credito' ? 'entrada' : 'saida', localDate }
+  return { ...record, type: record.type === 'credito' ? 'entrada' : 'saida', localDate, ...updatedAt ? { updatedAt } : {} }
 }

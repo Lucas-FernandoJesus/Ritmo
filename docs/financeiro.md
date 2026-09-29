@@ -14,7 +14,7 @@ Aplicação React 19 + TypeScript + Vite, local e offline, sem servidor ou integ
 
 Categorias gerais continuam strings: Moradia, Alimentação, Transporte, Saúde, Lazer, Desenvolvimento e Outros. Não há tabela nova de categorias nem transformação do histórico. `deliveryCostKind` é um campo opcional em despesas/lançamentos vinculados: combustível, manutenção, alimentação no turno, taxas ou outros. Combustível e outras despesas informados nos campos do turno já são identificáveis. Dados antigos sem classificação mantêm a categoria e aparecem explicitamente como não classificados; descrições não são usadas para adivinhar custos.
 
-`estimatedResult`, `resultPerHour`, `resultPerKilometer` e `hours` persistidos nos turnos são campos legados. Permanecem compatíveis com validação e backups; a análise recalcula valores pelas fontes e pelos horários. Não foram encontradas outras entidades monetárias ou saldos bancários iniciais.
+`estimatedResult`, `resultPerHour`, `resultPerKilometer` e `hours` persistidos nos turnos são campos legados. Permanecem compatíveis com validação e backups; a análise recalcula valores pelas fontes e pelos horários. Antes desta etapa, não havia outras entidades monetárias nem saldos iniciais. O patrimônio agora usa contas explicitamente cadastradas e vínculos opcionais, sem inferir saldos antigos.
 
 ## Arquitetura
 
@@ -42,11 +42,11 @@ Totais, saldos, percentuais, médias, status, tendências e projeções não sã
 
 ## Persistência, migração e backup
 
-IndexedDB `rotina-local`, versão **4**. A atualização aditiva cria somente `financialGoals` e `categoryBudgets` quando ausentes. As coleções anteriores são preservadas. A migração 2 → 3 já criava `financialRecords`; o mesmo laço mantém compatibilidade com bancos 1, 2 e 3 sem apagar ou inventar registros.
+IndexedDB `rotina-local`, versão **5**. A migração 3 → 4 criou `financialGoals` e `categoryBudgets`; a migração 4 → 5 cria `recurringPlans`, `installmentPlans`, `assetAccounts` e `accountTransfers` quando ausentes. As coleções anteriores são preservadas. A migração 2 → 3 já criava `financialRecords`; o mesmo laço mantém compatibilidade com bancos 1 a 4 sem apagar ou inventar registros. Outras abas abertas recebem `versionchange`; uma atualização bloqueada orienta fechar as abas, sem alterar os dados.
 
 Metas usam ID estável na edição. Orçamentos têm ID determinístico por mês e categoria ou custo específico. Salvar novamente o mesmo escopo/mês atualiza o limite, evitando duplicação. Alterar a identidade de um orçamento exige criar outro planejamento; edição modifica o limite. Exclusão de planejamento não apaga movimentações.
 
-O backup mantém `schemaVersion: 1`, seguindo o padrão de extensões opcionais já usado por `dailySnapshots` e `financialRecords`. `financialGoals` e `categoryBudgets` são opcionais para importação e incluídos na exportação atual. Backups antigos são aceitos e restauram as novas coleções vazias. A restauração substitui os dados de todas as coleções na mesma transação, após validação completa. IDs duplicados, alvos/limites inválidos, datas invertidas e vínculos órfãos são rejeitados antes de alterar dados.
+O backup mantém `schemaVersion: 1`, seguindo o padrão de extensões opcionais já usado por `dailySnapshots` e `financialRecords`. `financialGoals`, `categoryBudgets`, `recurringPlans`, `installmentPlans`, `assetAccounts` e `accountTransfers` são opcionais na importação e incluídos na exportação atual. A exportação lê todas as coleções em uma transação readonly consistente. Backups antigos são aceitos e restauram as novas coleções vazias. A restauração substitui os dados de todas as coleções na mesma transação, após validação completa. IDs duplicados, alvos/limites inválidos, datas invertidas e vínculos órfãos são rejeitados antes de alterar dados.
 
 Use o aplicativo atualizado para restaurar backups novos: versões anteriores não conhecem as coleções de planejamento. O funcionamento offline permanece no IndexedDB e no service worker existentes, sem novas dependências.
 
@@ -112,7 +112,7 @@ saldo projetado = saldo atual dos registros + impacto futuro
 
 Horizontes cumulativos de 7, 15 e 30 dias; as linhas não devem ser somadas. Valores em aberto vencidos entram em todos os horizontes porque continuam sem baixa. Reserva não entra. Sem base realizada válida, mostra o impacto e deixa o saldo projetado indisponível.
 
-A sequência por data calcula o saldo após compromissos de cada dia e identifica risco intermediário, mesmo quando o saldo final volta a ficar positivo. Valores do mesmo dia são compensados sem inventar horários de recebimento/pagamento. Não há extrapolação de receitas ou gastos ausentes, recorrência presumida nem saldo inicial inventado.
+A sequência por data calcula o saldo após compromissos de cada dia e identifica risco intermediário, mesmo quando o saldo final volta a ficar positivo. Valores do mesmo dia são compensados sem inventar horários de recebimento/pagamento. Não há extrapolação de receitas ou gastos ausentes, recorrência presumida nem saldo inicial inventado. Recorrências e parcelas explicitamente cadastradas e ainda não confirmadas entram na projeção pelos seus vencimentos, incluindo atrasadas; uma ocorrência confirmada deixa de ser projetada pelo planejamento e passa a usar somente seu lançamento existente. Os saldos iniciais de contas permanecem na visão Patrimônio, separados desta projeção dos registros.
 
 ## Alertas
 
@@ -152,7 +152,7 @@ Custos mostram total, participação nas despesas, percentual da receita bruta, 
 
 ## Interface, gráficos, Dashboard e acessibilidade
 
-A identidade existente é preservada: tokens, superfícies, tipografia, claro/escuro, campos e navegação. Cinco cards principais; planejamento em listas; comparações, projeção e análises detalhadas em seções recolhidas. Formulários de metas/orçamento são abertos por ação explícita. Cadastro/histórico continuam disponíveis.
+A identidade existente é preservada: tokens, superfícies, tipografia, claro/escuro e campos. O rodapé agora mantém somente Menu, que abre a lista central dos sete destinos em tela cheia. Cinco cards principais; planejamento em listas; comparações, projeção e análises detalhadas em seções recolhidas. Formulários de metas/orçamento são abertos por ação explícita. Cadastro/histórico continuam disponíveis.
 
 Gráficos SVG reutilizam `ProgressChart` e suas convenções, sem biblioteca nova: fluxo de entradas/saídas, saldo acumulado, distribuição por categoria/origem e evolução de indicadores do delivery. Fluxo diferencia barras cheias/contornadas e explica os valores em texto; gráficos possuem tabela alternativa. Séries longas são mensais, com limite de 1.200 buckets; totais/histórico permanecem completos. Saldo acumulado do gráfico começa em zero dentro do período e não presume saldo de conta.
 
@@ -164,34 +164,128 @@ Responsividade verificada em 320, 390, 768 e 1440px no Financeiro; larguras exis
 
 `MoneyInput`, `moneyFromInput` e `moneyInputValue` continuam compartilhados em todos os campos monetários, incluindo alvos e limites novos. `1 → R$ 0,01`, `100 → R$ 1,00`, `123456 → R$ 1.234,56`, persistido como `1234.56`. Limpar, apagar e colar permanecem disponíveis. Não há string monetária formatada no banco.
 
+## Planejamento recorrente
+
+`RecurringPlan` registra nome, tipo (entrada/saída/crédito/pendência), categoria, valor, frequência semanal/mensal/anual, início, fim opcional, ativo/pausado e contas opcionais. Contas fixas usam Saída. O calendário é calculado sem persistir ocorrências:
+
+- Semana: início + múltiplos de sete dias, por datas civis UTC para evitar diferenças de DST.
+- Mês: mantém o dia da primeira ocorrência. Dia 31 vira o último dia em fevereiro/meses curtos, retornando a 31 nos demais.
+- Ano: mantém mês/dia; 29/02 vira 28/02 em anos comuns e retorna a 29/02 nos bissextos.
+- Fim é inclusivo. Pausar retira ocorrências não confirmadas de histórico/projeções/alertas sem excluir lançamentos confirmados. Retomar preserva as mesmas identidades.
+
+`PlanOccurrence` é derivado. `planningRef` guarda origem, plano, chave e vencimento original no lançamento confirmado. ID determinístico: `occurrence:<kind>:<planId>:<chave>`. Confirmação é uma transação readwrite que relê o plano e o lançamento: duas confirmações simultâneas retornam o mesmo registro. Não duplica ao recarregar, restaurar ou confirmar em outra data.
+
+Entrada/saída confirmadas usam a data efetiva informada, até hoje. Crédito/pendência confirmados mantêm o vencimento e ficam em aberto até Receber/Pagar no histórico; baixa conserva o ID e `planningRef`. Valor e vínculo de uma ocorrência confirmada são preservados na edição; descrição, observação e conta podem ser corrigidas. Após confirmar, calendário/frequência/tipo e estrutura de parcelas ficam protegidos. Para outra estrutura, pause e crie um novo plano. Alterar o valor de uma recorrência vale para ocorrências não confirmadas, preservando valores anteriores.
+
+A tela lista os planejamentos e as ocorrências do período compartilhado, com paginação. Status **Planejado · ainda não confirmado** não é realizado. Alertas de vencimento/projeções também consideram os compromissos planejados. Não há geração automática de pagamentos, juros, correção ou cobranças externas.
+
+## Parcelamentos
+
+`InstallmentPlan` guarda somente nome, categoria, total, quantidade (1 a 600), primeiro vencimento mensal, ativo e contas opcionais. Parcelas, próxima não paga, pagas, restantes e saldo restante são derivados dos lançamentos confirmados:
+
+```text
+centavos = round(total × 100)
+base = floor(centavos ÷ quantidade)
+resto = centavos % quantidade
+parcela(i) = (base + 1 se i < resto; senão base) ÷ 100
+```
+
+Exemplo: R$ 100,00 / 3 → R$ 33,34 + R$ 33,33 + R$ 33,33. Todas as parcelas têm pelo menos um centavo e a soma é exatamente o total. Vencimentos usam a mesma âncora de mês das recorrências. Parcela confirmada em aberto continua não paga; futura continua não paga até a data efetiva. Não existem pagamento parcial, juros ou renegociação nesta estrutura simples. Criar compra parcelada não cria automaticamente despesa realizada nem dívida patrimonial; o usuário pode vinculá-la a um passivo já cadastrado.
+
+## Patrimônio
+
+`AssetAccount` contém nome, tipo (dinheiro, conta, poupança, reserva financeira, investimento ou dívida/passivo), saldo inicial positivo/zero e data. O saldo inicial representa a posição **antes** dos lançamentos daquela data. Para evitar dupla contagem, só vincule registros ainda não incluídos no saldo inicial.
+
+```text
+saldo do ativo = saldo inicial + entradas vinculadas − saídas vinculadas
+                + transferências recebidas − transferências enviadas
+passivo restante = valor inicial devido − pagamentos vinculados ao passivo
+patrimônio líquido = soma dos ativos − soma dos passivos
+```
+
+Data até o corte e igual/posterior à data inicial. Futuro, créditos e pendências sem baixa ficam fora. Conta com início futuro não entra na posição atual. Sem contas já iniciadas: Sem dados, sem zero inventado. Receitas/custos pagos de um turno podem ser vinculados à mesma conta; reserva de manutenção não entra. Custos adicionais continuam vindo de despesas/lançamentos originais. Registros sem conta permanecem no Financeiro e um aviso informa posição patrimonial incompleta.
+
+Vínculo `accountId` é opcional em `deliveryShifts`, `expenses` e `financialRecords`; `liabilityAccountId` opcional em saídas/pendências reduz uma dívida somente após pagamento. Legados sem vínculo não são migrados ou adivinhados. Corrigir saldo inicial recalcula a posição histórica. Após vínculos, tipo e data inicial ficam protegidos. Investimentos não recebem cotações/rendimentos automáticos; correções de valor são explícitas. A reserva financeira é uma conta com dinheiro e permanece distinta da reserva estimada do delivery.
+
+`AccountTransfer` conecta duas contas de ativos existentes, com valor, data e ID estável. A data deve ser igual/posterior ao início das duas contas. Não cria `financialRecords`, não entra em renda/despesa e conserva patrimônio total. Transferência é imutável; cancelamento marca `voidedAt`, excluindo seu efeito sem perder identidade. Saldo negativo ou pagamento que supere o passivo recebe aviso para conferir vínculos, sem presumir limite bancário.
+
+## Fechamento mensal
+
+Visão viva do mês civil, sem snapshot, bloqueio ou lançamento automático. Mês em andamento é identificado; o corte é o fim do mês ou hoje, o que vier primeiro. Inclui entradas, saídas, saldo, créditos/pendências atuais com data no mês, delivery bruto/custos/líquido operacional, reserva, resultado após reserva, metas, orçamentos, comparação anterior, cinco principais categorias e patrimônio no corte.
+
+Metas e orçamentos preservam seus próprios prazos; realizado termina em hoje. Créditos/pendências refletem o **status atual**, não uma reconstrução imutável do que estava em aberto no último dia histórico. Pagamentos usam sua data efetiva. A seleção mensal desta ferramenta é explícita e necessária para consultar outro mês, enquanto demais análises e simulador reutilizam o filtro principal. Selecionar/exportar o fechamento não altera dados.
+
+## Simulador
+
+Hipóteses locais ao componente, sem persistência: aumento de renda, redução de gastos, nova despesa, compra e alvo. A base pode ser saldo realizado do período ou progresso de uma meta selecionada. Limites de despesas não são metas de faturamento. Valores ausentes, taxa zero/negativa, duração inválida e estouro de centavos seguros deixam resultados indisponíveis.
+
+```text
+cenário líquido = base + renda adicional + redução de gastos − despesa nova − compra
+redução aplicada = mínimo(redução informada, despesas realizadas na base)
+falta = máximo(0, alvo − cenário)
+horas estimadas = falta ÷ líquido operacional/hora histórico
+bruto necessário = falta ÷ (líquido operacional histórico ÷ bruto histórico)
+```
+
+Necessidade de bruto é arredondada para cima em centavos. Para meta bruta, somente renda adicional altera o progresso: falta é o faturamento necessário, e horas usam **bruto/hora**. Economizar não vira receita bruta. Meta líquida de delivery limita redução aos custos do delivery; outras metas líquidas usam despesas gerais do período. Taxas usam os turnos do filtro selecionado, com aviso de amostra pequena e sem promessa de renda futura. Reserva e custos desconhecidos não são adivinhados. As hipóteses não alimentam os indicadores ou alertas reais.
+
+## Exportações por período
+
+`finance-export.ts` é um gerador local sem dependências ou rede. Exporta resumo e todos os lançamentos do período (independente dos filtros específicos do histórico), com status para diferenciar realizado/aberto/previsto/planejado/reserva:
+
+- CSV: UTF-8 com BOM, delimitador `;`, decimal brasileiro, campos entre aspas, escape de aspas/newlines e proteção de texto que possa ser interpretado como fórmula.
+- Excel: arquivo `.xlsx` OOXML verdadeiro, pacote ZIP com CRC32, partes/relações válidas, células de texto explícitas e valores numéricos com formato BRL. Uma aba Financeiro com resumo, congelamento de cabeçalho e autofiltro. Não é CSV renomeado e não contém fórmulas executáveis.
+- PDF: documento real com páginas A4, streams, objetos, xref, cabeçalhos, rodapés e quebra de linhas/páginas. Texto pesquisável; português e acentos WinAnsi preservados. Caracteres fora dessa cobertura usam representação `[U+XXXX]`, sem desaparecer silenciosamente. PDF não é PDF/UA nem formulário editável.
+
+Os relatórios são fotografias dos valores disponíveis e não substituem o backup completo. Exportação do fechamento usa o mês escolhido. XLSX/CSV preservam texto Unicode. Excel limita a 1.048.576 linhas; arquivos grandes são gerados em memória e podem exigir período menor no aparelho. Tabelas e planejamento completo ficam no backup JSON, não em abas redundantes dos relatórios.
+
+Referências de formato verificadas: [SpreadsheetML, Microsoft](https://learn.microsoft.com/en-us/office/open-xml/spreadsheet/structure-of-a-spreadsheetml-document) e [PDF Reference, Adobe](https://opensource.adobe.com/dc-acrobat-sdk-docs/pdfstandards/pdfreference1.7old.pdf). ZIP/CRC/XML foram lidos por `zipfile`/`ElementTree` do Python; PDF teve offsets/streams validados e foi renderizado/inspecionado no leitor nativo do Edge.
+
+## Backup e preparação para sincronização
+
+As quatro novas coleções estão no JSON schemaVersion 1 como extensões opcionais, no restore atômico e no apagamento global. Validação rejeita duplicidades, calendários/vínculos inválidos, contas órfãs, transferências incoerentes e parcelas com valores adulterados **antes** do restore. Backups antigos deixam as novas coleções vazias; bancos 3 → 5 e 4 → 5 foram testados preservando fontes antigas.
+
+IDs estáveis, `createdAt`/`updatedAt` nas novas entidades e `planningRef` mantido após baixa permitem um futuro adaptador externo. Planos são pausados e transferências canceladas sem perder identidade. `financeSyncSnapshot` oferece um contrato tipado apenas das fontes locais, sem totais derivados. Não existe backend, transporte de rede, serviço escolhido, credencial, fila, reconciliação remota ou sincronização implementada. A futura política de conflitos/identificação de usuário depende de decisão específica.
+
+## Menu principal em tela cheia
+
+`MainMenu` reutiliza `navItems` do App: Hoje, Semana, Treinos, Registros, Financeiro, Progresso e Ajustes. Não inventa destinos Delivery/Planejamento; são funcionalidades dentro de Registros/Financeiro. Rodapé contém um único botão Menu; opções ficam somente no diálogo aberto, verticalmente, sem cards, indicadores ou ícones.
+
+Diálogo nativo `showModal()` ocupa a viewport por `100dvh`, respeita safe areas e possui rolagem vertical própria. Fundo fica inert e com overflow bloqueado. Ao abrir, foco vai à opção atual; o destino atual usa texto, peso e sublinhado discretos, além de cor. Teclado permanece no diálogo. X com `aria-label` e Esc fecham preservando a tela e retornando foco ao botão. Escolher um destino fecha, usa `navigateTab` existente e foca o conteúdo, sem reload. Ícones SVG são usados somente em Menu/X, decorativos para leitores de tela. Abertura usa 180 ms; reduced-motion remove a animação. Mobile/paisagem/tablet/desktop e claro/escuro foram verificados.
+
 ## Skills e arquivos desta etapa
 
-- `prompt-master`: lida integralmente antes das alterações. Seu escopo é engenharia de prompts; esta solicitação é implementação, então não foi gerado um prompt substituindo o trabalho.
-- `ui-ux-pro-max`: orientação React, gráficos, acessibilidade, contraste, responsividade e revisão do sistema existente.
-- `frontend-design`: hierarquia, conteúdo, reaproveitamento da identidade e revisão visual.
-- `playwright-cli`: orientação de validação browser; os testes usam a suíte Playwright e o Edge já instalados.
-- `find-skills`: avaliação do catálogo disponível e necessidade de novas capacidades. Nenhuma instalação foi necessária; nenhuma dependência ou ferramenta foi adicionada por conveniência.
+`prompt-master` foi lida antes das alterações; por seu próprio escopo, esta implementação não foi substituída por um prompt. `ui-ux-pro-max` orientou React, formulários, foco, navegação, acessibilidade e revisão dos tokens. `frontend-design` orientou listas simples e separação de ferramentas, preservando a identidade. `playwright-cli` orientou validação com a suíte Playwright/Edge. `find-skills` orientou avaliar o catálogo: nenhuma capacidade adicional exigiu instalação, nem houve dependência nova. Orientações de PDF/planilhas foram consultadas para formatos e revisão; os workflows de artefatos isolados não substituem o gerador offline do aplicativo.
 
-Criados em `app-rotina`: `src/finance-analysis.ts`, `src/finance-analysis.test.ts`, `src/components/FinancePlanning.tsx`, `src/components/FinanceInsights.tsx`, `e2e/finance-intelligence.e2e.ts`.
+Criados em `app-rotina`:
 
-Alterados nesta etapa: `src/types.ts`, `src/domain.ts`, `src/repository.ts`, `src/money.ts`, `src/finance.ts`, `src/App.tsx`, `src/components/FinanceForms.tsx`, `src/components/FinanceSummary.tsx`, `src/components/FinanceView.tsx`, `src/components/ProgressDashboard.tsx`, `src/index.css`, `src/repository-guards.test.ts`, `e2e/finance.e2e.ts`, `e2e/fixtures.ts`, `README.md`, `design-system/ritmo/MASTER.md` e este documento. Arquivos da implementação anterior foram preservados.
+- Domínio: `src/finance-schedule.ts`, `src/finance-plans.ts`, `src/finance-closing.ts`, `src/finance-export.ts`.
+- Interface: `src/components/FinanceAdvanced.tsx`, `FinanceSchedules.tsx`, `FinanceWealth.tsx`, `FinanceTools.tsx`, `MainMenu.tsx`, `finance-form-utils.ts`.
+- Testes: `src/finance-plans.test.ts`, `src/finance-export.test.ts`, `e2e/finance-operations.e2e.ts`, `e2e/menu.e2e.ts`, `e2e/finance-pdf.e2e.ts`.
+
+Alterados: `src/App.tsx`, `src/types.ts`, `src/domain.ts`, `src/repository.ts`, `src/finance.ts`, `src/finance-analysis.ts`, `src/components/FinanceView.tsx`, `FinanceForms.tsx`, `FinanceInsights.tsx`, `ProgressDashboard.tsx`, `src/index.css`, `src/repository-guards.test.ts`, `e2e/fixtures.ts`, `e2e/offline.e2e.ts`, `e2e/finance-intelligence.e2e.ts`, `README.md`, `design-system/ritmo/MASTER.md` e este documento. MoneyInput/money.ts e dependências foram preservados.
 
 ## Validação final
 
 | Verificação | Resultado |
 | --- | --- |
-| `npm run lint` | Aprovado, sem erros ou avisos |
+| `npm run lint` | Sem erros ou avisos |
 | `npm run typecheck` | Aprovado, incluindo E2E |
-| `npm test` | **148 testes / 9 arquivos aprovados** |
-| `npm run test:e2e -- --config=playwright.edge.config.ts --workers=2` | **48 cenários aprovados** |
-| Build de produção, executado pelo comando E2E | Aprovado |
+| `npm test` | **182 testes / 11 arquivos** |
+| `npm run test:e2e -- --config=playwright.edge.config.ts --workers=2` | **55 cenários** |
+| `npm run build` | Aprovado |
 | Console / warnings React | Sem ocorrências nos cenários |
-| Temas / responsividade / contraste / teclado | Aprovados nas verificações descritas |
+| Temas / responsividade / foco / teclado | Verificados |
 
-Total: **196 testes**, com **49 unitários e 4 cenários de navegador novos** em relação aos 99/44 anteriores. TDD foi usado para motor e barreiras de persistência, com falha observada antes da implementação. Testes incluem metas 0/parcial/100/acima, limites, comparação sem base/zero, tendências com lacunas, projeção positiva/negativa/intermediária, alertas, taxas protegidas, madrugada, custos classificados, edição sem duplicação, centavos, migração 3→4, backup novo/antigo, restauração, máscara e offline.
+Total: **237 testes**, **34 unitários e 7 cenários de navegador novos** sobre a base 196. Nenhum teste anterior removido. Testes existentes foram adaptados à navegação modal e à versão final do IndexedDB. TDD teve falhas observadas antes do domínio, exportações e menu, e em proteções de precisão. A validação usa o Edge instalado, pois o Chromium padrão do Playwright não está instalado. Avisos NO_COLOR/FORCE_COLOR são do runner, não do aplicativo.
 
-O ambiente não possui o Chromium padrão do Playwright; validação usa o Edge instalado com configuração separada. O runner emite aviso de conflito de variáveis `NO_COLOR`/`FORCE_COLOR`, sem relação com o console da aplicação ou falha de build/testes.
+Casos cobertos: quatro tipos recorrentes, semana/mês/ano, 31/02 e bissexto, pausa, confirmação simultânea idempotente, pagamento com data distinta, parcelas de centavos e soma exata, limites inválidos, posição patrimonial/transferências/reserva, metas brutas/líquidas no simulador, sem histórico/taxa zero/overflow, fechamento civil/parcial, migração 3/4 → 5, backups antigos/novos e refs adulteradas, restore e offline, CSV escaping/fórmulas, ZIP CRC/XML/números, PDF/paginação/acento/renderização, menu viewport/mobile/paisagem/temas/teclado/retorno de foco.
 
-## Limitações e interpretação
+## Limitações reais
 
-Não há conta bancária, saldo inicial, sincronização, recorrências automáticas ou previsão de valores não cadastrados. Projeção e alertas dependem de valores e vencimentos informados. Tendências exigem histórico suficiente; ausência não é zero. Classificação fina de custos antigos exige edição explícita, sem inferência automática. Reserva acumulada não controla depósitos/retiradas. Planejamentos são locais ao aparelho e devem ser preservados em backup. Nenhum critério solicitado ficou pendente de implementação.
+- Não há sincronização externa, conta de usuário, saldo bancário automático, cotações, juros, renegociação ou pagamento parcial. A estrutura está preparada para um adaptador futuro, sem serviço escolhido.
+- Patrimônio depende do saldo inicial correto e dos vínculos explícitos; histórico sem vínculo não é inferido. Corrigir inicial recalcula a posição antiga. Projeção dos registros e saldo patrimonial são leituras separadas.
+- Fechamento é uma visão recalculada, não um documento imutável ou livro contábil; valores em aberto históricos usam status atual.
+- Simulações dependem das hipóteses e do histórico escolhido; médias de delivery não garantem desempenho. Tendências mantêm os requisitos mínimos de dados e lacunas não viram zero.
+- Relatórios são resumos/movimentações; estruturas completas de planejamento/patrimônio ficam no JSON. PDF usa cobertura WinAnsi, representação U+ para outros símbolos e não é um PDF marcado para acessibilidade. Exportações grandes usam memória local; escolha períodos menores se necessário.
+- Os testes de navegador foram executados no Edge; Safari/Firefox e outros dispositivos físicos não foram executados neste ambiente. Excel foi validado estruturalmente com ZIP/XML, sem abrir uma instalação do Microsoft Excel.

@@ -186,6 +186,7 @@ export function calculateProjectedBalance(rows: readonly FinancialMovement[], to
   const end = addDays(today, days)
   const current = summarizeFinance(realized(rows, today)).balance
   const future = rows.filter((row) => row.localDate <= end && ((row.status === 'aberto' && (row.type === 'credito' || row.type === 'pendencia'))
+    || row.status === 'planejado'
     || (row.status === 'previsto' && row.localDate > today && (row.type === 'entrada' || row.type === 'saida'))))
   const credits = amountOf(future.filter((row) => row.type === 'credito'))
   const pending = amountOf(future.filter((row) => row.type === 'pendencia'))
@@ -206,15 +207,15 @@ export function calculateProjectedBalance(rows: readonly FinancialMovement[], to
     return { date, impact: net, balance: running }
   })
   return { days, end, current, credits, pending, futureEntries, futureExits, impact, projected, minimum, riskDate, schedule,
-    overdueCount: future.filter((row) => row.type === 'pendencia' && row.localDate < today).length,
-    upcomingCount: future.filter((row) => row.type === 'pendencia' && row.localDate >= today && row.localDate <= addDays(today, 7)).length,
+    overdueCount: future.filter((row) => (row.type === 'pendencia' || row.type === 'saida') && row.localDate < today).length,
+    upcomingCount: future.filter((row) => (row.type === 'pendencia' || row.type === 'saida') && row.localDate >= today && row.localDate <= addDays(today, 7)).length,
   }
 }
 export type FinancialProjection = ReturnType<typeof calculateProjectedBalance>
 export interface FinancialAlert { code: string; severity: 'attention' | 'critical' | 'info'; message: string }
 export function calculateFinancialAlerts(input: { rows: readonly FinancialMovement[]; today: string; goals: readonly GoalProgress[]; budgets: readonly BudgetUsage[]; projections: readonly FinancialProjection[]; comparison?: PeriodComparison }) {
   const alerts: FinancialAlert[] = []
-  const open = input.rows.filter((row) => row.status === 'aberto' && row.type === 'pendencia')
+  const open = input.rows.filter((row) => row.status === 'aberto' && row.type === 'pendencia' || row.status === 'planejado' && (row.type === 'pendencia' || row.type === 'saida'))
   const overdue = open.filter((row) => row.localDate < input.today)
   const upcoming = open.filter((row) => row.localDate >= input.today && row.localDate <= addDays(input.today, 7))
   if (overdue.length) alerts.push({ code: 'overdue', severity: 'critical', message: `${overdue.length} pendência(s) vencida(s). Confira as datas e registre pagamentos já realizados.` })
@@ -266,7 +267,7 @@ export function financialSeries(rows: readonly FinancialMovement[], interval: Fi
 }
 
 export function buildFinanceAnalysis(input: FinanceSources & { goals: readonly FinancialGoal[]; budgets: readonly CategoryBudget[]; interval: FinanceInterval; period: FinancialPeriod }) {
-  const rows = buildFinancialMovements(input)
+  const rows = buildFinancialMovements({ ...input, planningInterval: { start: [input.interval.start, ...input.recurringPlans?.map(p => p.startDate) ?? [], ...input.installmentPlans?.map(p => p.firstDueDate) ?? []].sort()[0], end: input.interval.end > addDays(input.today, 30) ? input.interval.end : addDays(input.today, 30) } })
   const periodRows = filterFinancialMovements(rows, input.interval)
   const goals = input.goals.filter((goal) => goal.startDate <= input.interval.end && goal.endDate >= input.interval.start).map((goal) => calculateGoalProgress(goal, rows, input.today))
   const budgets = input.budgets.filter((budget) => `${budget.month}-01` <= input.interval.end && `${budget.month}-31` >= input.interval.start).map((budget) => calculateBudgetUsage(budget, rows, input.today))

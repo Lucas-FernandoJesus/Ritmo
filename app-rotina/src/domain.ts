@@ -1,4 +1,5 @@
-import type { AppSettings, BackupData, CategoryBudget, DailyCheckIn, DailyCompletion, DailyPlanSnapshot, DailyProgressSummary, DeliveryShift, Expense, FinancialGoal, FinancialRecord, RoutineItem, RoutineMode, StudyLog, ThirtyDayProgress, WeeklyProgressSummary } from './types'
+import type { AccountTransfer, AppSettings, AssetAccount, BackupData, CategoryBudget, DailyCheckIn, DailyCompletion, DailyPlanSnapshot, DailyProgressSummary, DeliveryShift, Expense, FinancialGoal, FinancialRecord, InstallmentPlan, RecurringPlan, RoutineItem, RoutineMode, StudyLog, ThirtyDayProgress, WeeklyProgressSummary } from './types'
+import { anchoredMonth, occurrenceId, recurringDate } from './finance-schedule'
 
 export const SCHEMA_VERSION = 1
 export const MAX_BACKUP_BYTES = 10 * 1024 * 1024
@@ -55,7 +56,7 @@ function isSafeId(value: unknown): value is string {
   return typeof value === 'string' && /^[A-Za-z0-9][A-Za-z0-9._:-]{0,199}$/.test(value)
 }
 
-function isLocalDate(value: unknown): value is string {
+export function isLocalDate(value: unknown): value is string {
   if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false
   const [year, month, day] = value.split('-').map(Number)
   const parsed = new Date(year, month - 1, day)
@@ -349,7 +350,8 @@ export function isValidDeliveryShift(value: unknown): value is DeliveryShift {
     || (value.fatigueLevel !== null && !isOneOf(value.fatigueLevel, [0, 1, 2, 3] as const))
     || (value.armCondition !== null && !isOneOf(value.armCondition, armConditions))
     || !isOptionalString(value.note)
-    || !isDateTime(value.createdAt)) return false
+    || !isDateTime(value.createdAt)
+    || (value.accountId !== undefined && !isSafeId(value.accountId))) return false
 
   const calculated = calculateDelivery(value as unknown as DeliveryShift)
   return sameCalculatedValue(value.estimatedResult as number | null, calculated.estimatedResult)
@@ -369,6 +371,7 @@ export function isValidExpense(value: unknown): value is Expense {
     && (value.deliveryShiftId === undefined || isSafeId(value.deliveryShiftId))
     && (value.deliveryCostKind === undefined || (isSafeId(value.deliveryShiftId) && isOneOf(value.deliveryCostKind, deliveryCostKinds)))
     && isOptionalString(value.note)
+    && (value.accountId === undefined || isSafeId(value.accountId))
 }
 
 export function isValidFinancialRecord(value: unknown): value is FinancialRecord {
@@ -384,6 +387,79 @@ export function isValidFinancialRecord(value: unknown): value is FinancialRecord
     && (value.deliveryCostKind === undefined || (isSafeId(value.deliveryShiftId) && isOneOf(value.deliveryCostKind, deliveryCostKinds) && (value.type === 'saida' || value.type === 'pendencia')))
     && isOptionalString(value.note)
     && isDateTime(value.createdAt)
+    && (value.updatedAt === undefined || isDateTime(value.updatedAt))
+    && (value.accountId === undefined || isSafeId(value.accountId))
+    && (value.liabilityAccountId === undefined || (isSafeId(value.liabilityAccountId) && (value.type === 'saida' || value.type === 'pendencia')))
+    && (value.planningRef === undefined || (isObject(value.planningRef)
+      && isOneOf(value.planningRef.kind, ['recurring', 'installment'] as const)
+      && isSafeId(value.planningRef.planId) && isSafeId(value.planningRef.key)
+      && isLocalDate(value.planningRef.dueDate)
+      && value.id === occurrenceId(value.planningRef as unknown as FinancialRecord['planningRef'] & object)))
+}
+
+function isMoneyAmount(value: unknown, positive = false): value is number {
+  return isNonNegativeNumber(value) && Number.isSafeInteger(Math.round(value * 100))
+    && Math.abs(value * 100 - Math.round(value * 100)) < .000001 && (!positive || value >= .01)
+}
+function isFinancialEntity(value: Record<string, unknown>): boolean {
+  return isSafeId(value.id) && value.id.length <= 100 && isDateTime(value.createdAt) && isDateTime(value.updatedAt) && Date.parse(value.updatedAt) >= Date.parse(value.createdAt)
+}
+function validPlanAccounts(value: Record<string, unknown>): boolean {
+  return (value.accountId === undefined || isSafeId(value.accountId))
+    && (value.liabilityAccountId === undefined || (isSafeId(value.liabilityAccountId) && (value.type === undefined || value.type === 'saida' || value.type === 'pendencia')))
+}
+export function isValidRecurringPlan(value: unknown): value is RecurringPlan {
+  return isObject(value) && isFinancialEntity(value) && isNonEmptyString(value.name, 200)
+    && isOneOf(value.type, ['entrada', 'saida', 'credito', 'pendencia'] as const) && isOneOf(value.category, expenseCategories)
+    && isMoneyAmount(value.amount, true) && isOneOf(value.frequency, ['weekly', 'monthly', 'yearly'] as const)
+    && isLocalDate(value.startDate) && (value.endDate === undefined || (isLocalDate(value.endDate) && value.endDate >= value.startDate))
+    && typeof value.active === 'boolean' && validPlanAccounts(value)
+}
+export function isValidInstallmentPlan(value: unknown): value is InstallmentPlan {
+  return isObject(value) && isFinancialEntity(value) && isNonEmptyString(value.name, 200) && isOneOf(value.category, expenseCategories)
+    && isMoneyAmount(value.total, true) && isFiniteNumber(value.count) && Number.isInteger(value.count) && value.count >= 1 && value.count <= 600
+    && Math.round(value.total * 100) >= value.count && isLocalDate(value.firstDueDate) && typeof value.active === 'boolean' && validPlanAccounts(value)
+}
+export function isValidAssetAccount(value: unknown): value is AssetAccount {
+  return isObject(value) && isFinancialEntity(value) && isNonEmptyString(value.name, 200)
+    && isOneOf(value.kind, ['cash', 'bank', 'savings', 'reserve', 'investment', 'liability'] as const)
+    && isMoneyAmount(value.openingBalance) && isLocalDate(value.openingDate)
+}
+export function isValidAccountTransfer(value: unknown): value is AccountTransfer {
+  return isObject(value) && isFinancialEntity(value) && isSafeId(value.fromAccountId) && isSafeId(value.toAccountId)
+    && value.fromAccountId !== value.toAccountId && isMoneyAmount(value.amount, true) && isLocalDate(value.localDate)
+    && (value.voidedAt === undefined || isDateTime(value.voidedAt))
+}
+
+// Usada antes de restore e em transações de gravação. Não altera os objetos.
+export function validFinanceReferences(data: Pick<BackupData, 'financialRecords' | 'expenses' | 'recurringPlans' | 'installmentPlans' | 'assetAccounts' | 'accountTransfers'> & { deliveryShifts?: DeliveryShift[] }): boolean {
+  const accounts = new Map((data.assetAccounts ?? []).map(a => [a.id, a]))
+  const recurrences = new Map((data.recurringPlans ?? []).map(p => [p.id, p]))
+  const installments = new Map((data.installmentPlans ?? []).map(p => [p.id, p]))
+  const linked = [...data.expenses, ...data.financialRecords ?? [], ...data.recurringPlans ?? [], ...data.installmentPlans ?? [], ...data.deliveryShifts ?? []]
+  if (linked.some(item => item.accountId && (!accounts.has(item.accountId) || accounts.get(item.accountId)?.kind === 'liability'))) return false
+  if ([...data.financialRecords ?? [], ...data.recurringPlans ?? [], ...data.installmentPlans ?? []].some(item => item.liabilityAccountId && accounts.get(item.liabilityAccountId)?.kind !== 'liability')) return false
+  if ((data.accountTransfers ?? []).some(t => {
+    const from = accounts.get(t.fromAccountId), to = accounts.get(t.toAccountId)
+    return !from || !to || from.kind === 'liability' || to.kind === 'liability' || t.localDate < from.openingDate || t.localDate < to.openingDate
+  })) return false
+  return (data.financialRecords ?? []).every(record => {
+    const ref = record.planningRef
+    if (!ref) return true
+    if (ref.kind === 'installment') {
+      const plan = installments.get(ref.planId), index = Number(ref.key)
+      if (!plan || !Number.isInteger(index) || index < 1 || index > plan.count || String(index) !== ref.key) return false
+      const totalCents = Math.round(plan.total * 100), expectedCents = Math.floor(totalCents / plan.count) + (index <= totalCents % plan.count ? 1 : 0)
+      return (record.type === 'saida' || record.type === 'pendencia') && Math.round(record.amount * 100) === expectedCents && ref.dueDate === anchoredMonth(plan.firstDueDate, index - 1)
+    }
+    const plan = recurrences.get(ref.planId)
+    if (!plan || ref.key !== ref.dueDate || ref.dueDate < plan.startDate || (plan.endDate && ref.dueDate > plan.endDate)) return false
+    if (record.type !== plan.type && !(plan.type === 'credito' && record.type === 'entrada') && !(plan.type === 'pendencia' && record.type === 'saida')) return false
+    const start = plan.startDate.split('-').map(Number), due = ref.dueDate.split('-').map(Number)
+    const index = plan.frequency === 'weekly' ? Math.round((Date.parse(`${ref.dueDate}T12:00:00Z`) - Date.parse(`${plan.startDate}T12:00:00Z`)) / 604800000)
+      : plan.frequency === 'yearly' ? due[0] - start[0] : (due[0] - start[0]) * 12 + due[1] - start[1]
+    return recurringDate(plan, index) === ref.dueDate
+  })
 }
 
 export function categoryBudgetId(month: string, category: CategoryBudget['category'], costKind?: CategoryBudget['deliveryCostKind']): string {
@@ -444,6 +520,10 @@ export function validateBackup(value: unknown): value is BackupData {
     || (value.financialRecords !== undefined && !Array.isArray(value.financialRecords))
     || (value.financialGoals !== undefined && !Array.isArray(value.financialGoals))
     || (value.categoryBudgets !== undefined && !Array.isArray(value.categoryBudgets))
+    || (value.recurringPlans !== undefined && !Array.isArray(value.recurringPlans))
+    || (value.installmentPlans !== undefined && !Array.isArray(value.installmentPlans))
+    || (value.assetAccounts !== undefined && !Array.isArray(value.assetAccounts))
+    || (value.accountTransfers !== undefined && !Array.isArray(value.accountTransfers))
     || (value.dailySnapshots !== undefined && !Array.isArray(value.dailySnapshots))
     || !isValidSettings(value.settings)) return false
 
@@ -451,7 +531,8 @@ export function validateBackup(value: unknown): value is BackupData {
   const financialRecords = value.financialRecords ?? []
   const financialGoals = value.financialGoals ?? []
   const categoryBudgets = value.categoryBudgets ?? []
-  const groups = [value.completions, dailySnapshots, value.checkIns, value.deliveryShifts, value.expenses, financialRecords, financialGoals, categoryBudgets, value.studyLogs, value.progress]
+  const recurringPlans = value.recurringPlans ?? [], installmentPlans = value.installmentPlans ?? [], assetAccounts = value.assetAccounts ?? [], accountTransfers = value.accountTransfers ?? []
+  const groups = [value.completions, dailySnapshots, value.checkIns, value.deliveryShifts, value.expenses, financialRecords, financialGoals, categoryBudgets, recurringPlans, installmentPlans, assetAccounts, accountTransfers, value.studyLogs, value.progress]
   if (groups.some((items) => items.length > MAX_RECORDS_PER_STORE)) return false
   if (!value.completions.every(isValidCompletion)
     || !dailySnapshots.every(isValidDailyPlanSnapshot)
@@ -461,11 +542,14 @@ export function validateBackup(value: unknown): value is BackupData {
     || !financialRecords.every(isValidFinancialRecord)
     || !financialGoals.every(isValidFinancialGoal)
     || !categoryBudgets.every(isValidCategoryBudget)
+    || !recurringPlans.every(isValidRecurringPlan) || !installmentPlans.every(isValidInstallmentPlan)
+    || !assetAccounts.every(isValidAssetAccount) || !accountTransfers.every(isValidAccountTransfer)
     || !value.studyLogs.every(isValidStudyLog)
     || !value.progress.every(isValidProgress)) return false
 
   const shiftIds = new Set(value.deliveryShifts.map((item) => item.id))
   if ([...value.expenses, ...financialRecords].some((item) => item.deliveryShiftId !== undefined && !shiftIds.has(item.deliveryShiftId))) return false
+  if (!validFinanceReferences({ expenses: value.expenses, financialRecords, recurringPlans, installmentPlans, assetAccounts, accountTransfers, deliveryShifts: value.deliveryShifts })) return false
   return hasUnique(value.completions, (item) => item.id)
     && hasUnique(dailySnapshots, (item) => item.id)
     && hasUnique(value.checkIns, (item) => item.localDate)
@@ -474,6 +558,8 @@ export function validateBackup(value: unknown): value is BackupData {
     && hasUnique(financialRecords, (item) => item.id)
     && hasUnique(financialGoals, (item) => item.id)
     && hasUnique(categoryBudgets, (item) => item.id)
+    && hasUnique(recurringPlans, (item) => item.id) && hasUnique(installmentPlans, (item) => item.id)
+    && hasUnique(assetAccounts, (item) => item.id) && hasUnique(accountTransfers, (item) => item.id)
     && hasUnique(value.studyLogs, (item) => item.id)
     && hasUnique(value.progress, (item) => item.id)
 }

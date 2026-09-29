@@ -26,7 +26,7 @@ Existem somente os modos Claro e Escuro. Valores antigos persistidos como `syste
 - Campos: rótulo persistente, controle mínimo de 48 px, erro contextual e foco visível.
 - Estados: texto e forma para concluído, em aberto e impedido; nenhuma cor classifica Normal, Reduzido e Mínimo como mérito.
 - Movimento: feedback de 160–220 ms para ação do usuário; respeitar `prefers-reduced-motion`.
-- Navegação: sete destinos fixos no rodapé, incluindo Treinos e Financeiro; até 620 px, duas linhas mantêm os nomes e alvos de toque legíveis. Largura de leitura limitada em telas maiores.
+- Navegação: somente o botão Menu permanece no rodapé. Ele abre um diálogo modal de tela inteira com os sete destinos existentes em uma lista vertical de nomes, sem ícones nas opções. Fechar por X ou Esc preserva a tela e retorna o foco; escolher uma opção fecha e direciona o foco ao conteúdo. Safe areas, rolagem local e bloqueio do fundo valem do mobile ao desktop. Largura de leitura limitada em telas maiores.
 - Orientações da rotina: a área de título e horário abre um diálogo nativo em formato de folha inferior para atividades gerais; concluir e pular permanecem botões independentes. O diálogo traz instruções em sequência, cuidados e fechamento visível, com foco contido e tecla Escape. Fortalecimento e Muay Thai abrem telas próprias da semana atual, com retorno previsível, instruções offline e links externos por movimento.
 
 ## Composição
@@ -49,3 +49,5 @@ Planejamento financeiro usa listas de metas e orçamentos em duas colunas, empil
 ## Revisão da direção
 
 A pesquisa da UI/UX Pro Max orienta os critérios de contraste, alvos de toque, foco, responsividade e redução de movimento. A direção usa acentos frios discretos, gradientes estáticos e ergonomia contemporânea, sem espalhar efeitos que prejudiquem a leitura.
+
+Planejar próximos passos reúne recorrências/parcelas, patrimônio, fechamento, simulação e exportações em seções selecionáveis. Planejamento não confirmado permanece explicitamente separado de valores realizados. Todos os inputs monetários usam MoneyInput. Transferências e saldos iniciais não usam cores ou rótulos de receita/despesa.

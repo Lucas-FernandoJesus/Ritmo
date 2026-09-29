@@ -106,6 +106,7 @@ export interface DeliveryShift {
   estimatedResult: number | null
   resultPerHour: number | null
   resultPerKilometer: number | null
+  accountId?: string
   fatigueLevel: 0 | 1 | 2 | 3 | null
   armCondition: 'habitual' | 'alterado' | 'dor' | null
   note?: string
@@ -122,6 +123,7 @@ export interface Expense {
   deliveryShiftId?: string
   deliveryCostKind?: DeliveryCostKind
   note?: string
+  accountId?: string
 }
 
 export type FinancialType = 'entrada' | 'saida' | 'credito' | 'pendencia'
@@ -137,6 +139,66 @@ export interface FinancialRecord {
   deliveryCostKind?: DeliveryCostKind
   note?: string
   createdAt: string
+  updatedAt?: string
+  accountId?: string
+  liabilityAccountId?: string
+  planningRef?: PlanningReference
+}
+
+export interface PlanningReference {
+  kind: 'recurring' | 'installment'
+  planId: string
+  key: string
+  dueDate: string
+}
+
+// Definições e fatos com identidade estável; cálculos não são persistidos.
+export interface FinancialEntity {
+  id: string
+  createdAt: string
+  updatedAt: string
+}
+export interface RecurringPlan extends FinancialEntity {
+  name: string
+  type: FinancialType
+  category: ExpenseCategory
+  amount: number
+  frequency: 'weekly' | 'monthly' | 'yearly'
+  startDate: string
+  endDate?: string
+  active: boolean
+  accountId?: string
+  liabilityAccountId?: string
+}
+export interface InstallmentPlan extends FinancialEntity {
+  name: string
+  category: ExpenseCategory
+  total: number
+  count: number
+  firstDueDate: string
+  active: boolean
+  accountId?: string
+  liabilityAccountId?: string
+}
+export type AssetKind = 'cash' | 'bank' | 'savings' | 'reserve' | 'investment' | 'liability'
+export interface AssetAccount extends FinancialEntity {
+  name: string
+  kind: AssetKind
+  openingBalance: number
+  openingDate: string
+}
+export interface AccountTransfer extends FinancialEntity {
+  fromAccountId: string
+  toAccountId: string
+  amount: number
+  localDate: string
+  voidedAt?: string
+}
+export interface FinancePlanningData {
+  recurringPlans: readonly RecurringPlan[]
+  installmentPlans: readonly InstallmentPlan[]
+  accounts: readonly AssetAccount[]
+  transfers: readonly AccountTransfer[]
 }
 
 export type DeliveryCostKind = 'combustivel' | 'manutencao' | 'alimentacao' | 'taxas' | 'outros'
@@ -210,6 +272,10 @@ export interface BackupData {
   financialRecords?: FinancialRecord[]
   financialGoals?: FinancialGoal[]
   categoryBudgets?: CategoryBudget[]
+  recurringPlans?: RecurringPlan[]
+  installmentPlans?: InstallmentPlan[]
+  assetAccounts?: AssetAccount[]
+  accountTransfers?: AccountTransfer[]
   studyLogs: StudyLog[]
   progress: ThirtyDayProgress[]
   settings: AppSettings

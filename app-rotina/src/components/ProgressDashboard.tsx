@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { buildDashboard, type DashboardCategory, type DashboardComparisonMetric, type DashboardPeriod, type DashboardUnit, type DashboardValue } from '../dashboard'
-import type { CategoryBudget, DailyCompletion, DailyPlanSnapshot, DeliveryShift, Expense, FinancialGoal, FinancialRecord, StudyLog } from '../types'
+import type { CategoryBudget, DailyCompletion, DailyPlanSnapshot, DeliveryShift, Expense, FinancialGoal, FinancialRecord, FinancePlanningData, StudyLog } from '../types'
 import { buildFinanceAnalysis, numberLabel, percentLabel } from '../finance-analysis'
 import { FinanceSummary } from './FinanceSummary'
 import { FinanceAlerts } from './FinanceInsights'
@@ -8,6 +8,7 @@ import { PlanningProgress } from './FinancePlanning'
 import { ProgressChart } from './ProgressChart'
 
 interface ProgressDashboardProps {
+  planning: FinancePlanningData
   today: string
   snapshots: readonly DailyPlanSnapshot[]
   completions: readonly DailyCompletion[]
@@ -137,7 +138,7 @@ function Comparison({ metric, previousLabel, status }: { metric: DashboardCompar
   </section>
 }
 
-export function ProgressDashboard({ today, snapshots, completions, studyLogs, deliveryShifts, expenses, financialRecords, financialGoals, categoryBudgets, onFinance }: ProgressDashboardProps) {
+export function ProgressDashboard({ planning, today, snapshots, completions, studyLogs, deliveryShifts, expenses, financialRecords, financialGoals, categoryBudgets, onFinance }: ProgressDashboardProps) {
   const [category, setCategory] = useState<DashboardCategory>('renda')
   const [period, setPeriod] = useState<DashboardPeriod>('month')
   const [referenceDate, setReferenceDate] = useState(today)
@@ -154,7 +155,7 @@ export function ProgressDashboard({ today, snapshots, completions, studyLogs, de
     expenses,
     financialRecords,
   }), [category, period, referenceDate, today, snapshots, completions, studyLogs, deliveryShifts, expenses, financialRecords])
-  const finance = useMemo(() => buildFinanceAnalysis({ shifts: deliveryShifts, expenses, records: financialRecords, today, goals: financialGoals, budgets: categoryBudgets, interval: { start: dashboard.interval.start, end: dashboard.interval.end }, period }), [deliveryShifts, expenses, financialRecords, today, financialGoals, categoryBudgets, dashboard.interval.start, dashboard.interval.end, period])
+  const finance = useMemo(() => buildFinanceAnalysis({ ...planning, shifts: deliveryShifts, expenses, records: financialRecords, today, goals: financialGoals, budgets: categoryBudgets, interval: { start: dashboard.interval.start, end: dashboard.interval.end }, period }), [planning, deliveryShifts, expenses, financialRecords, today, financialGoals, categoryBudgets, dashboard.interval.start, dashboard.interval.end, period])
   const balanceComparison = finance.comparison.metrics.find((metric) => metric.id === 'balance')!
   const highlightedGoal = [...finance.goals].filter((goal) => goal.status === 'active' || goal.status === 'near' || goal.status === 'achieved').sort((a, b) => a.goal.endDate.localeCompare(b.goal.endDate) || a.goal.createdAt.localeCompare(b.goal.createdAt))[0]
 
