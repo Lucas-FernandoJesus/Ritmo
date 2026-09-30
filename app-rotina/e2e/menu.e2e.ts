@@ -1,5 +1,20 @@
 import { expect, goToTab, openAppOnTuesday, test } from './fixtures'
 
+test('oferece ações rápidas sem aumentar os destinos principais', async ({ page }) => {
+  await openAppOnTuesday(page)
+  await page.getByRole('button', { name: 'Abrir menu principal', exact: true }).click()
+
+  const actions = page.getByRole('group', { name: 'Ações rápidas' })
+  await expect(actions.getByRole('button')).toHaveText(['Turno', 'Estudo', 'Entrada', 'Saída'])
+  await actions.getByRole('button', { name: 'Estudo', exact: true }).click()
+  await expect(page.getByRole('heading', { name: 'Registros', exact: true })).toBeVisible()
+  await expect(page.getByRole('group', { name: 'Tipo de registro' }).getByRole('button', { name: 'Estudos', exact: true })).toHaveAttribute('aria-pressed', 'true')
+
+  await page.getByRole('button', { name: 'Abrir menu principal', exact: true }).click()
+  await page.getByRole('group', { name: 'Ações rápidas' }).getByRole('button', { name: 'Saída', exact: true }).click()
+  await expect(page.getByRole('form', { name: 'Registrar saída', exact: true })).toBeVisible()
+})
+
 for (const theme of ['light', 'dark'] as const) test(`menu em tela cheia, teclado e responsividade no tema ${theme}`, async ({ page }) => {
   await openAppOnTuesday(page)
   await goToTab(page, 'Ajustes')
@@ -35,7 +50,8 @@ for (const theme of ['light', 'dark'] as const) test(`menu em tela cheia, teclad
     expect(await menu.locator('nav').evaluate((navigation, closeButton) => Boolean(navigation.compareDocumentPosition(closeButton as Node) & Node.DOCUMENT_POSITION_FOLLOWING), await close.elementHandle())).toBe(true)
     const content = await menu.locator('.main-menu-content').boundingBox()
     expect(content).not.toBeNull()
-    expect(Math.abs(content!.y + content!.height / 2 - size.height / 2)).toBeLessThan(8)
+    if (content!.height <= size.height - 48) expect(Math.abs(content!.y + content!.height / 2 - size.height / 2)).toBeLessThan(8)
+    else expect(content!.y).toBeGreaterThanOrEqual(12)
     expect(await page.evaluate(() => document.documentElement.style.overflow)).toBe('hidden')
     await close.click()
     await expect(menu).not.toBeVisible()

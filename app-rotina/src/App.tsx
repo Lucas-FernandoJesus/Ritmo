@@ -1,22 +1,31 @@
-import { useEffect, useMemo, useState } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import { routineItems } from './features/routine/data'
 import { TodayView } from './features/routine/components/TodayView'
 import { WeekView } from './features/routine/components/WeekView'
 import { ActivityDetailsDialog, type ActivitySelection } from './features/routine/components/ActivityDetailsDialog'
 import { createDailyPlanSnapshot, defaultSettings, filterRoutineForDay, findLinkedActivityId, localDateKey, rideSafetyForDate, summarizeDailyProgress, summarizeWeeklyProgress, upgradeAppearance, weekBounds } from './core/domain'
-import { ProgressView } from './features/progress/components/ProgressView'
-import { SettingsView } from './features/settings/components/SettingsView'
 import { applyDocumentTheme, deviceTheme, effectiveTheme, type AppearanceFeedback, type EffectiveTheme } from './features/settings/theme'
-import { FinanceView, type FinanceRegistrationRequest } from './features/finance/components/FinanceView'
-import { RecordsView, type DeliverySelection, type RecordKind } from './features/records/components/RecordsView'
+import { useDailyReminder } from './features/settings/useDailyReminder'
+import type { FinanceRegistrationRequest } from './features/finance/components/FinanceView'
+import type { DeliverySelection, RecordKind } from './features/records/components/RecordsView'
 import { MainMenu } from './components/MainMenu'
-import { settleFinancialRecord } from './features/finance/finance'
+import { useFinanceState } from './features/finance/useFinanceState'
 import { repository } from './infrastructure/repository'
+import { loadAppData } from './infrastructure/load-app-data'
 import { clampTrainingWeek } from './features/training/training-plan'
-import { MuayWorkoutView, TrainingHubView, TrainingWorkoutView, type TrainingSelection } from './features/training/components/TrainingViews'
-import type { AccountTransfer, AssetAccount, AppSettings, CategoryBudget, DailyCheckIn, DailyCompletion, DailyPlanSnapshot, DailyProgressSummary, DeliveryShift, Expense, FinancialGoal, FinancialRecord, FinancePlanningData, InstallmentPlan, PlanningReference, RecurringPlan, RoutineItem, RoutineMode, StoragePersistence, StudyLog, ThirtyDayProgress } from './core/types'
+import type { TrainingSelection } from './features/training/components/TrainingViews'
+import type { AppSettings, DailyCheckIn, DailyCompletion, DailyPlanSnapshot, DailyProgressSummary, DeliveryShift, Expense, RoutineItem, RoutineMode, StoragePersistence, StudyLog, ThirtyDayProgress } from './core/types'
+
+const FinanceView = lazy(() => import('./features/finance/components/FinanceView').then((module) => ({ default: module.FinanceView })))
+const ProgressView = lazy(() => import('./features/progress/components/ProgressView').then((module) => ({ default: module.ProgressView })))
+const SettingsView = lazy(() => import('./features/settings/components/SettingsView').then((module) => ({ default: module.SettingsView })))
+const RecordsView = lazy(() => import('./features/records/components/RecordsView').then((module) => ({ default: module.RecordsView })))
+const TrainingHubView = lazy(() => import('./features/training/components/TrainingViews').then((module) => ({ default: module.TrainingHubView })))
+const TrainingWorkoutView = lazy(() => import('./features/training/components/TrainingViews').then((module) => ({ default: module.TrainingWorkoutView })))
+const MuayWorkoutView = lazy(() => import('./features/training/components/TrainingViews').then((module) => ({ default: module.MuayWorkoutView })))
 
 type Tab = 'hoje' | 'semana' | 'treinos' | 'registros' | 'financeiro' | 'progresso' | 'ajustes'
+type QuickAction = 'shift' | 'study' | 'income' | 'expense'
 type LinkableRecord = { kind: 'study', area: StudyLog['area'] } | { kind: 'delivery', startTime: string, endTime: string } | { kind: 'expense' }
 
 
@@ -28,6 +37,13 @@ const navItems: { id: Tab; label: string }[] = [
   { id: 'financeiro', label: 'Financeiro' },
   { id: 'progresso', label: 'Progresso' },
   { id: 'ajustes', label: 'Ajustes' },
+]
+
+const quickActions: { id: QuickAction; label: string }[] = [
+  { id: 'shift', label: 'Turno' },
+  { id: 'study', label: 'Estudo' },
+  { id: 'income', label: 'Entrada' },
+  { id: 'expense', label: 'Saída' },
 ]
 
 const readableError = (error: unknown, fallback: string) => error instanceof Error ? error.message : fallback
@@ -60,6 +76,7 @@ function prepareWeekSnapshots(existing: DailyPlanSnapshot[], localDate: string, 
 
 
 function App() {
+  useDailyReminder()
   const [now, setNow] = useState(() => new Date())
   const dateKey = localDateKey(now)
   const [tab, setTab] = useState<Tab>(() => workoutFromUrl() ? 'treinos' : 'hoje')
@@ -76,11 +93,8 @@ function App() {
   const [checkIn, setCheckIn] = useState<DailyCheckIn | null>(null)
   const [deliveryShifts, setDeliveryShifts] = useState<DeliveryShift[]>([])
   const [expenses, setExpenses] = useState<Expense[]>([])
-  const [financialRecords, setFinancialRecords] = useState<FinancialRecord[]>([])
-  const [financialGoals, setFinancialGoals] = useState<FinancialGoal[]>([])
-  const [categoryBudgets, setCategoryBudgets] = useState<CategoryBudget[]>([])
-  const [financePlanning, setFinancePlanning] = useState<FinancePlanningData>({ recurringPlans: [], installmentPlans: [], accounts: [], transfers: [] })
   const [recordKind, setRecordKind] = useState<RecordKind>('delivery')
+  const [recordsVisited, setRecordsVisited] = useState(false)
   const [financeRegistration, setFinanceRegistration] = useState<FinanceRegistrationRequest>()
   const [deliverySelection, setDeliverySelection] = useState<DeliverySelection>({ revision: 0 })
   const [studyLogs, setStudyLogs] = useState<StudyLog[]>([])
@@ -89,6 +103,7 @@ function App() {
   const [loadError, setLoadError] = useState(false)
   const [savingIds, setSavingIds] = useState<string[]>([])
   const [message, setMessage] = useState('')
+  const { financialRecords, financialGoals, categoryBudgets, financePlanning, hydrateFinance, saveFinancialRecord, saveFinancialGoal, saveCategoryBudget, removeFinancialPlan, financeOperations } = useFinanceState(dateKey, setMessage)
   const [online, setOnline] = useState(navigator.onLine)
   const [storagePersistence, setStoragePersistence] = useState<StoragePersistence>('checking')
 
@@ -105,37 +120,31 @@ function App() {
     let active = true
     async function load() {
       try {
-        await repository.initialize()
-        const [loadedSettings, loadedCompletions, loadedSnapshots, loadedCheckIn, shifts, loadedExpenses, logs, loadedProgress, loadedFinancial, loadedGoals, loadedBudgets, loadedRecurring, loadedInstallments, loadedAccounts, loadedTransfers] = await Promise.all([
-          repository.getSettings(), repository.getCompletions(), repository.getDailySnapshots(), repository.getCheckIn(dateKey), repository.getDeliveryShifts(), repository.getExpenses(), repository.getStudyLogs(), repository.getProgress(), repository.getFinancialRecords(), repository.getFinancialGoals(), repository.getCategoryBudgets(), repository.getRecurringPlans(), repository.getInstallmentPlans(), repository.getAssetAccounts(), repository.getAccountTransfers(),
-        ])
+        const loaded = await loadAppData(repository, dateKey)
         if (!active) return
-        const upgradedSettings = upgradeAppearance(loadedSettings)
-        const resolvedTheme = loadedSettings.theme === 'system' ? deviceTheme() : effectiveTheme(upgradedSettings.theme)
+        const upgradedSettings = upgradeAppearance(loaded.settings)
+        const resolvedTheme = loaded.settings.theme === 'system' ? deviceTheme() : effectiveTheme(upgradedSettings.theme)
         const nextSettings = upgradedSettings.theme === resolvedTheme && upgradedSettings.appearanceVersion === 2
           ? upgradedSettings
           : { ...upgradedSettings, theme: resolvedTheme, appearanceVersion: 2 as const }
         setSettings(nextSettings)
         setMode(nextSettings.preferredMode)
-        if (nextSettings !== loadedSettings) {
+        if (nextSettings !== loaded.settings) {
           try { await repository.saveSettings(nextSettings) }
           catch { if (active) setMessage('A aparência compatível está ativa, mas não foi possível salvar a preferência explícita.') }
         }
         if (!active) return
-        const snapshotPlan = prepareWeekSnapshots(loadedSnapshots, dateKey, nextSettings.preferredMode, nextSettings)
+        const snapshotPlan = prepareWeekSnapshots(loaded.dailySnapshots, dateKey, nextSettings.preferredMode, nextSettings)
         await Promise.all(snapshotPlan.changed.map((snapshot) => repository.saveDailySnapshot(snapshot)))
         if (!active) return
-        setCompletions(loadedCompletions)
+        setCompletions(loaded.completions)
         setDailySnapshots(snapshotPlan.all)
-        setCheckIn(loadedCheckIn ?? null)
-        setDeliveryShifts(shifts)
-        setExpenses(loadedExpenses)
-        setFinancialRecords(loadedFinancial)
-        setFinancialGoals(loadedGoals)
-        setCategoryBudgets(loadedBudgets)
-        setFinancePlanning({ recurringPlans: loadedRecurring, installmentPlans: loadedInstallments, accounts: loadedAccounts, transfers: loadedTransfers })
-        setStudyLogs(logs)
-        setProgress(loadedProgress)
+        setCheckIn(loaded.checkIn)
+        setDeliveryShifts(loaded.deliveryShifts)
+        setExpenses(loaded.expenses)
+        hydrateFinance(loaded)
+        setStudyLogs(loaded.studyLogs)
+        setProgress(loaded.progress)
       } catch {
         if (active) setLoadError(true)
       } finally {
@@ -184,6 +193,8 @@ function App() {
   const todayCheckIn = checkIn?.localDate === dateKey ? checkIn : null
   const safety = rideSafetyForDate(checkIn, dateKey)
   const weeklySummary = useMemo(() => summarizeWeeklyProgress(dateKey, dailySnapshots, completions), [dateKey, dailySnapshots, completions])
+  const previousWeekReference = useMemo(() => { const date = new Date(`${dateKey}T12:00:00`); date.setDate(date.getDate() - 7); return localDateKey(date) }, [dateKey])
+  const previousWeeklySummary = useMemo(() => summarizeWeeklyProgress(previousWeekReference, dailySnapshots, completions), [previousWeekReference, dailySnapshots, completions])
   const todaySnapshot = dailySnapshots.find((snapshot) => snapshot.localDate === dateKey)
   const todaySummary = useMemo<DailyProgressSummary>(() => todaySnapshot
     ? summarizeDailyProgress(todaySnapshot, completions)
@@ -270,59 +281,6 @@ function App() {
     finally { setModeSaving(false) }
   }
 
-  async function saveFinancialRecord(item: FinancialRecord) {
-    try {
-      await repository.saveFinancialRecord(item)
-      setFinancialRecords((current) => [item, ...current.filter((existing) => existing.id !== item.id)])
-      setMessage('Movimentação financeira salva.')
-      return true
-    } catch (error) { setMessage(readableError(error, 'Não foi possível salvar a movimentação.')); return false }
-  }
-
-  async function saveFinancialGoal(item: FinancialGoal) {
-    try {
-      await repository.saveFinancialGoal(item)
-      setFinancialGoals((current) => [item, ...current.filter((existing) => existing.id !== item.id)])
-      setMessage('Meta financeira salva.')
-      return true
-    } catch (error) { setMessage(readableError(error, 'Não foi possível salvar a meta.')); return false }
-  }
-
-  async function saveCategoryBudget(item: CategoryBudget) {
-    try {
-      await repository.saveCategoryBudget(item)
-      setCategoryBudgets((current) => [item, ...current.filter((existing) => existing.id !== item.id)])
-      setMessage('Orçamento salvo.')
-      return true
-    } catch (error) { setMessage(readableError(error, 'Não foi possível salvar o orçamento.')); return false }
-  }
-
-  async function removeFinancialPlan(kind: 'goal' | 'budget', id: string) {
-    try {
-      if (kind === 'goal') { await repository.deleteFinancialGoal(id); setFinancialGoals((current) => current.filter((item) => item.id !== id)) }
-      else { await repository.deleteCategoryBudget(id); setCategoryBudgets((current) => current.filter((item) => item.id !== id)) }
-      setMessage('Planejamento excluído.')
-      return true
-    } catch (error) { setMessage(readableError(error, 'Não foi possível excluir o planejamento.')); return false }
-  }
-
-  async function saveFinanceOperation(action: () => Promise<unknown>, success: string) {
-    try {
-      await action()
-      const [recurringPlans, installmentPlans, accounts, transfers, records] = await Promise.all([repository.getRecurringPlans(), repository.getInstallmentPlans(), repository.getAssetAccounts(), repository.getAccountTransfers(), repository.getFinancialRecords()])
-      setFinancePlanning({ recurringPlans, installmentPlans, accounts, transfers }); setFinancialRecords(records)
-      setMessage(success); return true
-    } catch (error) { setMessage(readableError(error, 'Não foi possível salvar.')); return false }
-  }
-  const financeOperations = {
-    onRecurring: (plan: RecurringPlan) => saveFinanceOperation(() => repository.saveRecurringPlan(plan), 'Recorrência salva.'),
-    onInstallment: (plan: InstallmentPlan) => saveFinanceOperation(() => repository.saveInstallmentPlan(plan), 'Parcelamento salvo.'),
-    onAccount: (account: AssetAccount) => saveFinanceOperation(() => repository.saveAssetAccount(account), 'Conta patrimonial salva.'),
-    onTransfer: (transfer: AccountTransfer) => saveFinanceOperation(() => repository.saveAccountTransfer(transfer), 'Transferência salva sem alterar entradas ou saídas.'),
-    onConfirm: (ref: PlanningReference, date: string) => saveFinanceOperation(() => repository.confirmOccurrence(ref, date), 'Ocorrência confirmada uma única vez.'),
-    onSettle: (record: FinancialRecord) => saveFinancialRecord(settleFinancialRecord(record, dateKey, new Date().toISOString())),
-  }
-
   async function changeTrainingWeek(next: number, successMessage: string) {
     const trainingWeek = clampTrainingWeek(next)
     const nextSettings = { ...settings, trainingWeek }
@@ -400,8 +358,19 @@ function App() {
       window.history.replaceState(window.history.state, '', url)
       setTrainingSelection(null)
     }
+    if (next === 'registros') setRecordsVisited(true)
     setTab(next)
     focusContent()
+  }
+
+  function runQuickAction(action: string) {
+    if (action === 'shift' || action === 'study') {
+      setRecordKind(action === 'shift' ? 'delivery' : 'estudo')
+      navigateTab('registros')
+      return
+    }
+    setFinanceRegistration((current) => ({ intent: action === 'income' ? 'entrada' : 'saida', revision: (current?.revision ?? 0) + 1 }))
+    navigateTab('financeiro')
   }
 
   if (loading) return <main className="loading-state"><div className="spinner" /><p>Preparando sua rotina…</p></main>
@@ -417,20 +386,22 @@ function App() {
       </header>
 
       <main className="content" id="main-content" tabIndex={-1}>
+        <Suspense fallback={<section className="section-loading" role="status"><div className="spinner" /><p>Abrindo área…</p></section>}>
         {trainingSelection ? trainingSelection === 'A' || trainingSelection === 'B'
           ? <TrainingWorkoutView day={trainingSelection} trainingWeek={clampTrainingWeek(settings.trainingWeek)} mode={mode} online={online} onBack={closeWorkout} />
           : <MuayWorkoutView itemId={trainingSelection} trainingWeek={clampTrainingWeek(settings.trainingWeek)} mode={mode} online={online} onBack={closeWorkout} /> : <>
-          {tab === 'hoje' && <TodayView key={dateKey} now={now} items={todayItems} mode={mode} modeSaving={modeSaving} onMode={changeMode} states={todayStates} savingIds={savingIds} dateKey={dateKey} checkIn={todayCheckIn} safety={safety} weeklySummary={weeklySummary} todaySummary={todaySummary} onCheckIn={saveCheckIn} onToggle={toggleCompletion} onSkip={toggleSkipped} onOpen={(item) => openActivity(item, now.getDay())} />}
+          {tab === 'hoje' && <TodayView key={dateKey} now={now} items={todayItems} mode={mode} modeSaving={modeSaving} onMode={changeMode} states={todayStates} savingIds={savingIds} dateKey={dateKey} checkIn={todayCheckIn} safety={safety} weeklySummary={weeklySummary} previousWeeklySummary={previousWeeklySummary} todaySummary={todaySummary} onCheckIn={saveCheckIn} onToggle={toggleCompletion} onSkip={toggleSkipped} onOpen={(item) => openActivity(item, now.getDay())} />}
           {tab === 'semana' && <WeekView settings={settings} selectedDay={selectedWeekDay} onSelectedDay={setSelectedWeekDay} onOpen={openActivity} completed={todayCompleted} onToggle={toggleCompletion} />}
           {tab === 'treinos' && <TrainingHubView trainingWeek={clampTrainingWeek(settings.trainingWeek)} mode={mode} onTrainingWeek={changeTrainingWeek} onOpenTraining={openWorkout} />}
           {tab === 'financeiro' && <FinanceView planning={financePlanning} operations={financeOperations} today={dateKey} shifts={deliveryShifts} expenses={expenses} records={financialRecords} goals={financialGoals} budgets={categoryBudgets} registrationRequest={financeRegistration} onGoal={saveFinancialGoal} onBudget={saveCategoryBudget} onDeleteGoal={(id) => removeFinancialPlan("goal", id)} onDeleteBudget={(id) => removeFinancialPlan("budget", id)} onSave={saveFinancialRecord} onExpense={saveLinkedExpense} onDelivery={(id) => { setDeliverySelection((current) => ({ id, revision: current.revision + 1 })); setRecordKind('delivery'); navigateTab('registros') }} />}
-          {tab === 'progresso' && <ProgressView planning={financePlanning} today={dateKey} snapshots={dailySnapshots} completions={completions} studyLogs={studyLogs} deliveryShifts={deliveryShifts} expenses={expenses} financialRecords={financialRecords} financialGoals={financialGoals} categoryBudgets={categoryBudgets} onFinance={() => navigateTab('financeiro')} progress={progress} weeklySummary={weeklySummary} onToggle={async (item) => { try { await repository.saveProgress(item); setProgress((v) => [...v.filter((p) => p.id !== item.id), item]) } catch (error) { setMessage(readableError(error, 'Não foi possível salvar o progresso.')) } }} />}
+          {tab === 'progresso' && <ProgressView planning={financePlanning} today={dateKey} snapshots={dailySnapshots} completions={completions} studyLogs={studyLogs} deliveryShifts={deliveryShifts} expenses={expenses} financialRecords={financialRecords} financialGoals={financialGoals} categoryBudgets={categoryBudgets} onFinance={() => navigateTab('financeiro')} progress={progress} weeklySummary={weeklySummary} previousWeeklySummary={previousWeeklySummary} onToggle={async (item) => { try { await repository.saveProgress(item); setProgress((v) => [...v.filter((p) => p.id !== item.id), item]) } catch (error) { setMessage(readableError(error, 'Não foi possível salvar o progresso.')) } }} />}
           {tab === 'ajustes' && <SettingsView settings={settings} persistence={storagePersistence} appearanceSaving={appearanceSaving} appearanceFeedback={appearanceFeedback} onAppearance={changeAppearance} onSettings={async (next) => { const synchronizedNext: AppSettings = { ...next, theme: effectiveTheme(settings.theme), appearanceVersion: 2 }; const snapshotPlan = prepareWeekSnapshots(dailySnapshots, dateKey, synchronizedNext.preferredMode, synchronizedNext, dateKey); try { await repository.saveSettingsAndDailySnapshots(synchronizedNext, snapshotPlan.changed); setSettings(synchronizedNext); setMode(synchronizedNext.preferredMode); setDailySnapshots(snapshotPlan.all); setMessage('Ajustes salvos.') } catch (error) { setMessage(readableError(error, 'Não foi possível salvar os ajustes.')) } }} onMessage={setMessage} onImported={() => window.location.reload()} onCleared={() => window.location.reload()} />}
         </>}
-        <div hidden={tab !== 'registros' || !!trainingSelection}><RecordsView accounts={financePlanning.accounts} deliverySelection={deliverySelection} kind={recordKind} onKind={setRecordKind} onExpenseRegistration={() => { setFinanceRegistration((current) => ({ intent: 'saida', revision: (current?.revision ?? 0) + 1 })); navigateTab('financeiro') }} dateKey={dateKey} shifts={deliveryShifts} expenses={expenses} financialRecords={financialRecords} studyLogs={studyLogs} onShift={saveLinkedShift} onStudy={saveLinkedStudy} /></div>
+        {recordsVisited && <div hidden={tab !== 'registros' || !!trainingSelection}><RecordsView accounts={financePlanning.accounts} deliverySelection={deliverySelection} kind={recordKind} onKind={setRecordKind} onExpenseRegistration={() => { setFinanceRegistration((current) => ({ intent: 'saida', revision: (current?.revision ?? 0) + 1 })); navigateTab('financeiro') }} dateKey={dateKey} shifts={deliveryShifts} expenses={expenses} financialRecords={financialRecords} studyLogs={studyLogs} onShift={saveLinkedShift} onStudy={saveLinkedStudy} /></div>}
+        </Suspense>
       </main>
 
-      <MainMenu items={navItems} current={trainingSelection ? 'treinos' : tab} onNavigate={navigateTab} />
+      <MainMenu items={navItems} actions={quickActions} current={trainingSelection ? 'treinos' : tab} onNavigate={navigateTab} onAction={runQuickAction} />
       {message && <div className="toast" role="status">{message}</div>}
       <ActivityDetailsDialog selection={detailActivity} trainingWeek={clampTrainingWeek(settings.trainingWeek)} mode={mode} onClose={() => setDetailActivity(null)} />
     </div>

@@ -122,6 +122,62 @@ function contrastRatio(foreground: string, background: string): number {
   return (Math.max(first, second) + 0.05) / (Math.min(first, second) + 0.05)
 }
 
+test('configura, testa e mantém o lembrete diário somente neste dispositivo', async ({ page }) => {
+  await page.addInitScript(() => {
+    ;(window as unknown as { __notifications: Array<{ title: string; body?: string }> }).__notifications = []
+    ;(window as unknown as { Notification: unknown }).Notification = class {
+      static permission = 'default'
+      static async requestPermission() {
+        this.permission = 'granted'
+        return 'granted'
+      }
+      constructor(title: string, options?: NotificationOptions) {
+        ;(window as unknown as { __notifications: Array<{ title: string; body?: string }> }).__notifications.push({ title, body: options?.body })
+      }
+    }
+  })
+  await openSeededApp(page, 'dark')
+  await goToTab(page, 'Ajustes')
+
+  const reminder = page.getByRole('region', { name: 'Lembrete diário' })
+  await reminder.getByRole('switch', { name: 'Ativar lembrete diário' }).click()
+  await reminder.getByLabel('Horário do lembrete').fill('08:30')
+  await reminder.getByRole('button', { name: 'Salvar lembrete' }).click()
+
+  await expect(reminder.getByRole('status')).toHaveText('Lembrete diário salvo para 08:30.')
+  expect(await page.evaluate(() => localStorage.getItem('ritmo:daily-reminder:v1'))).toBe(JSON.stringify({ enabled: true, time: '08:30' }))
+
+  await reminder.getByRole('button', { name: 'Testar lembrete' }).click()
+  await expect.poll(() => page.evaluate(() => (window as unknown as { __notifications: unknown[] }).__notifications.length)).toBe(1)
+
+  await page.reload()
+  await goToTab(page, 'Ajustes')
+  const restored = page.getByRole('region', { name: 'Lembrete diário' })
+  await expect(restored.getByRole('switch', { name: 'Ativar lembrete diário' })).toHaveAttribute('aria-checked', 'true')
+  await expect(restored.getByLabel('Horário do lembrete')).toHaveValue('08:30')
+})
+
+test('mantém o lembrete agendado fora da tela de ajustes', async ({ page }) => {
+  await page.addInitScript(() => {
+    ;(window as unknown as { __notifications: Array<{ title: string }> }).__notifications = []
+    ;(window as unknown as { Notification: unknown }).Notification = class {
+      static permission = 'granted'
+      static requestPermission = async () => 'granted'
+      constructor(title: string) {
+        ;(window as unknown as { __notifications: Array<{ title: string }> }).__notifications.push({ title })
+      }
+    }
+  })
+  await seedAppearance(page, 'dark')
+  await page.evaluate(() => localStorage.setItem('ritmo:daily-reminder:v1', JSON.stringify({ enabled: true, time: '10:01' })))
+  await openAppAt(page, APPEARANCE_NOW)
+
+  await page.clock.fastForward(61_000)
+
+  await expect.poll(() => page.evaluate(() => (window as unknown as { __notifications: unknown[] }).__notifications.length)).toBe(1)
+  await expect(page.getByRole('heading', { name: 'Um dia de cada vez.' })).toBeVisible()
+})
+
 test('exibe somente Claro e Escuro e aplica e persiste cada tema sem Salvar ajustes', async ({ page }) => {
   await openSeededApp(page, 'dark')
   await goToTab(page, 'Ajustes')

@@ -61,6 +61,7 @@ export function FinanceView({ planning, operations, today, shifts, expenses, rec
   const [editingExpense, setEditingExpense] = useState<Expense | undefined>()
   const [settling, setSettling] = useState<string | null>(null)
   const [limit, setLimit] = useState(50)
+  const [guideDismissed, setGuideDismissed] = useState(false)
   const formContainer = useRef<HTMLDivElement>(null)
   const registerDialog = useRef<HTMLDialogElement>(null)
   const registerTrigger = useRef<HTMLButtonElement>(null)
@@ -73,6 +74,7 @@ export function FinanceView({ planning, operations, today, shifts, expenses, rec
   const visibleRows = filterFinancialMovements(periodRows, { ...interval, type, category, origin, status, search })
   const summary = summarizeFinance(periodRows)
   const categories = [...new Set(allRows.map((row) => row.category))].sort()
+  const firstUse = !shifts.length && !expenses.length && !records.length && !goals.length && !budgets.length && !planning.recurringPlans.length && !planning.installmentPlans.length && !planning.accounts.length && !planning.transfers.length
   if (registrationRequest && registrationRequest.revision !== handledRegistrationRevision) {
     setHandledRegistrationRevision(registrationRequest.revision)
     setArea('overview')
@@ -119,10 +121,12 @@ export function FinanceView({ planning, operations, today, shifts, expenses, rec
     try { await onSave(settleFinancialRecord(record, today, new Date().toISOString())) } finally { setSettling(null) }
   }
 
+  const areaNavigation = <nav className="finance-area-nav" aria-label="Áreas do Financeiro">{financeAreas.map(item => <button type="button" key={item.id} aria-current={area === item.id ? 'page' : undefined} onClick={() => openArea(item.id)}>{item.label}</button>)}</nav>
+
 
   return <>
     <PageTitle eyebrow="Dinheiro e compromissos" title="Financeiro" subtitle="O que entrou, o que saiu e o que ainda precisa acontecer." />
-    <nav className="finance-area-nav" aria-label="Áreas do Financeiro">{financeAreas.map(item => <button type="button" key={item.id} aria-current={area === item.id ? 'page' : undefined} onClick={() => openArea(item.id)}>{item.label}</button>)}</nav>
+    {area !== 'overview' && areaNavigation}
     {area === 'overview' && <section className="finance-overview" aria-label="Visão geral financeira"><div className="finance-overview-actions"><button ref={registerTrigger} type="button" className="primary-button" aria-haspopup="dialog" aria-expanded={registerOpen} aria-controls={registerDialogId} onClick={() => setRegisterOpen(true)}>Registrar</button></div>
     <section className="finance-period form-card" aria-label="Filtros do período financeiro">
       <div className="subnav" role="group" aria-label="Período financeiro">{([['today', 'Hoje'], ['week', 'Semana'], ['month', 'Mês'], ['year', 'Ano'], ['custom', 'Personalizado']] as const).map(([id, label]) => <button type="button" key={id} aria-pressed={period === id} className={period === id ? 'active' : ''} onClick={() => setPeriod(id)}>{label}</button>)}</div>
@@ -130,6 +134,11 @@ export function FinanceView({ planning, operations, today, shifts, expenses, rec
       {validInterval ? <p className="fine-print">{new Date(`${interval.start}T12:00:00`).toLocaleDateString('pt-BR')} a {new Date(`${interval.end}T12:00:00`).toLocaleDateString('pt-BR')} · dados deste aparelho</p> : <p className="warning-text" role="alert">Informe um intervalo válido. A data final deve ser igual ou posterior à inicial.</p>}
     </section>
     <FinanceSummary rows={periodRows} />
+    {firstUse && !guideDismissed && <section className="getting-started-card" aria-labelledby="finance-getting-started-title">
+      <div><h2 id="finance-getting-started-title">Comece pelo essencial</h2><p>Registre o que já aconteceu antes de planejar o restante.</p></div>
+      <div className="getting-started-actions"><button type="button" className="secondary-button" onClick={() => chooseRegisterIntent('entrada')}>Registrar primeira entrada</button><button type="button" className="secondary-button" onClick={() => openArea('wealth')}>Cadastrar uma conta</button><button type="button" className="secondary-button" onClick={() => onDelivery()}>Registrar um turno</button><button type="button" className="text-button" onClick={() => setGuideDismissed(true)}>Agora não</button></div>
+    </section>}
+    {areaNavigation}
     {(summary.futureEntries !== 0 || summary.futureExits !== 0) && <p className="finance-forecast fine-print">Previstos no período: {formatMoney(summary.futureEntries)} de entradas e {formatMoney(summary.futureExits)} de saídas. Não alteram o saldo realizado.</p>}
     <FinanceAlerts alerts={analysis.alerts} />
 

@@ -5,7 +5,7 @@
 - **Etapa atual:** tarefa 8 concluída — reorganização implementada e integração final verificada.
 - **Base analisada:** commit `c08872e`, que concluiu o mapeamento do estado existente.
 - **Decisão aprovada:** Financeiro será o caminho canônico para cadastrar e consultar informações financeiras; Delivery permanece em Registros.
-- **Implementação:** Visão geral, áreas secundárias, quatro intenções de cadastro, redirecionamento de Despesas e posição do X do menu foram concluídos sem alterar schema, migrações ou contratos de backup.
+- **Implementação:** Visão geral, áreas secundárias, quatro intenções de cadastro, redirecionamento de Despesas, orientação de primeiro uso, prioridade móvel do resumo e posição do X do menu foram concluídos sem alterar schema, migrações ou contratos de backup.
 - **Próxima ação:** revisar o diff e criar o commit quando desejado.
 
 ## Resultado da integração

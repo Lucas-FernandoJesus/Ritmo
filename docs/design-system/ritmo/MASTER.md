@@ -26,7 +26,7 @@ Existem somente os modos Claro e Escuro. Valores antigos persistidos como `syste
 - Campos: rótulo persistente, controle mínimo de 48 px, erro contextual e foco visível.
 - Estados: texto e forma para concluído, em aberto e impedido; nenhuma cor classifica Normal, Reduzido e Mínimo como mérito.
 - Movimento: feedback de 160–220 ms para ação do usuário; respeitar `prefers-reduced-motion`.
-- Navegação: somente o botão Menu permanece no rodapé. Ele abre um diálogo modal de tela inteira com os sete destinos existentes em uma lista vertical de nomes, sem ícones nas opções. Fechar por X ou Esc preserva a tela e retorna o foco; escolher uma opção fecha e direciona o foco ao conteúdo. Safe areas, rolagem local e bloqueio do fundo valem do mobile ao desktop. Largura de leitura limitada em telas maiores.
+- Navegação: somente o botão Menu permanece no rodapé. Ele abre um diálogo modal de tela inteira com os sete destinos existentes em uma lista vertical de nomes, sem ícones nas opções, e um grupo visualmente separado de ações rápidas para Turno, Estudo, Entrada e Saída. Fechar por X ou Esc preserva a tela e retorna o foco; escolher uma opção fecha e direciona o foco ao conteúdo. Safe areas, rolagem local e bloqueio do fundo valem do mobile ao desktop. Largura de leitura limitada em telas maiores.
 - Orientações da rotina: a área de título e horário abre um diálogo nativo em formato de folha inferior para atividades gerais; concluir e pular permanecem botões independentes. O diálogo traz instruções em sequência, cuidados e fechamento visível, com foco contido e tecla Escape. Fortalecimento e Muay Thai abrem telas próprias da semana atual, com retorno previsível, instruções offline e links externos por movimento.
 
 ## Composição
@@ -36,13 +36,13 @@ topo sólido escuro — marca / estado local
 cabeçalho baixo com fundo abstrato — data / título
 seletor de ritmo — três opções equivalentes
 painel de foco — próxima ação e horário
-linha do tempo — rotina restante
+linha do tempo — três próximos itens; expansão explícita para o dia inteiro
 navegação fixa — botão Menu; destinos no diálogo de tela inteira
 ```
 
-As demais telas repetem o cabeçalho abstrato sem ampliar a altura. Semana favorece orientação e reúne os checklists de preparo do fim de semana. Treinos reúne as sessões e a semana do plano. Registros distingue Delivery e Estudos e encaminha Despesas ao Financeiro. Progresso usa marcos neutros e mantém o plano inicial de 30 dias separado do Dashboard. Ajustes agrupa controles. Nos modos Claro e Escuro, cards e cabeçalhos preservam contraste mínimo de 4.5:1 para texto normal.
+As demais telas repetem o cabeçalho abstrato sem ampliar a altura. Semana favorece orientação, oferece busca textual por título ou categoria e reúne os checklists de preparo do fim de semana. Treinos reúne as sessões e a semana do plano. Registros distingue Delivery e Estudos e encaminha Despesas ao Financeiro. Progresso usa marcos neutros e mantém o plano inicial de 30 dias separado do Dashboard. Ajustes agrupa controles e um lembrete local com limitação operacional explícita. Nos modos Claro e Escuro, cards e cabeçalhos preservam contraste mínimo de 4.5:1 para texto normal.
 
-Financeiro reutiliza as superfícies, campos e indicadores de Registros e Progresso. O período precede os cinco cards financeiros; delivery tem uma faixa própria de estimativas. Cadastro e histórico ficam em duas colunas no desktop e em sequência no celular. Análises ficam recolhidas inicialmente. Tipos usam texto e bordas distintas além de cor; filtros, valores e listas permanecem legíveis desde 320 px. Os campos monetários compartilham a mesma máscara brasileira, e os rótulos têm nomes acessíveis separados dos textos de ajuda.
+Financeiro reutiliza as superfícies, campos e indicadores de Registros e Progresso. Na Visão geral móvel, período, orientação inicial e resumo precedem a navegação das áreas secundárias; assim, os números prioritários permanecem na primeira tela. Delivery tem uma faixa própria de estimativas. Cadastro e histórico ficam em duas colunas no desktop e em sequência no celular. Análises ficam recolhidas inicialmente. Tipos usam texto e bordas distintas além de cor; filtros, valores e listas permanecem legíveis desde 320 px. Os campos monetários compartilham a mesma máscara brasileira, e os rótulos têm nomes acessíveis separados dos textos de ajuda.
 
 Planejamento financeiro usa listas de metas e orçamentos em duas colunas, empilhadas no mobile, com progresso numérico e estados escritos além de cor. Formulários aparecem por ação explícita. Comparação, projeção e métricas detalhadas ficam em disclosures, mantendo cinco cards principais. Alertas são agrupados e exibem até três itens inicialmente; a Dashboard usa até dois. Tabelas financeiras têm rolagem local, foco de teclado e captions. Gráficos SVG reutilizam os tokens e oferecem tabelas de dados; o fluxo diferencia barras cheias e contornadas. Projeções são identificadas como estimativas dos compromissos cadastrados e não compartilham o card de saldo realizado.
 

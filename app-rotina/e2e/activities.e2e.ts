@@ -2,8 +2,49 @@ import { expect, goToTab, openAppAt, openAppOnTuesday, test } from './fixtures'
 
 const strengthActivity = 'Fortalecimento de corpo inteiro'
 
+async function showFullDay(page: import('@playwright/test').Page) {
+  await page.getByRole('region', { name: 'Ao longo do dia' }).getByRole('button', { name: 'Ver dia inteiro', exact: true }).click()
+}
+
+test('prioriza a atividade atual antes do progresso semanal', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await openAppOnTuesday(page)
+
+  const focus = page.getByRole('region', { name: 'Agora' })
+  const weekly = page.getByRole('region', { name: 'Progresso desta semana' })
+  const [focusBox, weeklyBox] = await Promise.all([focus.boundingBox(), weekly.boundingBox()])
+
+  expect(focusBox).not.toBeNull()
+  expect(weeklyBox).not.toBeNull()
+  expect(focusBox!.y).toBeLessThan(weeklyBox!.y)
+})
+
+test('resume a agenda nas próximas três atividades e permite abrir o dia inteiro', async ({ page }) => {
+  await openAppOnTuesday(page)
+
+  const timeline = page.getByRole('region', { name: 'Ao longo do dia' })
+  await expect(timeline.getByRole('article')).toHaveCount(3)
+  await timeline.getByRole('button', { name: 'Ver dia inteiro', exact: true }).click()
+  await expect(timeline.getByRole('article')).toHaveCount(14)
+  await expect(timeline.getByRole('button', { name: 'Mostrar somente próximas atividades', exact: true })).toBeVisible()
+})
+
+test('busca atividades da semana por título e mostra ausência de resultados', async ({ page }) => {
+  await openAppOnTuesday(page)
+  await goToTab(page, 'Semana')
+
+  const search = page.getByRole('searchbox', { name: 'Buscar atividade' })
+  await search.fill('fortalecimento')
+  await expect(page.getByRole('button', { name: `Abrir treino: ${strengthActivity}` })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Ver orientações: Café da manhã' })).not.toBeVisible()
+
+  await search.fill('atividade inexistente')
+  await expect(page.getByText('Nenhuma atividade encontrada.', { exact: true })).toBeVisible()
+})
+
 test('abre o treino A de hoje com instruções, exemplos, vídeo e retorno', async ({ page }) => {
   await openAppOnTuesday(page)
+  await showFullDay(page)
   await page.getByRole('button', { name: `Abrir treino: ${strengthActivity}` }).first().click()
 
   await expect(page).toHaveURL(/treino=A/)
@@ -27,12 +68,14 @@ test('mostra a seleção correta nos ritmos reduzido e mínimo', async ({ page }
   const modeGroup = page.getByRole('group', { name: 'Intensidade da rotina' })
 
   await modeGroup.getByRole('button', { name: /^Reduzido/ }).click()
+  await showFullDay(page)
   await page.getByRole('button', { name: `Abrir treino: ${strengthActivity}` }).first().click()
   await expect(page.getByText('8–12 min', { exact: true })).toBeVisible()
   await expect(page.locator('.workout-exercise')).toHaveCount(4)
   await page.getByRole('button', { name: '← Voltar à rotina' }).click()
 
   await modeGroup.getByRole('button', { name: /^Mínimo/ }).click()
+  await showFullDay(page)
   await page.getByRole('button', { name: `Abrir treino: ${strengthActivity}` }).first().click()
   await expect(page.getByText('4–5 min', { exact: true })).toBeVisible()
   await expect(page.locator('.workout-exercise')).toHaveCount(3)
@@ -41,6 +84,7 @@ test('mostra a seleção correta nos ritmos reduzido e mínimo', async ({ page }
 
 test('abre o treino B da quinta e os atalhos A/B de Treinos', async ({ page }) => {
   await openAppAt(page, '2026-09-24T10:00:00-03:00')
+  await showFullDay(page)
   await page.getByRole('button', { name: `Abrir treino: ${strengthActivity}` }).first().click()
   await expect(page.getByRole('heading', { name: 'Treino B', exact: true })).toBeVisible()
   await expect(page.locator('.workout-exercise').first()).toContainText('Passo para trás assistido')

@@ -12,8 +12,19 @@ const fridayRequired = [
   'Comer e descansar após o trabalho',
 ]
 
+async function showFullDay(page: import('@playwright/test').Page) {
+  const button = page.getByRole('region', { name: 'Ao longo do dia' }).getByRole('button', { name: 'Ver dia inteiro', exact: true })
+  if (await button.isVisible()) await button.click()
+}
+
+test('explica quando ainda não existe uma semana anterior comparável', async ({ page }) => {
+  await openAppOnTuesday(page)
+  await expect(page.getByRole('region', { name: 'Progresso desta semana' })).toContainText('Ainda sem base anterior para comparar.')
+})
+
 test('fecha o dia com todas as obrigatórias, ignora opcionais e reage a uma atividade pulada', async ({ page }) => {
   await openAppAt(page, '2026-09-25T10:00:00-03:00')
+  await showFullDay(page)
 
   const skippedTitle = 'Comer e descansar após o trabalho'
   const skippedCard = page.getByRole('article').filter({ hasText: skippedTitle })
@@ -103,6 +114,7 @@ test('oferece a conclusão do estudo, respeita cancelamento e não duplica concl
   await expect(page.getByText('Programação: Exercícios de TypeScript', { exact: true })).toBeVisible()
 
   await goToTab(page, 'Hoje')
+  await showFullDay(page)
   await expect(page.getByRole('button', { name: 'Concluir Programação — prática e exercícios', exact: true })).toBeVisible()
 
   await goToTab(page, 'Registros')
@@ -116,6 +128,7 @@ test('oferece a conclusão do estudo, respeita cancelamento e não duplica concl
   await acceptedSave
 
   await goToTab(page, 'Hoje')
+  await showFullDay(page)
   await expect(page.getByRole('button', { name: 'Desmarcar Programação — prática e exercícios', exact: true })).toBeVisible()
 
   await goToTab(page, 'Registros')
@@ -149,6 +162,7 @@ test('oferece a conclusão da atividade financeira aplicável', async ({ page })
   await save
 
   await goToTab(page, 'Hoje')
+  await showFullDay(page)
   await expect(page.getByRole('button', { name: 'Desmarcar Revisão semanal de finanças', exact: true })).toBeVisible()
 })
 
@@ -175,6 +189,7 @@ test('usa o horário para oferecer o turno de delivery inequívoco', async ({ pa
   await save
 
   await goToTab(page, 'Hoje')
+  await showFullDay(page)
   await expect(page.getByRole('button', { name: 'Desmarcar Delivery — turno da noite', exact: true })).toBeVisible()
   await expect(page.getByRole('button', { name: 'Concluir Delivery — turno do almoço', exact: true })).toBeVisible()
 })

@@ -17,6 +17,25 @@ test('mantém somente consulta e cadastro no primeiro nível do Financeiro', asy
   await expect(page.getByRole('region', { name: 'Financeiro do delivery' })).not.toBeVisible()
 })
 
+test('mantém o resumo financeiro prioritário na primeira tela móvel', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await openAppOnTuesday(page)
+  await goToTab(page, 'Financeiro')
+
+  await expect(page.getByRole('region', { name: 'Resumo financeiro' })).toBeInViewport({ ratio: 0.5 })
+})
+
+test('orienta o primeiro uso financeiro com caminhos concretos e dispensáveis', async ({ page }) => {
+  await openAppOnTuesday(page)
+  await goToTab(page, 'Financeiro')
+
+  const guide = page.getByRole('region', { name: 'Comece pelo essencial' })
+  await expect(guide).toContainText('Registre o que já aconteceu antes de planejar o restante.')
+  await expect(guide.getByRole('button')).toHaveText(['Registrar primeira entrada', 'Cadastrar uma conta', 'Registrar um turno', 'Agora não'])
+  await guide.getByRole('button', { name: 'Agora não', exact: true }).click()
+  await expect(guide).not.toBeVisible()
+})
+
 test('abre as quatro intenções de registro e devolve o foco ao fechar', async ({ page }) => {
   await openAppOnTuesday(page)
   await goToTab(page, 'Financeiro')

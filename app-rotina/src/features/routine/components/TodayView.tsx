@@ -3,8 +3,9 @@ import type { DailyCheckIn, DailyCompletion, DailyProgressSummary, RoutineItem, 
 import { WeeklyProgressCard } from '../../../components/WeeklyProgressCard'
 import { areaLabels, modeCopy } from '../view-labels'
 
-export function TodayView({ now, items, mode, modeSaving, onMode, states, savingIds, dateKey, checkIn, safety, weeklySummary, todaySummary, onCheckIn, onToggle, onSkip, onOpen }: { now: Date; items: RoutineItem[]; mode: RoutineMode; modeSaving: boolean; onMode: (mode: RoutineMode) => void; states: Map<string, DailyCompletion['state']>; savingIds: string[]; dateKey: string; checkIn: DailyCheckIn | null; safety: { allowed: boolean; reason: string }; weeklySummary: WeeklyProgressSummary; todaySummary: DailyProgressSummary; onCheckIn: (item: DailyCheckIn) => Promise<boolean>; onToggle: (id: string) => void; onSkip: (id: string) => void; onOpen: (item: RoutineItem) => void }) {
+export function TodayView({ now, items, mode, modeSaving, onMode, states, savingIds, dateKey, checkIn, safety, weeklySummary, previousWeeklySummary, todaySummary, onCheckIn, onToggle, onSkip, onOpen }: { now: Date; items: RoutineItem[]; mode: RoutineMode; modeSaving: boolean; onMode: (mode: RoutineMode) => void; states: Map<string, DailyCompletion['state']>; savingIds: string[]; dateKey: string; checkIn: DailyCheckIn | null; safety: { allowed: boolean; reason: string }; weeklySummary: WeeklyProgressSummary; previousWeeklySummary: WeeklyProgressSummary; todaySummary: DailyProgressSummary; onCheckIn: (item: DailyCheckIn) => Promise<boolean>; onToggle: (id: string) => void; onSkip: (id: string) => void; onOpen: (item: RoutineItem) => void }) {
   const [checkInDirty, setCheckInDirty] = useState(false)
+  const [showFullDay, setShowFullDay] = useState(false)
   const effectiveSafety = checkInDirty ? { allowed: false, reason: 'Salve a checagem atualizada antes de decidir pilotar.' } : safety
   const formattedDate = new Intl.DateTimeFormat('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' }).format(now)
   const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
@@ -16,6 +17,10 @@ export function TodayView({ now, items, mode, modeSaving, onMode, states, saving
   const focusIsPast = !!focus?.endTime && focus.endTime < currentTime
   const done = items.filter((item) => states.get(item.id) === 'done').length
   const deliveryToday = items.some((item) => item.area === 'delivery')
+  const otherItems = items.filter((item) => item.id !== focus?.id)
+  const upcomingItems = otherItems.filter((item) => !states.has(item.id) && (!item.endTime || item.endTime >= currentTime))
+  const previewItems = upcomingItems.slice(0, 3)
+  const timelineItems = showFullDay ? otherItems : previewItems
   return <>
     <header className="today-header">
       <p className="date-line">{formattedDate}</p>
@@ -30,20 +35,21 @@ export function TodayView({ now, items, mode, modeSaving, onMode, states, saving
       </div>
     </section>
 
-    <WeeklyProgressCard summary={weeklySummary} today={todaySummary} />
-
     <section className="focus-section" aria-labelledby="focus-heading">
       <div className="section-heading"><h2 id="focus-heading">{focus ? focusIsNow ? 'Agora' : focusIsPast ? 'Ainda em aberto' : focus.startTime ? 'Seu próximo compromisso' : 'Para quando couber' : 'Por enquanto, tudo certo'}</h2><span className="quiet-note">{done} de {items.length} concluídas</span></div>
       {focus ? <ActivityItem item={focus} state={states.get(focus.id)} saving={savingIds.includes(`${dateKey}:${focus.id}`)} blocked={focus.area === 'delivery' && !effectiveSafety.allowed} safetyReason={effectiveSafety.reason} onToggle={onToggle} onSkip={onSkip} onOpen={onOpen} featured /> : <div className="focus-empty"><strong>Há espaço para seguir no seu tempo.</strong><p>{items.length ? 'As atividades de hoje já foram concluídas ou deixadas para outro momento.' : 'Não há atividades previstas neste ritmo.'}</p></div>}
     </section>
 
+    <WeeklyProgressCard summary={weeklySummary} previous={previousWeeklySummary} today={todaySummary} />
+
     <CheckInCard dateKey={dateKey} value={checkIn} safety={safety} deliveryToday={deliveryToday} onSave={onCheckIn} onDirtyChange={setCheckInDirty} />
 
     <section className="section-block" aria-labelledby="timeline-heading">
-      <div className="section-heading"><div><h2 id="timeline-heading">Ao longo do dia</h2><p className="section-description">Horários são referências, não cobranças.</p></div><span className="count-chip">{items.length} atividades</span></div>
+      <div className="section-heading"><div><h2 id="timeline-heading">Ao longo do dia</h2><p className="section-description">Horários são referências, não cobranças.</p></div><span className="count-chip">{showFullDay ? `${otherItems.length} atividades` : `${previewItems.length} próximas`}</span></div>
       {items.length === 0 ? <div className="empty-state"><strong>Sem atividades previstas.</strong><p>Use este espaço para descansar ou cuidar do essencial.</p></div> : <div className="timeline">
-        {items.filter((item) => item.id !== focus?.id).map((item) => <ActivityItem key={item.id} item={item} state={states.get(item.id)} saving={savingIds.includes(`${dateKey}:${item.id}`)} blocked={item.area === 'delivery' && !effectiveSafety.allowed} safetyReason={effectiveSafety.reason} onToggle={onToggle} onSkip={onSkip} onOpen={onOpen} />)}
+        {timelineItems.map((item) => <ActivityItem key={item.id} item={item} state={states.get(item.id)} saving={savingIds.includes(`${dateKey}:${item.id}`)} blocked={item.area === 'delivery' && !effectiveSafety.allowed} safetyReason={effectiveSafety.reason} onToggle={onToggle} onSkip={onSkip} onOpen={onOpen} />)}
       </div>}
+      {otherItems.length > previewItems.length && <button type="button" className="secondary-button timeline-toggle" onClick={() => setShowFullDay((current) => !current)}>{showFullDay ? 'Mostrar somente próximas atividades' : 'Ver dia inteiro'}</button>}
     </section>
   </>
 }

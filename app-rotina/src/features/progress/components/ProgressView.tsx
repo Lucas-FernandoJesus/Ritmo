@@ -5,7 +5,7 @@ import { ProgressDashboard } from '../../dashboard/components/ProgressDashboard'
 import { WeeklyProgressCard } from '../../../components/WeeklyProgressCard'
 import { progressPlan } from '../../routine/data'
 
-export function ProgressView({ planning, today, snapshots, completions, studyLogs, deliveryShifts, expenses, financialRecords, financialGoals, categoryBudgets, onFinance, progress, weeklySummary, onToggle }: { planning: FinancePlanningData; today: string; snapshots: DailyPlanSnapshot[]; completions: DailyCompletion[]; studyLogs: StudyLog[]; deliveryShifts: DeliveryShift[]; expenses: Expense[]; financialRecords: FinancialRecord[]; financialGoals: FinancialGoal[]; categoryBudgets: CategoryBudget[]; onFinance: () => void; progress: ThirtyDayProgress[]; weeklySummary: WeeklyProgressSummary; onToggle: (item: ThirtyDayProgress) => Promise<void> }) {
+export function ProgressView({ planning, today, snapshots, completions, studyLogs, deliveryShifts, expenses, financialRecords, financialGoals, categoryBudgets, onFinance, progress, weeklySummary, previousWeeklySummary, onToggle }: { planning: FinancePlanningData; today: string; snapshots: DailyPlanSnapshot[]; completions: DailyCompletion[]; studyLogs: StudyLog[]; deliveryShifts: DeliveryShift[]; expenses: Expense[]; financialRecords: FinancialRecord[]; financialGoals: FinancialGoal[]; categoryBudgets: CategoryBudget[]; onFinance: () => void; progress: ThirtyDayProgress[]; weeklySummary: WeeklyProgressSummary; previousWeeklySummary: WeeklyProgressSummary; onToggle: (item: ThirtyDayProgress) => Promise<void> }) {
   const { completedIds: completed, total, completedCount, percentage } = summarizePlanProgress(progress, progressPlan)
   return <>
     <PageTitle eyebrow="Evolução" title="Seu progresso continua" subtitle="Acompanhe a rotina e os passos do plano inicial. Os treinos estão na aba Treinos." />
@@ -15,7 +15,7 @@ export function ProgressView({ planning, today, snapshots, completions, studyLog
     <section className="dashboard-existing-progress" aria-labelledby="existing-progress-title">
       <div className="section-heading"><div><p className="eyebrow">Rotina preservada</p><h2 id="existing-progress-title">Progresso semanal e plano de 30 dias</h2><p className="section-description">Estas leituras permanecem separadas do dashboard mensal e anual.</p></div></div>
 
-      <WeeklyProgressCard summary={weeklySummary} />
+      <WeeklyProgressCard summary={weeklySummary} previous={previousWeeklySummary} />
 
       <div className="section-heading progress-plan-heading"><div><h2>Plano inicial de 30 dias</h2><p className="section-description">O checklist original permanece separado e com todos os registros preservados.</p></div></div>
       <section className="progress-summary"><div><strong>{completedCount} de {total} passos registrados</strong><span>Continue de onde fizer sentido.</span></div><div className="progress-track" role="progressbar" aria-label="Passos do plano concluídos" aria-valuenow={completedCount} aria-valuemin={0} aria-valuemax={total}><span style={{ width: `${percentage}%` }} /></div></section>

@@ -20,3 +20,16 @@ test('navega pelas áreas principais sem recarregar a aplicação', async ({ pag
     })
   }
 })
+
+test('carrega o pacote financeiro somente quando a área é aberta', async ({ page }) => {
+  const loadedFinanceChunks: string[] = []
+  page.on('request', (request) => {
+    if (request.resourceType() === 'script' && request.url().includes('/FinanceView-')) loadedFinanceChunks.push(request.url())
+  })
+  await openAppOnTuesday(page)
+
+  expect(loadedFinanceChunks).toHaveLength(0)
+
+  await goToTab(page, 'Financeiro')
+  await expect.poll(() => loadedFinanceChunks.length).toBeGreaterThan(0)
+})
