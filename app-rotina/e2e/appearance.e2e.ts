@@ -178,6 +178,52 @@ test('mantém o lembrete agendado fora da tela de ajustes', async ({ page }) => 
   await expect(page.getByRole('heading', { name: 'Um dia de cada vez.' })).toBeVisible()
 })
 
+test('atualiza o horário do lembrete quando a preferência muda em outra aba', async ({ page, context }) => {
+  await page.addInitScript(() => {
+    ;(window as unknown as { __notifications: string[] }).__notifications = []
+    ;(window as unknown as { Notification: unknown }).Notification = class {
+      static permission = 'granted'
+      constructor(title: string) {
+        ;(window as unknown as { __notifications: string[] }).__notifications.push(title)
+      }
+    }
+  })
+  await seedAppearance(page, 'dark')
+  await page.evaluate(() => localStorage.setItem('ritmo:daily-reminder:v1', JSON.stringify({ enabled: true, time: '10:02' })))
+  await openAppAt(page, APPEARANCE_NOW)
+
+  const otherTab = await context.newPage()
+  await openStoragePage(otherTab)
+  await otherTab.evaluate(() => localStorage.setItem('ritmo:daily-reminder:v1', JSON.stringify({ enabled: true, time: '10:01' })))
+
+  await page.clock.fastForward(61_000)
+  await expect.poll(() => page.evaluate(() => (window as unknown as { __notifications: string[] }).__notifications.length)).toBe(1)
+  await otherTab.close()
+})
+
+test('apagar dados confirmados remove também a preferência local do lembrete', async ({ page }) => {
+  await openSeededApp(page, 'light')
+  await page.evaluate(() => localStorage.setItem('ritmo:daily-reminder:v1', JSON.stringify({ enabled: true, time: '08:30' })))
+  await goToTab(page, 'Ajustes')
+  await expect(page.getByRole('switch', { name: 'Ativar lembrete diário' })).toHaveAttribute('aria-checked', 'true')
+
+  const canceled = page.waitForEvent('dialog')
+  const cancelClick = page.getByRole('button', { name: 'Apagar todos os dados' }).click()
+  await (await canceled).dismiss()
+  await cancelClick
+  expect(await page.evaluate(() => localStorage.getItem('ritmo:daily-reminder:v1'))).not.toBeNull()
+
+  const confirmed = page.waitForEvent('dialog')
+  const confirmClick = page.getByRole('button', { name: 'Apagar todos os dados' }).click()
+  await (await confirmed).accept()
+  await confirmClick
+
+  await expect.poll(() => page.evaluate(() => localStorage.getItem('ritmo:daily-reminder:v1'))).toBeNull()
+  await expect.poll(() => storedTheme(page)).toBe('dark')
+  await goToTab(page, 'Ajustes')
+  await expect(page.getByRole('switch', { name: 'Ativar lembrete diário' })).toHaveAttribute('aria-checked', 'false')
+})
+
 test('exibe somente Claro e Escuro e aplica e persiste cada tema sem Salvar ajustes', async ({ page }) => {
   await openSeededApp(page, 'dark')
   await goToTab(page, 'Ajustes')

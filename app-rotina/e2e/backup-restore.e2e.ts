@@ -10,6 +10,7 @@ test('exporta um backup JSON válido e restaura os dados pela interface', async 
     .getByRole('button', { name: /^Reduzido/ })
   await reducedMode.click()
   await expect(reducedMode).toHaveAttribute('aria-pressed', 'true')
+  await page.getByRole('region', { name: 'Ao longo do dia' }).getByRole('button', { name: 'Ver dia inteiro' }).click()
   await page.getByRole('button', { name: `Concluir ${strengthActivity}` }).click()
   await expect(page.getByRole('button', { name: `Desmarcar ${strengthActivity}` })).toBeVisible()
 
@@ -46,6 +47,7 @@ test('exporta um backup JSON válido e restaura os dados pela interface', async 
     .getByRole('button', { name: /^Normal/ })
   await normalMode.click()
   await expect(normalMode).toHaveAttribute('aria-pressed', 'true')
+  await page.getByRole('region', { name: 'Ao longo do dia' }).getByRole('button', { name: 'Ver dia inteiro' }).click()
   await page.getByRole('button', { name: `Desmarcar ${strengthActivity}` }).click()
   await expect(page.getByRole('button', { name: `Concluir ${strengthActivity}` })).toBeVisible()
 
@@ -65,6 +67,7 @@ test('exporta um backup JSON válido e restaura os dados pela interface', async 
   await expect(page.getByRole('heading', { name: 'Um dia de cada vez.', exact: true })).toBeVisible()
   await expect(page.getByRole('group', { name: 'Intensidade da rotina' })
     .getByRole('button', { name: /^Reduzido/ })).toHaveAttribute('aria-pressed', 'true')
+  await page.getByRole('region', { name: 'Ao longo do dia' }).getByRole('button', { name: 'Ver dia inteiro' }).click()
   await expect(page.getByRole('button', { name: `Desmarcar ${strengthActivity}` })).toHaveAttribute('aria-pressed', 'true')
 
   const restoredSnapshots = await page.evaluate(async () => new Promise<Array<{ localDate?: string, mode?: string }>>((resolve, reject) => {

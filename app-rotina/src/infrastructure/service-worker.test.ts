@@ -29,9 +29,17 @@ function createWorker(options: { assetFailure?: boolean; responseOk?: boolean; b
     clone() { return this },
     text: async () => `<script src="${options.basePath ?? '/'}assets/app.js"></script><link href="${options.basePath ?? '/'}assets/app.css" rel="stylesheet">`,
   }
+  const assetManifest = {
+    ok: true,
+    json: async () => ({
+      'index.html': { file: 'assets/app.js', css: ['assets/app.css'] },
+      'src/features/progress/components/ProgressView.tsx': { file: 'assets/ProgressView-lazy.js', isDynamicEntry: true },
+    }),
+  }
   const cssResponse = { ok: true, text: async () => '.page{background:url(./lacquered-desk-header.webp)}body{background:url(./ebony-walnut-texture.webp)}' }
   const fetchMock = vi.fn(async (url: string | { url: string }) => {
     if (options.offline) throw new Error('sem conexão')
+    if (typeof url === 'string' && url.endsWith('/asset-manifest.json')) return assetManifest
     return typeof url === 'string' && url.endsWith('.css') ? cssResponse : response
   })
   const worker = {
@@ -59,7 +67,7 @@ describe('shell offline', () => {
     let pending: Promise<unknown> | undefined
     handlers.get('install')?.({ waitUntil: (promise: Promise<unknown>) => { pending = promise } })
     await pending
-    expect(cache.addAll).toHaveBeenCalledWith(expect.arrayContaining(['https://ritmo.local/assets/app.js', 'https://ritmo.local/assets/app.css', 'https://ritmo.local/assets/lacquered-desk-header.webp', 'https://ritmo.local/assets/ebony-walnut-texture.webp', 'https://ritmo.local/manifest.webmanifest', 'https://ritmo.local/icon-ebony-192.png']))
+    expect(cache.addAll).toHaveBeenCalledWith(expect.arrayContaining(['https://ritmo.local/assets/app.js', 'https://ritmo.local/assets/app.css', 'https://ritmo.local/assets/ProgressView-lazy.js', 'https://ritmo.local/assets/lacquered-desk-header.webp', 'https://ritmo.local/assets/ebony-walnut-texture.webp', 'https://ritmo.local/manifest.webmanifest', 'https://ritmo.local/icon-ebony-192.png']))
     expect(cache.put).toHaveBeenCalledWith('https://ritmo.local/', expect.anything())
     expect(worker.skipWaiting).toHaveBeenCalledOnce()
   })
@@ -72,6 +80,7 @@ describe('shell offline', () => {
     expect(cache.addAll).toHaveBeenCalledWith(expect.arrayContaining([
       'https://ritmo.local/app-rotina/assets/app.js',
       'https://ritmo.local/app-rotina/assets/app.css',
+      'https://ritmo.local/app-rotina/assets/ProgressView-lazy.js',
       'https://ritmo.local/app-rotina/assets/lacquered-desk-header.webp',
       'https://ritmo.local/app-rotina/manifest.webmanifest',
     ]))
@@ -108,6 +117,16 @@ describe('shell offline', () => {
     })
     expect(await pending).toBe(response)
     expect(storage.match).toHaveBeenCalledWith('https://ritmo.local/app-rotina/')
+  })
+
+  it('serve módulos carregados depois da abertura usando o cache offline', async () => {
+    const { handlers, storage, response, fetchMock } = createWorker({ offline: true })
+    const request = { method: 'GET', mode: 'cors', url: 'https://ritmo.local/assets/ProgressView-lazy.js' }
+    let pending: Promise<unknown> | undefined
+    handlers.get('fetch')?.({ request, respondWith: (promise: Promise<unknown>) => { pending = promise } })
+    expect(await pending).toBe(response)
+    expect(storage.match).toHaveBeenCalledWith(request, { ignoreVary: true })
+    expect(fetchMock).not.toHaveBeenCalled()
   })
 
   it('não intercepta páginas fora da pasta do aplicativo', () => {

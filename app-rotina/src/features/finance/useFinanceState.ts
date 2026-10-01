@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import type { CategoryBudget, FinancialGoal, FinancialRecord, FinancePlanningData } from '../../core/types'
 import { repository } from '../../infrastructure/repository'
 import { settleFinancialRecord } from './finance'
@@ -12,12 +12,12 @@ export function useFinanceState(today: string, onMessage: (message: string) => v
   const [categoryBudgets, setCategoryBudgets] = useState<CategoryBudget[]>([])
   const [financePlanning, setFinancePlanning] = useState<FinancePlanningData>(emptyPlanning)
 
-  function hydrateFinance(data: { financialRecords: FinancialRecord[]; financialGoals: FinancialGoal[]; categoryBudgets: CategoryBudget[]; financePlanning: FinancePlanningData }) {
+  const hydrateFinance = useCallback((data: { financialRecords: FinancialRecord[]; financialGoals: FinancialGoal[]; categoryBudgets: CategoryBudget[]; financePlanning: FinancePlanningData }) => {
     setFinancialRecords(data.financialRecords)
     setFinancialGoals(data.financialGoals)
     setCategoryBudgets(data.categoryBudgets)
     setFinancePlanning(data.financePlanning)
-  }
+  }, [])
 
   async function saveFinancialRecord(item: FinancialRecord) {
     try {

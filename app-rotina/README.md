@@ -67,7 +67,7 @@ npm run test:e2e -- --config=playwright.edge.config.ts --workers=2
 
 Ao abrir a aplicação, o Ritmo salva no IndexedDB um snapshot das atividades previstas de segunda a domingo e do modo aplicável. Mudanças de modo atualizam somente o dia atual e os dias seguintes; dias anteriores permanecem associados ao planejamento que estava registrado.
 
-Atividades fixas e flexíveis contam como obrigatórias. Um dia é concluído quando todas elas estão marcadas como concluídas; atividades opcionais não bloqueiam e atividades puladas não contam. O indicador semanal soma os dias e as atividades obrigatórias usando a semana de segunda-feira a domingo. O plano inicial de 30 dias e a semana do treino continuam manuais.
+Atividades fixas e flexíveis contam como obrigatórias. Um dia é concluído quando todas elas estão marcadas como concluídas; atividades opcionais não bloqueiam e atividades puladas não contam. O indicador semanal soma os dias e as atividades obrigatórias de segunda-feira até hoje, sem antecipar os dias futuros, e compara o mesmo trecho da semana anterior quando há histórico. O plano inicial de 30 dias e a semana do treino continuam manuais.
 
 Registros de estudo, delivery e despesa podem oferecer a conclusão da atividade correspondente quando há um único vínculo aplicável. A confirmação é sempre explícita e uma atividade já concluída não é oferecida novamente.
 

@@ -9,4 +9,5 @@ const githubPagesBase = repository && repository.toLowerCase() !== `${owner?.toL
 export default defineConfig({
   base: process.env.RITMO_BASE_PATH || githubPagesBase,
   plugins: [react()],
+  build: { manifest: 'asset-manifest.json' },
 })

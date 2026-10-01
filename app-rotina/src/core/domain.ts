@@ -151,7 +151,7 @@ export function summarizeDailyProgress(snapshot: DailyPlanSnapshot, completions:
 export function summarizeWeeklyProgress(localDate: string, snapshots: DailyPlanSnapshot[], completions: DailyCompletion[]): WeeklyProgressSummary {
   const { weekStart, weekEnd } = weekBounds(localDate)
   const daily = snapshots
-    .filter((snapshot) => snapshot.localDate >= weekStart && snapshot.localDate <= weekEnd)
+    .filter((snapshot) => snapshot.localDate >= weekStart && snapshot.localDate <= localDate)
     .map((snapshot) => summarizeDailyProgress(snapshot, completions))
     .filter((summary) => summary.planned)
   const requiredActivities = daily.reduce((total, summary) => total + summary.requiredCount, 0)

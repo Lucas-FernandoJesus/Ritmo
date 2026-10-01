@@ -14,7 +14,7 @@ Uma agenda pessoal de caráter editorial, com fundo abstrato estático feito em 
 | Ação primária | `#14B8A6` | `#0D9488` |
 | Destaque | `#22C55E` | `#EA580C` |
 
-Existem somente os modos Claro e Escuro. Valores antigos persistidos como `system` devem ser normalizados futuramente para o modo correspondente à preferência atual do dispositivo. Tokens complementares devem manter contraste mínimo de 4.5:1 para texto normal.
+Existem somente os modos Claro e Escuro. Ao carregar um valor antigo `system`, o aplicativo usa a preferência atual do dispositivo e salva o modo explícito correspondente. Tokens complementares devem manter contraste mínimo de 4.5:1 para texto normal.
 
 - Corpo: `Segoe UI Variable`, `Segoe UI`, sistema. Títulos e marca: `Georgia`, `Cambria`, serif. Sem fontes externas nem dependência de rede.
 - Escala tipográfica: 13, 14, 16, 18, 24 e 32 px. Corpo 16 px, entrelinha 1,5. Valores e horários usam algarismos tabulares.

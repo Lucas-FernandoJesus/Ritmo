@@ -1,7 +1,8 @@
 const APP_URL = new URL('./', self.location.href)
 const CACHE_PREFIX = `ritmo-${encodeURIComponent(APP_URL.pathname)}-`
-const CACHE_NAME = `${CACHE_PREFIX}v5`
+const CACHE_NAME = `${CACHE_PREFIX}v6`
 const CORE = [
+  'asset-manifest.json',
   'manifest.webmanifest',
   'ritmo-mark.svg',
   'icon-ebony-192.png',
@@ -18,8 +19,15 @@ self.addEventListener('install', (event) => {
     const response = await fetch(APP_URL.href)
     if (!response.ok) throw new Error('Não foi possível preparar o aplicativo para uso offline.')
     const html = await response.clone().text()
-    const assets = [...html.matchAll(/(?:src|href)=["']([^"']+\.(?:js|css)(?:\?[^"']*)?)["']/g)]
-      .map((match) => new URL(match[1], APP_URL))
+    const manifestResponse = await fetch(new URL('asset-manifest.json', APP_URL).href)
+    if (!manifestResponse.ok) throw new Error('Lista de arquivos do aplicativo ausente.')
+    const manifest = await manifestResponse.json()
+    const bundledAssets = Object.values(manifest).flatMap((entry) => [entry.file, ...(entry.css || []), ...(entry.assets || [])])
+    const htmlAssets = [...html.matchAll(/(?:src|href)=["']([^"']+\.(?:js|css)(?:\?[^"']*)?)["']/g)]
+      .map((match) => match[1])
+    const assets = [...htmlAssets, ...bundledAssets]
+      .filter((path) => typeof path === 'string')
+      .map((path) => new URL(path, APP_URL))
       .filter(isAppResource)
       .map((url) => url.href)
     if (!assets.some((url) => url.endsWith('.js')) || !assets.some((url) => url.endsWith('.css'))) throw new Error('Arquivos do aplicativo ausentes.')
@@ -63,7 +71,7 @@ self.addEventListener('fetch', (event) => {
     }).catch(() => caches.match(APP_URL.href)))
     return
   }
-  event.respondWith(caches.match(event.request).then((cached) => cached || fetch(event.request).then(async (response) => {
+  event.respondWith(caches.match(event.request, { ignoreVary: true }).then((cached) => cached || fetch(event.request).then(async (response) => {
     if (response.ok) {
       const cache = await caches.open(CACHE_NAME)
       await cache.put(event.request, response.clone())

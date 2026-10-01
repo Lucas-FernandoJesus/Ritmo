@@ -48,8 +48,9 @@ test('adiciona snapshots sem apagar conclusões de um IndexedDB legado', async (
   await page.clock.install({ time: new Date('2026-09-22T10:00:00-03:00') })
   await page.goto('/')
 
+  await page.getByRole('region', { name: 'Ao longo do dia' }).getByRole('button', { name: 'Ver dia inteiro' }).click()
   await expect(page.getByRole('button', { name: 'Desmarcar Fortalecimento de corpo inteiro', exact: true })).toBeVisible()
-  await expect(page.getByRole('region', { name: 'Progresso desta semana' })).toContainText('1 de 84 atividades obrigatórias')
+  await expect(page.getByRole('region', { name: 'Progresso desta semana' })).toContainText('1 de 30 atividades obrigatórias')
 
   const databaseState = await page.evaluate(async () => new Promise<{ stores: string[], snapshots: number }>((resolve, reject) => {
     const request = indexedDB.open('rotina-local')

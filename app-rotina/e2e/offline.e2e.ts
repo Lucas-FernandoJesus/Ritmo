@@ -10,6 +10,12 @@ test('mantém navegação e orientações disponíveis offline', async ({ contex
 
   await page.reload()
   await expect.poll(() => page.evaluate(() => Boolean(navigator.serviceWorker.controller))).toBe(true)
+  const cachedTraining = await page.evaluate(async () => {
+    const manifest = await (await fetch('/asset-manifest.json')).json() as Record<string, { file: string }>
+    const path = manifest['src/features/training/components/TrainingViews.tsx'].file
+    return { path, cached: Boolean(await caches.match(new URL(path, location.href).href)), caches: await caches.keys() }
+  })
+  expect(cachedTraining.cached, JSON.stringify(cachedTraining)).toBe(true)
 
   await context.setOffline(true)
   try {
@@ -17,12 +23,14 @@ test('mantém navegação e orientações disponíveis offline', async ({ contex
     await expect(page.getByText('Offline', { exact: true })).toBeVisible()
     await expect(page.getByRole('heading', { name: 'Um dia de cada vez.', exact: true })).toBeVisible()
 
+    await page.getByRole('region', { name: 'Ao longo do dia' }).getByRole('button', { name: 'Ver dia inteiro' }).click()
     await page.getByRole('button', { name: `Concluir ${strengthActivity}`, exact: true }).click()
     const weekly = page.getByRole('region', { name: 'Progresso desta semana' })
-    await expect(weekly).toContainText('1 de 84 atividades obrigatórias')
+    await expect(weekly).toContainText('1 de 30 atividades obrigatórias')
     await page.reload({ waitUntil: 'domcontentloaded' })
+    await page.getByRole('region', { name: 'Ao longo do dia' }).getByRole('button', { name: 'Ver dia inteiro' }).click()
     await expect(page.getByRole('button', { name: `Desmarcar ${strengthActivity}`, exact: true })).toBeVisible()
-    await expect(page.getByRole('region', { name: 'Progresso desta semana' })).toContainText('1 de 84 atividades obrigatórias')
+    await expect(page.getByRole('region', { name: 'Progresso desta semana' })).toContainText('1 de 30 atividades obrigatórias')
 
     await goToTab(page, 'Semana')
     await expect(page.getByRole('heading', { name: 'Sua semana', exact: true })).toBeVisible()

@@ -242,7 +242,7 @@ describe('regras críticas', () => {
     })
   })
 
-  it('resume de segunda a domingo apenas os snapshots da semana solicitada', () => {
+  it('resume a semana até a data consultada sem antecipar atividades futuras', () => {
     const tuesdaySnapshot = {
       ...mondaySnapshot,
       id: '2026-09-22',
@@ -260,15 +260,15 @@ describe('regras críticas', () => {
     expect(progressDomain.summarizeWeeklyProgress(
       '2026-09-24',
       [mondaySnapshot, tuesdaySnapshot, sundaySnapshot, outsideSnapshot],
-      [done('2026-09-21', 'required-a'), done('2026-09-22', 'required-b'), done('2026-09-27', 'required-c', 'skipped')],
+      [done('2026-09-21', 'required-a'), done('2026-09-22', 'required-b'), done('2026-09-27', 'required-c')],
     )).toEqual({
       weekStart: '2026-09-21',
       weekEnd: '2026-09-27',
-      plannedDays: 3,
+      plannedDays: 2,
       completedDays: 2,
-      requiredActivities: 3,
+      requiredActivities: 2,
       completedRequiredActivities: 2,
-      activityPercentage: 67,
+      activityPercentage: 100,
     })
   })
 

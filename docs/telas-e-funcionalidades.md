@@ -22,7 +22,7 @@ Este mapa define onde cada ação começa e onde seu resultado é consultado. A 
 - O plano inicial de 30 dias pertence ao Progresso, mas permanece separado do percentual principal e dos períodos civis do Dashboard.
 - Dados financeiros planejados não contam como realizados antes da confirmação. Transferência entre contas próprias não é entrada nem saída.
 - As ações rápidas do menu abrem diretamente Turno, Estudo, Entrada ou Saída, mas não criam novos destinos globais.
-- O lembrete diário pede permissão somente após ação explícita, fica neste dispositivo e funciona enquanto o Ritmo estiver aberto. Ele não altera o IndexedDB nem o backup.
+- O lembrete diário pede permissão somente após ação explícita, fica neste dispositivo e funciona enquanto o Ritmo estiver aberto. Ele não altera o IndexedDB nem o backup; a ação confirmada de apagar todos os dados remove também sua preferência local.
 
 ## Critérios para mudanças nas telas
 

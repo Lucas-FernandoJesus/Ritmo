@@ -153,7 +153,7 @@ function App() {
     }
     load()
     return () => { active = false }
-  }, [dateKey])
+  }, [dateKey, hydrateFinance])
 
   useEffect(() => {
     const onOnline = () => setOnline(true)

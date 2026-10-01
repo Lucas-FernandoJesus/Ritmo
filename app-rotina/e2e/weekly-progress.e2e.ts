@@ -35,21 +35,21 @@ test('fecha o dia com todas as obrigatórias, ignora opcionais e reage a uma ati
   }
 
   const weekly = page.getByRole('region', { name: 'Progresso desta semana' })
-  await expect(weekly).toContainText('0 de 7 dias concluídos')
-  await expect(weekly).toContainText('8 de 84 atividades obrigatórias · 10%')
+  await expect(weekly).toContainText('Até hoje: 0 de 5 dias concluídos')
+  await expect(weekly).toContainText('8 de 70 atividades obrigatórias · 11%')
   await expect(weekly).toContainText('8 de 9 obrigatórias concluídas hoje')
   await expect(page.getByRole('button', { name: 'Concluir Muay Thai leve ou descanso', exact: true })).toBeVisible()
   await expect(page.getByRole('button', { name: 'Concluir Delivery de sexta', exact: true })).toBeVisible()
 
   await page.getByRole('button', { name: `Concluir ${skippedTitle}`, exact: true }).click()
 
-  await expect(weekly).toContainText('1 de 7 dias concluídos')
-  await expect(weekly).toContainText('9 de 84 atividades obrigatórias · 11%')
+  await expect(weekly).toContainText('Até hoje: 1 de 5 dias concluídos')
+  await expect(weekly).toContainText('9 de 70 atividades obrigatórias · 13%')
   await expect(weekly).toContainText('Dia concluído')
 
   await goToTab(page, 'Progresso')
   const preservedProgress = page.getByRole('region', { name: 'Progresso semanal e plano de 30 dias' })
-  await expect(preservedProgress.getByRole('region', { name: 'Progresso desta semana' })).toContainText('1 de 7 dias concluídos')
+  await expect(preservedProgress.getByRole('region', { name: 'Progresso desta semana' })).toContainText('Até hoje: 1 de 5 dias concluídos')
   await expect(preservedProgress.getByText('0 de 19 passos registrados', { exact: true })).toBeVisible()
 })
 

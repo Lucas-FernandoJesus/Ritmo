@@ -10,6 +10,7 @@ test('mantém modo e conclusão no IndexedDB após recarregar', async ({ page })
   await reducedMode.click()
   await expect(reducedMode).toHaveAttribute('aria-pressed', 'true')
 
+  await page.getByRole('region', { name: 'Ao longo do dia' }).getByRole('button', { name: 'Ver dia inteiro' }).click()
   await page.getByRole('button', { name: `Concluir ${strengthActivity}` }).click()
   await expect(page.getByRole('button', { name: `Desmarcar ${strengthActivity}` })).toHaveAttribute('aria-pressed', 'true')
 
@@ -17,6 +18,7 @@ test('mantém modo e conclusão no IndexedDB após recarregar', async ({ page })
 
   await expect(page.getByRole('group', { name: 'Intensidade da rotina' })
     .getByRole('button', { name: /^Reduzido/ })).toHaveAttribute('aria-pressed', 'true')
+  await page.getByRole('region', { name: 'Ao longo do dia' }).getByRole('button', { name: 'Ver dia inteiro' }).click()
   await expect(page.getByRole('button', { name: `Desmarcar ${strengthActivity}` })).toHaveAttribute('aria-pressed', 'true')
 
   const snapshot = await page.evaluate(async () => new Promise<{

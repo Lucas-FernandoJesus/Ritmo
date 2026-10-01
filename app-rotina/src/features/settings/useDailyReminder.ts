@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { millisecondsUntilNextReminder, readReminderSettings } from './reminder'
+import { millisecondsUntilNextReminder, readReminderSettings, REMINDER_STORAGE_KEY } from './reminder'
 
 export const REMINDER_CHANGE_EVENT = 'ritmo:daily-reminder-change'
 
@@ -18,10 +18,15 @@ export function useDailyReminder() {
       }, millisecondsUntilNextReminder(new Date(), settings.time))
     }
     schedule()
+    const onStorage = (event: StorageEvent) => {
+      if (event.storageArea === window.localStorage && (event.key === REMINDER_STORAGE_KEY || event.key === null)) schedule()
+    }
     window.addEventListener(REMINDER_CHANGE_EVENT, schedule)
+    window.addEventListener('storage', onStorage)
     return () => {
       window.clearTimeout(timer)
       window.removeEventListener(REMINDER_CHANGE_EVENT, schedule)
+      window.removeEventListener('storage', onStorage)
     }
   }, [])
 }
