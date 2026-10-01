@@ -42,6 +42,8 @@ export interface TrainingBlock {
     rounds: number
     roundDuration: string
     recovery: string
+    modality: string
+    leftArmProgression: string
     progression: string
     friday: string
   }
@@ -100,7 +102,7 @@ export const trainingBlocks: readonly TrainingBlock[] = [
     reduced: 'Faça 1 circuito apenas com os movimentos marcados como essenciais, sem reduzir a qualidade da execução.',
     minimum: minimumSession,
     criteria: criteria('Avance depois de cumprir os dois treinos com técnica estável e o braço no padrão habitual durante a sessão e no dia seguinte.'),
-    muayThai: { objective: 'Base, guarda, deslocamentos simples, esquivas suaves e joelhadas controladas no ar.', rounds: 3, roundDuration: '1 min', recovery: '1 min leve', progression: 'Mude apenas a fluidez dos movimentos; não aumente impacto nem velocidade do braço esquerdo.', friday: 'Repita base e deslocamento por poucos minutos ou descanse.' },
+    muayThai: { objective: 'Base, guarda, deslocamentos simples, esquivas suaves e joelhadas controladas.', rounds: 3, roundDuration: '1 min', recovery: '1 min leve', modality: 'Sombra. Saco, manopla e parceiro ficam para os blocos seguintes.', leftArmProgression: 'Braço esquerdo: técnica leve no ar, sem buscar impacto ou potência; interrompa se houver dor.', progression: 'Mude apenas a fluidez dos movimentos; não aumente duas variáveis na mesma semana.', friday: 'Repita base e deslocamento por poucos minutos ou descanse.' },
   },
   {
     id: 'consolidacao',
@@ -133,7 +135,7 @@ export const trainingBlocks: readonly TrainingBlock[] = [
     reduced: 'Faça 1 circuito com perna, empurrar, puxar e core; mantenha as pausas, mas use a faixa inferior de repetições.',
     minimum: minimumSession,
     criteria: criteria('Avance quando as pausas não desorganizarem a postura e os dois circuitos couberem no tempo sem apressar os movimentos.'),
-    muayThai: { objective: 'Consolidar base, entradas e saídas, retorno à guarda e combinações curtas no ar.', rounds: 4, roundDuration: '1 min', recovery: '45–60 s leve', progression: 'Acrescente uma combinação curta, mantendo ritmo conversável e nenhum contato.', friday: 'Faça 2 rounds leves de base e retorno à guarda ou escolha descanso.' },
+    muayThai: { objective: 'Consolidar base, entradas e saídas, retorno à guarda e combinações curtas.', rounds: 4, roundDuration: '1 min', recovery: '45–60 s leve', modality: 'Sombra e, se houver equipamento, até 1 round de contato técnico leve no saco ou manopla.', leftArmProgression: 'Braço esquerdo: toque leve, poucas repetições e técnica acima da força; pare se surgir dor.', progression: 'Acrescente contato técnico leve sem aumentar também duração, rounds ou velocidade.', friday: 'Faça 2 rounds leves de base e retorno à guarda ou escolha descanso.' },
   },
   {
     id: 'progressao-controlada',
@@ -166,7 +168,7 @@ export const trainingBlocks: readonly TrainingBlock[] = [
     reduced: 'Faça 1 circuito com quatro padrões essenciais e use a regressão conhecida sempre que a nova variação perder estabilidade.',
     minimum: minimumSession,
     criteria: criteria('Avance quando cada variação nova puder ser feita sem pressa, compensação evidente ou mudança nos sintomas do braço até o dia seguinte.'),
-    muayThai: { objective: 'Ligar deslocamento, esquiva e combinações de 2 ou 3 movimentos no ar, sempre retornando à guarda.', rounds: 4, roundDuration: '75 s', recovery: '45 s leve', progression: 'Aumente primeiro a duração do round; mantenha a quantidade de rounds.', friday: 'Faça 2 rounds técnicos de deslocamento e esquiva ou descanse.' },
+    muayThai: { objective: 'Ligar deslocamento, esquiva e combinações de 2 ou 3 movimentos, sempre retornando à guarda.', rounds: 4, roundDuration: '75 s', recovery: '45 s leve', modality: 'Sombra e contato técnico leve no saco ou manopla; mantenha ao menos parte do treino em sombra.', leftArmProgression: 'Braço esquerdo: aumente uma variável por vez — repetições, velocidade ou impacto — e somente sem dor durante e depois.', progression: 'Aumente primeiro a duração do round; mantenha a quantidade de rounds.', friday: 'Faça 2 rounds técnicos de deslocamento e esquiva ou descanse.' },
   },
   {
     id: 'novas-variacoes',
@@ -199,7 +201,7 @@ export const trainingBlocks: readonly TrainingBlock[] = [
     reduced: 'Escolha a amplitude mais conhecida e faça 1 circuito com quatro movimentos; o modo reduzido não é o momento de testar a nova variação.',
     minimum: minimumSession,
     criteria: criteria('Avance quando as novas direções e bases não reduzirem o equilíbrio nem exigirem compensar com o braço ou prender a respiração.'),
-    muayThai: { objective: 'Variar saídas laterais e diagonais, esquivas suaves, joelhadas e chutes controlados no ar.', rounds: 4, roundDuration: '90 s', recovery: '45 s leve', progression: 'Mude a direção dos deslocamentos, não a força ou o impacto.', friday: 'Faça 2 rounds leves de base, saída lateral e retorno ou descanse.' },
+    muayThai: { objective: 'Variar saídas laterais e diagonais, esquivas suaves, joelhadas e chutes controlados.', rounds: 4, roundDuration: '90 s', recovery: '45 s leve', modality: 'Sombra, saco ou manopla; parceiro somente em exercício técnico controlado e com supervisão adequada.', leftArmProgression: 'Braço esquerdo: introduza impacto moderado apenas depois de tolerar o contato leve; preserve baixo volume e não busque potência máxima.', progression: 'Mude direção ou modalidade; não aumente também força, volume ou duração.', friday: 'Faça 2 rounds leves de base, saída lateral e retorno ou descanse.' },
   },
   {
     id: 'capacidade',
@@ -233,7 +235,7 @@ export const trainingBlocks: readonly TrainingBlock[] = [
     reduced: 'Retire o finalizador e faça 1 circuito dos quatro padrões essenciais com descanso livre.',
     minimum: minimumSession,
     criteria: criteria('Avance quando o condicionamento adicional não deteriorar a técnica, o sono, a recuperação geral ou a condição habitual do braço no dia seguinte.'),
-    muayThai: { objective: 'Sustentar deslocamentos, defesa e combinações no ar em rounds um pouco mais longos, sem impacto.', rounds: 4, roundDuration: '90 s', recovery: '30–45 s leve', progression: 'Reduza primeiro a recuperação; não aumente também rounds ou velocidade.', friday: 'Faça até 2 rounds leves ou substitua por marcha e mobilidade.' },
+    muayThai: { objective: 'Sustentar deslocamentos, defesa e combinações em rounds um pouco mais longos.', rounds: 4, roundDuration: '90 s', recovery: '30–45 s leve', modality: 'Integre a modalidade escolhida — sombra, saco, manopla ou exercício técnico com parceiro — sem criar rounds extras.', leftArmProgression: 'Braço esquerdo: consolide o nível de impacto já tolerado antes de elevar potência ou volume; dor significa regredir.', progression: 'Reduza primeiro a recuperação; não aumente também rounds, velocidade ou impacto.', friday: 'Faça até 2 rounds leves ou substitua por marcha e mobilidade.' },
   },
   {
     id: 'consolidacao-final',
@@ -267,7 +269,7 @@ export const trainingBlocks: readonly TrainingBlock[] = [
     reduced: 'Faça 1 circuito com as variações já dominadas, sem finalizador e sem transformar a avaliação em teste máximo.',
     minimum: minimumSession,
     criteria: criteria('Conclua o ciclo quando reconhecer variações estáveis para os sete padrões e conseguir mantê-las dentro de 20 minutos com recuperação adequada.'),
-    muayThai: { objective: 'Reunir base, deslocamentos, esquivas, joelhadas e combinações no ar com técnica consistente.', rounds: 4, roundDuration: '90 s', recovery: '45 s leve', progression: 'Avalie fluidez e retorno à guarda; não teste potência, grande volume ou impacto.', friday: 'Faça uma revisão técnica curta ou descanse para fechar a semana.' },
+    muayThai: { objective: 'Reunir base, deslocamentos, esquivas, joelhadas e combinações com técnica consistente.', rounds: 4, roundDuration: '90 s', recovery: '45 s leve', modality: 'Sombra, saco, manopla ou parceiro. Sparring fica fora da sessão solo e exige professor e contexto apropriados.', leftArmProgression: 'Braço esquerdo: mantenha o nível confortável já alcançado e não teste potência máxima, tolerância à dor ou grande volume.', progression: 'Avalie fluidez, retorno à guarda e recuperação; consolide antes de escolher nova progressão.', friday: 'Faça uma revisão técnica curta ou descanse para fechar a semana.' },
   },
 ]
 
@@ -335,15 +337,15 @@ export function getMuaySession(itemId: MuayTrainingId, weekNumber: number | unde
 export function getMuayThaiGuide(itemId: MuayTrainingId, weekNumber: number | undefined, mode: RoutineMode): ActivityGuide {
   const { block, week, muay, rounds, duration, mainDescription } = getMuaySession(itemId, weekNumber, mode)
   return {
-    introduction: `Semana ${week.week} · ${block.title}. Muay Thai técnico sem contato, sem saco e sem movimentos explosivos com o braço esquerdo.`,
+    introduction: `Semana ${week.week} · ${block.title}. As modalidades estão liberadas; impacto e potência do braço esquerdo seguem a progressão gradual deste bloco.`,
     steps: [
-      { title: 'Checagem e aquecimento', amount: mode === 'minimo' ? '1 min' : '4–5 min', description: 'Observe o braço e aqueça com marcha, base, passos laterais e deslocamentos confortáveis.' },
+      { title: 'Checagem e aquecimento', amount: mode === 'minimo' ? '1 min' : '4–5 min', description: 'Observe se há dor no braço esquerdo e aqueça com marcha, base, passos laterais e deslocamentos confortáveis.' },
       rounds > 0
-        ? { title: itemId === 'muay-fri' ? 'Sessão opcional' : 'Rounds técnicos', amount: `${rounds} × ${muay.roundDuration}`, description: `${mainDescription} Faça ${muay.recovery} entre os rounds.` }
+        ? { title: itemId === 'muay-fri' ? 'Sessão opcional' : 'Rounds técnicos', amount: `${rounds} × ${muay.roundDuration}`, description: `${mainDescription} Modalidade: ${muay.modality} ${muay.leftArmProgression} Faça ${muay.recovery} entre os rounds.` }
         : { title: 'Versão mínima ou descanso', amount: duration, description: 'Faça somente base e deslocamentos confortáveis, ou descanse se sono, fadiga ou braço não estiverem favoráveis.' },
       { title: 'Desacelerar', amount: mode === 'normal' ? '3–4 min' : '1–2 min', description: 'Caminhe devagar, recupere a respiração e confira força, pegada, sensibilidade e movimento.' },
     ],
-    closing: 'Não acrescente impacto, saco de pancadas, golpes fortes, grande volume de socos ou velocidade explosiva sem liberação específica. Regresse ou interrompa se houver sintomas novos, piores ou persistentes no dia seguinte.',
+    closing: 'Dor nova, crescente, aguda ou persistente durante ou depois do treino significa interromper ou voltar ao estágio anterior. Mudança nova de força, sensibilidade, inchaço ou movimento pede reavaliação; não use a sessão para testar a tolerância dos fios de Kirschner.',
   }
 }
 

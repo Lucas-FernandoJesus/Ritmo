@@ -14,7 +14,8 @@ import { repository } from './infrastructure/repository'
 import { loadAppData } from './infrastructure/load-app-data'
 import { clampTrainingWeek } from './features/training/training-plan'
 import type { TrainingSelection } from './features/training/components/TrainingViews'
-import type { AppSettings, DailyCheckIn, DailyCompletion, DailyPlanSnapshot, DailyProgressSummary, DeliveryShift, Expense, RoutineItem, RoutineMode, StoragePersistence, StudyLog, ThirtyDayProgress } from './core/types'
+import type { MuayPracticeId, MuayProgressStatus } from './features/training/muay-exercises'
+import type { AppSettings, BodyMeasurement, DailyCheckIn, DailyCompletion, DailyPlanSnapshot, DailyProgressSummary, DeliveryShift, Expense, MealLog, RoutineItem, RoutineMode, StoragePersistence, StudyLog, ThirtyDayProgress } from './core/types'
 
 const FinanceView = lazy(() => import('./features/finance/components/FinanceView').then((module) => ({ default: module.FinanceView })))
 const ProgressView = lazy(() => import('./features/progress/components/ProgressView').then((module) => ({ default: module.ProgressView })))
@@ -23,8 +24,9 @@ const RecordsView = lazy(() => import('./features/records/components/RecordsView
 const TrainingHubView = lazy(() => import('./features/training/components/TrainingViews').then((module) => ({ default: module.TrainingHubView })))
 const TrainingWorkoutView = lazy(() => import('./features/training/components/TrainingViews').then((module) => ({ default: module.TrainingWorkoutView })))
 const MuayWorkoutView = lazy(() => import('./features/training/components/TrainingViews').then((module) => ({ default: module.MuayWorkoutView })))
+const NutritionView = lazy(() => import('./features/nutrition/components/NutritionView').then((module) => ({ default: module.NutritionView })))
 
-type Tab = 'hoje' | 'semana' | 'treinos' | 'registros' | 'financeiro' | 'progresso' | 'ajustes'
+type Tab = 'hoje' | 'semana' | 'treinos' | 'nutricao' | 'registros' | 'financeiro' | 'progresso' | 'ajustes'
 type QuickAction = 'shift' | 'study' | 'income' | 'expense'
 type LinkableRecord = { kind: 'study', area: StudyLog['area'] } | { kind: 'delivery', startTime: string, endTime: string } | { kind: 'expense' }
 
@@ -33,6 +35,7 @@ const navItems: { id: Tab; label: string }[] = [
   { id: 'hoje', label: 'Hoje' },
   { id: 'semana', label: 'Semana' },
   { id: 'treinos', label: 'Treinos' },
+  { id: 'nutricao', label: 'Nutrição' },
   { id: 'registros', label: 'Registros' },
   { id: 'financeiro', label: 'Financeiro' },
   { id: 'progresso', label: 'Progresso' },
@@ -99,6 +102,8 @@ function App() {
   const [deliverySelection, setDeliverySelection] = useState<DeliverySelection>({ revision: 0 })
   const [studyLogs, setStudyLogs] = useState<StudyLog[]>([])
   const [progress, setProgress] = useState<ThirtyDayProgress[]>([])
+  const [bodyMeasurements, setBodyMeasurements] = useState<BodyMeasurement[]>([])
+  const [mealLogs, setMealLogs] = useState<MealLog[]>([])
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState(false)
   const [savingIds, setSavingIds] = useState<string[]>([])
@@ -145,6 +150,8 @@ function App() {
         hydrateFinance(loaded)
         setStudyLogs(loaded.studyLogs)
         setProgress(loaded.progress)
+        setBodyMeasurements(loaded.bodyMeasurements)
+        setMealLogs(loaded.mealLogs)
       } catch {
         if (active) setLoadError(true)
       } finally {
@@ -291,6 +298,15 @@ function App() {
     } catch { setMessage('Não foi possível salvar a semana do treino. Tente novamente.') }
   }
 
+  async function changeMuayProgress(practiceId: MuayPracticeId, status: MuayProgressStatus) {
+    const nextSettings: AppSettings = { ...settings, muayProgress: { ...(settings.muayProgress ?? {}), [practiceId]: status } }
+    try {
+      await repository.saveSettings(nextSettings)
+      setSettings(nextSettings)
+      setMessage('Progresso técnico salvo neste aparelho.')
+    } catch { setMessage('Não foi possível salvar o progresso técnico. Tente novamente.') }
+  }
+
   async function changeAppearance(nextTheme: EffectiveTheme) {
     if (appearanceSaving) return false
     if (effectiveTheme(settings.theme) === nextTheme) return true
@@ -318,6 +334,24 @@ function App() {
   async function saveCheckIn(next: DailyCheckIn) {
     try { await repository.saveCheckIn(next); setCheckIn(next); setMessage('Checagem salva neste aparelho.'); return true }
     catch { setMessage('Não foi possível salvar a checagem. Tente novamente.'); return false }
+  }
+
+  async function saveBodyMeasurement(next: BodyMeasurement) {
+    try {
+      await repository.saveBodyMeasurement(next)
+      setBodyMeasurements((current) => [...current.filter((item) => item.id !== next.id), next])
+      setMessage('Medida salva neste aparelho.')
+      return true
+    } catch (error) { setMessage(readableError(error, 'Não foi possível salvar a medida.')); return false }
+  }
+
+  async function saveMealLog(next: MealLog) {
+    try {
+      await repository.saveMealLog(next)
+      setMealLogs((current) => [...current.filter((item) => item.id !== next.id), next])
+      setMessage('Refeição salva neste aparelho.')
+      return true
+    } catch (error) { setMessage(readableError(error, 'Não foi possível salvar a refeição.')); return false }
   }
 
   function focusContent() {
@@ -389,10 +423,11 @@ function App() {
         <Suspense fallback={<section className="section-loading" role="status"><div className="spinner" /><p>Abrindo área…</p></section>}>
         {trainingSelection ? trainingSelection === 'A' || trainingSelection === 'B'
           ? <TrainingWorkoutView day={trainingSelection} trainingWeek={clampTrainingWeek(settings.trainingWeek)} mode={mode} online={online} onBack={closeWorkout} />
-          : <MuayWorkoutView itemId={trainingSelection} trainingWeek={clampTrainingWeek(settings.trainingWeek)} mode={mode} online={online} onBack={closeWorkout} /> : <>
+          : <MuayWorkoutView itemId={trainingSelection} trainingWeek={clampTrainingWeek(settings.trainingWeek)} mode={mode} online={online} progress={settings.muayProgress ?? {}} onProgress={changeMuayProgress} onBack={closeWorkout} /> : <>
           {tab === 'hoje' && <TodayView key={dateKey} now={now} items={todayItems} mode={mode} modeSaving={modeSaving} onMode={changeMode} states={todayStates} savingIds={savingIds} dateKey={dateKey} checkIn={todayCheckIn} safety={safety} weeklySummary={weeklySummary} previousWeeklySummary={previousWeeklySummary} todaySummary={todaySummary} onCheckIn={saveCheckIn} onToggle={toggleCompletion} onSkip={toggleSkipped} onOpen={(item) => openActivity(item, now.getDay())} />}
           {tab === 'semana' && <WeekView settings={settings} selectedDay={selectedWeekDay} onSelectedDay={setSelectedWeekDay} onOpen={openActivity} completed={todayCompleted} onToggle={toggleCompletion} />}
           {tab === 'treinos' && <TrainingHubView trainingWeek={clampTrainingWeek(settings.trainingWeek)} mode={mode} onTrainingWeek={changeTrainingWeek} onOpenTraining={openWorkout} />}
+          {tab === 'nutricao' && <NutritionView today={dateKey} measurements={bodyMeasurements} mealLogs={mealLogs} onSaveMeasurement={saveBodyMeasurement} onSaveMeal={saveMealLog} />}
           {tab === 'financeiro' && <FinanceView planning={financePlanning} operations={financeOperations} today={dateKey} shifts={deliveryShifts} expenses={expenses} records={financialRecords} goals={financialGoals} budgets={categoryBudgets} registrationRequest={financeRegistration} onGoal={saveFinancialGoal} onBudget={saveCategoryBudget} onDeleteGoal={(id) => removeFinancialPlan("goal", id)} onDeleteBudget={(id) => removeFinancialPlan("budget", id)} onSave={saveFinancialRecord} onExpense={saveLinkedExpense} onDelivery={(id) => { setDeliverySelection((current) => ({ id, revision: current.revision + 1 })); setRecordKind('delivery'); navigateTab('registros') }} />}
           {tab === 'progresso' && <ProgressView planning={financePlanning} today={dateKey} snapshots={dailySnapshots} completions={completions} studyLogs={studyLogs} deliveryShifts={deliveryShifts} expenses={expenses} financialRecords={financialRecords} financialGoals={financialGoals} categoryBudgets={categoryBudgets} onFinance={() => navigateTab('financeiro')} progress={progress} weeklySummary={weeklySummary} previousWeeklySummary={previousWeeklySummary} onToggle={async (item) => { try { await repository.saveProgress(item); setProgress((v) => [...v.filter((p) => p.id !== item.id), item]) } catch (error) { setMessage(readableError(error, 'Não foi possível salvar o progresso.')) } }} />}
           {tab === 'ajustes' && <SettingsView settings={settings} persistence={storagePersistence} appearanceSaving={appearanceSaving} appearanceFeedback={appearanceFeedback} onAppearance={changeAppearance} onSettings={async (next) => { const synchronizedNext: AppSettings = { ...next, theme: effectiveTheme(settings.theme), appearanceVersion: 2 }; const snapshotPlan = prepareWeekSnapshots(dailySnapshots, dateKey, synchronizedNext.preferredMode, synchronizedNext, dateKey); try { await repository.saveSettingsAndDailySnapshots(synchronizedNext, snapshotPlan.changed); setSettings(synchronizedNext); setMode(synchronizedNext.preferredMode); setDailySnapshots(snapshotPlan.all); setMessage('Ajustes salvos.') } catch (error) { setMessage(readableError(error, 'Não foi possível salvar os ajustes.')) } }} onMessage={setMessage} onImported={() => window.location.reload()} onCleared={() => window.location.reload()} />}

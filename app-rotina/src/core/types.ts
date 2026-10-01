@@ -255,12 +255,35 @@ export interface ThirtyDayProgress {
   completedAt?: string
 }
 
+export interface BodyMeasurement {
+  id: string
+  localDate: string
+  weightKg: number
+  waistCm?: number
+  createdAt: string
+  updatedAt: string
+}
+
+export type MealSlot = 'breakfast' | 'lunch' | 'snack' | 'dinner'
+export type MealOutcome = 'with-protein' | 'without-protein' | 'skipped'
+
+export interface MealLog {
+  id: string
+  localDate: string
+  meal: MealSlot
+  outcome: MealOutcome
+  note?: string
+  createdAt: string
+  updatedAt: string
+}
+
 export interface AppSettings {
   id: 'settings'
   scheduleOverrides: Record<string, { startTime?: string; endTime?: string }>
   disabledActivities: string[]
   preferredMode: RoutineMode
   trainingWeek?: number
+  muayProgress?: Record<string, 'praticado' | 'confortavel' | 'repetir'>
   theme?: 'system' | 'light' | 'dark'
   appearanceVersion?: 2
   schemaVersion: number
@@ -283,6 +306,8 @@ export interface BackupData {
   accountTransfers?: AccountTransfer[]
   studyLogs: StudyLog[]
   progress: ThirtyDayProgress[]
+  bodyMeasurements?: BodyMeasurement[]
+  mealLogs?: MealLog[]
   settings: AppSettings
 }
 

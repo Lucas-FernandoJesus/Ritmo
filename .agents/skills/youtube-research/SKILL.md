@@ -11,7 +11,7 @@ Use esta skill quando a tarefa for pesquisar, revisar ou ampliar fontes de víde
 
 1. Para cada playlist solicitada, registre canal, nome, ordem, URL, título, duração e todas as posições acessíveis, inclusive duplicatas. Continue a paginação ou carregamento até a contagem fechar. Não amplie para outras playlists sem pedido.
 2. Deduplicate por ID do vídeo para análise, preservando todas as posições no inventário.
-3. Separe três estados: conteúdo verbal ou audiovisual verificado; página reproduzível sem conteúdo obtido; reprodução indisponível. Título, descrição ou resumo de terceiro não comprovam o conteúdo da aula.
+3. Mantenha no acervo do Ritmo somente conteúdo verbal ou audiovisual verificado. Título, descrição ou resumo de terceiro não comprovam o conteúdo da aula.
 4. Prefira transcrição/legendas obtidas do próprio vídeo, por interface ou automação de navegador. Confira o vídeo visualmente quando a técnica depender de detalhe que o texto não esclarece. Registre a limitação quando isso não for possível.
 5. Anote conteúdo, objetivo, pré-requisitos, método, execução que as fontes realmente sustentam, dificuldades e tempo aproximado. Diferencie demonstração do instrutor de adaptação proposta para o Ritmo. Preserve o link individual nas recomendações.
 6. Compare canais e sequências antes de alterar o plano. Não replique aulas inteiras apenas pelo rótulo “iniciante”; respeite as sessões e critérios já existentes no projeto.
@@ -24,4 +24,4 @@ Use esta skill quando a tarefa for pesquisar, revisar ou ampliar fontes de víde
 
 ## Atualização do projeto
 
-Atualize os três documentos em `docs/muay-thai/` de forma consistente: cobertura no inventário, observação por vídeo nas fichas e implicações pedagógicas no plano. Mantenha os casos inacessíveis explícitos. Os documentos numerados de `docs/rotina/` definem o contexto atual do usuário; a alta geral para exercícios em fevereiro de 2026 já está registrada. O escopo específico para impacto no saco continua como informação a esclarecer, sem confundi-lo com ausência de alta.
+Atualize os três documentos em `docs/muay-thai/` de forma consistente: cobertura no inventário, observação por vídeo nas fichas e implicações pedagógicas no plano. Os documentos numerados de `docs/rotina/` definem o contexto atual do usuário; a alta geral para exercícios em fevereiro de 2026 já está registrada. O escopo específico para impacto no saco continua como informação a esclarecer, sem confundi-lo com ausência de alta.

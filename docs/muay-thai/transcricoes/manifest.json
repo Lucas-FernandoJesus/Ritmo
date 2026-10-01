@@ -88,36 +88,6 @@
     ],
     "status": "caption_saved"
   },
-  "SSMu3x3-ejI": {
-    "id": "SSMu3x3-ejI",
-    "title": "Muay Thai Essentials - How to wrap your hands",
-    "url": "https://www.youtube.com/watch?v=SSMu3x3-ejI",
-    "positions": [
-      "2"
-    ],
-    "status": "no_speech_detected",
-    "source": "faster-whisper/base.en"
-  },
-  "JPsbtvEWKmc": {
-    "id": "JPsbtvEWKmc",
-    "title": "Muay Thai Essentials - Check kick defence",
-    "url": "https://www.youtube.com/watch?v=JPsbtvEWKmc",
-    "positions": [
-      "3"
-    ],
-    "status": "no_speech_detected",
-    "source": "faster-whisper/base.en"
-  },
-  "FJ2NM1XFluE": {
-    "id": "FJ2NM1XFluE",
-    "title": "Muay Thai Essentials - Basic Teep (Push kick)",
-    "url": "https://www.youtube.com/watch?v=FJ2NM1XFluE",
-    "positions": [
-      "4"
-    ],
-    "status": "no_speech_detected",
-    "source": "faster-whisper/base.en"
-  },
   "0AQHSBFXBaU": {
     "id": "0AQHSBFXBaU",
     "title": "Muay Thai | Teep/Push Kick Series (Part 2: Advanced) - Thrust Teep",
@@ -252,16 +222,6 @@
       "19"
     ],
     "status": "caption_saved"
-  },
-  "CWJ3zhdaI6A": {
-    "id": "CWJ3zhdaI6A",
-    "title": "Training to become Sagat!",
-    "url": "https://www.youtube.com/watch?v=CWJ3zhdaI6A",
-    "positions": [
-      "20"
-    ],
-    "status": "no_speech_detected",
-    "source": "faster-whisper/base.en"
   },
   "89gzKhYm8Ds": {
     "id": "89gzKhYm8Ds",
@@ -945,16 +905,6 @@
     ],
     "status": "caption_saved"
   },
-  "2v7_J170PMQ": {
-    "id": "2v7_J170PMQ",
-    "title": "Beginner Muay Thai Class - Stance, Jab Cross, Push Kicks aka Teeps (Class 1/3)",
-    "url": "https://www.youtube.com/watch?v=2v7_J170PMQ",
-    "positions": [
-      "10"
-    ],
-    "error": "ERROR: [youtube] 2v7_J170PMQ: Join this channel to get access to members-only content like this video, and other exclusive perks.",
-    "status": "unavailable"
-  },
   "h-f5Ijd1le4": {
     "id": "h-f5Ijd1le4",
     "title": "Beginner Muay Thai Class - Hooks, Knees, Elbows + Recap of class 1 (Class 2/3)",
@@ -1108,36 +1058,6 @@
     ],
     "status": "caption_saved"
   },
-  "6hR_nTVVGDM": {
-    "id": "6hR_nTVVGDM",
-    "title": "MUAYTHAI BASICS HOW TO: Rear Roundhouse Kick (On a Bag) | BEGINNER MUAYTHAI",
-    "url": "https://www.youtube.com/watch?v=6hR_nTVVGDM",
-    "positions": [
-      "28"
-    ],
-    "error": "ERROR: [youtube] 6hR_nTVVGDM: This video is available to this channel's members on level: Heart Muaythai Students (or any higher level). Join this channel to get access to members-only content and other exclusive perks.",
-    "status": "unavailable"
-  },
-  "G6tlOYT346Y": {
-    "id": "G6tlOYT346Y",
-    "title": "MUAYTHAI BASICS HOW TO: Lead Switch Roundhouse Kick (On a Bag) | BEGINNER MUAYTHAI",
-    "url": "https://www.youtube.com/watch?v=G6tlOYT346Y",
-    "positions": [
-      "29"
-    ],
-    "error": "ERROR: [youtube] G6tlOYT346Y: This video is available to this channel's members on level: Heart Muaythai Students (or any higher level). Join this channel to get access to members-only content and other exclusive perks.",
-    "status": "unavailable"
-  },
-  "XeM15r0hogg": {
-    "id": "XeM15r0hogg",
-    "title": "MUAYTHAI BAG WORKOUT - 10 Minutes",
-    "url": "https://www.youtube.com/watch?v=XeM15r0hogg",
-    "positions": [
-      "30"
-    ],
-    "error": "ERROR: [youtube] XeM15r0hogg: Join this channel to get access to members-only content like this video, and other exclusive perks.",
-    "status": "unavailable"
-  },
   "BRJy0lhOKt4": {
     "id": "BRJy0lhOKt4",
     "title": "YOUR FIRST MUAYTHAI CLASS - Stance , Rhythm & Basic Footwork",
@@ -1147,26 +1067,6 @@
     ],
     "status": "caption_saved"
   },
-  "m5Vfu6Mg3S0": {
-    "id": "m5Vfu6Mg3S0",
-    "title": "How to Angle + Combos with Angles | BEGINNER MUAYTHAI",
-    "url": "https://www.youtube.com/watch?v=m5Vfu6Mg3S0",
-    "positions": [
-      "32"
-    ],
-    "error": "ERROR: [youtube] m5Vfu6Mg3S0: Join this channel to get access to members-only content like this video, and other exclusive perks.",
-    "status": "unavailable"
-  },
-  "ijeaUbuZNHI": {
-    "id": "ijeaUbuZNHI",
-    "title": "Muaythai for Newbies - Punches (All Basic Punches + Follow Along Combinations)",
-    "url": "https://www.youtube.com/watch?v=ijeaUbuZNHI",
-    "positions": [
-      "33"
-    ],
-    "error": "ERROR: [youtube] ijeaUbuZNHI: Join this channel to get access to members-only content like this video, and other exclusive perks.",
-    "status": "unavailable"
-  },
   "oFKZQVw9rno": {
     "id": "oFKZQVw9rno",
     "title": "MUAYTHAI SHADOW BOXING CLASS (Home & Small Space Friendly)",
@@ -1175,16 +1075,6 @@
       "34"
     ],
     "status": "caption_saved"
-  },
-  "eagKESe_RaQ": {
-    "id": "eagKESe_RaQ",
-    "title": "LEARN KNEES |Technique Tutorial - Muaythai Basic for Newbies (Rear Knee, Switch Knee & Step Up Knee)",
-    "url": "https://www.youtube.com/watch?v=eagKESe_RaQ",
-    "positions": [
-      "35"
-    ],
-    "error": "ERROR: [youtube] eagKESe_RaQ: This video is available to this channel's members on level: Heart Muaythai Students (or any higher level). Join this channel to get access to members-only content and other exclusive perks.",
-    "status": "unavailable"
   },
   "vTVyY5CcbiM": {
     "id": "vTVyY5CcbiM",
@@ -1213,26 +1103,6 @@
     ],
     "status": "caption_saved"
   },
-  "PwIJu3F4dFE": {
-    "id": "PwIJu3F4dFE",
-    "title": "Muaythai Newbies - How to Shadow Box?",
-    "url": "https://www.youtube.com/watch?v=PwIJu3F4dFE",
-    "positions": [
-      "39"
-    ],
-    "error": "ERROR: [youtube] PwIJu3F4dFE: This video is available to this channel's members on level: Heart Muaythai Students (or any higher level). Join this channel to get access to members-only content and other exclusive perks.",
-    "status": "unavailable"
-  },
-  "HLY-XI4lxW8": {
-    "id": "HLY-XI4lxW8",
-    "title": "MUAYTHAI CLASS - How to Teep / Push Kick + Shadow Box Combinations",
-    "url": "https://www.youtube.com/watch?v=HLY-XI4lxW8",
-    "positions": [
-      "40"
-    ],
-    "error": "ERROR: [youtube] HLY-XI4lxW8: Join this channel to get access to members-only content like this video, and other exclusive perks.",
-    "status": "unavailable"
-  },
   "a5vsvuM46ks": {
     "id": "a5vsvuM46ks",
     "title": "MUAYTHAI FOLLOW ALONG CLASS - 15 mins, Shadow Boxing",
@@ -1251,16 +1121,6 @@
     ],
     "status": "caption_saved"
   },
-  "e86SylXMZb4": {
-    "id": "e86SylXMZb4",
-    "title": "Welcome to Muaythai - Your First Class (members only)",
-    "url": "https://www.youtube.com/watch?v=e86SylXMZb4",
-    "positions": [
-      "43"
-    ],
-    "error": "ERROR: [youtube] e86SylXMZb4: Join this channel to get access to members-only content like this video, and other exclusive perks.",
-    "status": "unavailable"
-  },
   "d65B2TXBXLo": {
     "id": "d65B2TXBXLo",
     "title": "MUAY THAI + BODYWEIGHT HIIT CLASS | 20 Mins , Follow Along",
@@ -1269,26 +1129,6 @@
       "44"
     ],
     "status": "caption_saved"
-  },
-  "PEVMT-Rarhg": {
-    "id": "PEVMT-Rarhg",
-    "title": "Faking the Push Kick - How To and Examples of Use (members only)",
-    "url": "https://www.youtube.com/watch?v=PEVMT-Rarhg",
-    "positions": [
-      "45"
-    ],
-    "error": "ERROR: [youtube] PEVMT-Rarhg: Join this channel to get access to members-only content like this video, and other exclusive perks.",
-    "status": "unavailable"
-  },
-  "zx8fBg7xCI8": {
-    "id": "zx8fBg7xCI8",
-    "title": "How to Fake the Roundhouse Kicks (members only)",
-    "url": "https://www.youtube.com/watch?v=zx8fBg7xCI8",
-    "positions": [
-      "46"
-    ],
-    "error": "ERROR: [youtube] zx8fBg7xCI8: Join this channel to get access to members-only content like this video, and other exclusive perks.",
-    "status": "unavailable"
   },
   "QvXUiTpf744": {
     "id": "QvXUiTpf744",

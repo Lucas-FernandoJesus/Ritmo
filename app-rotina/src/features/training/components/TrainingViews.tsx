@@ -1,11 +1,19 @@
+import { useState } from 'react'
 import type { RoutineMode } from '../../../core/types'
 import { PageTitle } from '../../../components/FormPrimitives'
 import { getExerciseDemo } from '../exercise-demos'
-import { getMuayPractices } from '../muay-exercises'
+import { getMuayPractice, getMuayPracticeRecommendation, getMuayPractices, type MuayPracticeId, type MuayProgressMap, type MuayProgressStatus } from '../muay-exercises'
 import { getMuaySession, getMuayThaiGuide, getStrengthSession, getTrainingPlanWeek, trainingBlocks, type MuayTrainingId, type TrainingDay } from '../training-plan'
 import { modeCopy } from '../../routine/view-labels'
 
 export type TrainingSelection = TrainingDay | MuayTrainingId
+
+const muayLevelLabels = { fundamento: 'Fundamento', desenvolvimento: 'Desenvolvimento', integração: 'Integração' } as const
+const muayProgressOptions: readonly { value: MuayProgressStatus; label: string }[] = [
+  { value: 'praticado', label: 'Praticado' },
+  { value: 'confortavel', label: 'Confortável' },
+  { value: 'repetir', label: 'Quero repetir' },
+]
 
 export function TrainingWorkoutView({ day, trainingWeek, mode, online, onBack }: { day: TrainingDay; trainingWeek: number; mode: RoutineMode; online: boolean; onBack: () => void }) {
   const { block, week, format, exercises } = getStrengthSession(trainingWeek, day, mode)
@@ -38,7 +46,8 @@ export function TrainingWorkoutView({ day, trainingWeek, mode, online, onBack }:
   </div>
 }
 
-export function MuayWorkoutView({ itemId, trainingWeek, mode, online, onBack }: { itemId: MuayTrainingId; trainingWeek: number; mode: RoutineMode; online: boolean; onBack: () => void }) {
+export function MuayWorkoutView({ itemId, trainingWeek, mode, online, progress, onProgress, onBack }: { itemId: MuayTrainingId; trainingWeek: number; mode: RoutineMode; online: boolean; progress: MuayProgressMap; onProgress: (practiceId: MuayPracticeId, status: MuayProgressStatus) => Promise<void>; onBack: () => void }) {
+  const [savingPractice, setSavingPractice] = useState<MuayPracticeId | null>(null)
   const { block, week, muay, rounds, duration, mainDescription } = getMuaySession(itemId, trainingWeek, mode)
   const guide = getMuayThaiGuide(itemId, trainingWeek, mode)
   const practices = getMuayPractices(week.week, itemId, mode)
@@ -52,18 +61,36 @@ export function MuayWorkoutView({ itemId, trainingWeek, mode, online, onBack }: 
     </header>
     <section className="workout-summary" aria-label="Como fazer o treino">
       <div className="workout-stats"><div><span>Tempo previsto</span><strong>{duration}</strong></div><div><span>Parte principal</span><strong>{rounds ? `${rounds} × ${muay.roundDuration}` : 'Base ou descanso'}</strong></div><div><span>Recuperação</span><strong>{rounds ? muay.recovery : 'livre'}</strong></div></div>
+      <p>{guide.introduction}</p>
       <p>{mainDescription}</p>
       <ol className="workout-flow"><li><strong>Antes</strong><span>{guide.steps[0].description} {guide.steps[0].amount}.</span></li><li><strong>Durante</strong><span>{guide.steps[1].description} {rounds ? 'As práticas abaixo são opções dentro dos rounds previstos; não são rounds extras.' : 'A prática de base abaixo é opcional; descansar também segue o plano.'}</span></li><li><strong>Depois</strong><span>{guide.steps[2].description} {guide.steps[2].amount}.</span></li></ol>
     </section>
-    <div className="section-heading workout-section-heading"><div><h2>{rounds ? 'Práticas para os rounds' : 'Prática opcional'}</h2><p className="section-description">Faça movimentos controlados no ar. As sequências e a seleção por semana são adaptações do Ritmo.</p></div><span className="count-chip">{practices.length} {practices.length === 1 ? 'prática' : 'práticas'}</span></div>
-    <ol className="workout-exercises">{practices.map((practice, index) => <li key={practice.id} className="workout-exercise">
-      <div className="workout-exercise-heading"><span className="workout-order" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span><div><h3>{practice.title}</h3><span className="workout-amount">{rounds ? 'Parte de um round' : 'Se confortável'} · sem contagem fixa</span></div></div>
-      <p className="workout-prescription">{practice.objective}</p>
-      <div className="workout-example"><strong>Como praticar no Ritmo</strong><p>{practice.instructions}</p></div>
-      <p className="workout-video-caption"><strong>Atenção:</strong> {practice.attention}</p>
-      <p className="workout-video-caption">{practice.videoTitle} · {practice.provider}. Trecho com conteúdo verbal pesquisado; confira a demonstração visual no YouTube. O vídeo pode ter volume, intensidade ou técnicas além desta adaptação.</p>
-      <a className="workout-video-link secondary-button" href={practice.videoUrl} target="_blank" rel="noopener noreferrer" aria-label={`Ver aula sobre ${practice.title} no YouTube (abre em nova aba)`}>▶ Ver aula no YouTube <span aria-hidden="true">↗</span></a>
-    </li>)}</ol>
+    <div className="section-heading workout-section-heading"><div><h2>{rounds ? 'Práticas para os rounds' : 'Prática opcional'}</h2><p className="section-description">Aprenda o gesto em sombra e aplique somente as habilidades confortáveis na modalidade indicada para o bloco. As sequências são adaptações do Ritmo.</p></div><span className="count-chip">{practices.length} {practices.length === 1 ? 'prática' : 'práticas'}</span></div>
+    <ol className="workout-exercises">{practices.map((practice, index) => {
+      const recommendation = getMuayPracticeRecommendation(practice.id, progress)
+      const currentStatus = progress[practice.id]
+      const saving = savingPractice === practice.id
+      return <li key={practice.id} className="workout-exercise muay-practice-card">
+        <div className="workout-exercise-heading"><span className="workout-order" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span><div><h3>{practice.title}</h3><span className="workout-amount">{rounds ? 'Parte de um round' : 'Se confortável'} · sem contagem fixa</span></div></div>
+        <div className="muay-practice-meta" aria-label="Classificação da prática"><span>{muayLevelLabels[practice.level]}</span><span>Base em sombra</span></div>
+        <p className="workout-prescription">{practice.objective}</p>
+        <div className="workout-example"><strong>Como praticar no Ritmo</strong><p>{practice.instructions}</p></div>
+        <p className="workout-video-caption"><strong>Atenção:</strong> {practice.attention}</p>
+        <aside className={`muay-recommendation ${recommendation.kind}`} aria-label="Recomendação para esta prática"><strong>{recommendation.title}</strong><p>{recommendation.description}</p></aside>
+        <details className="muay-technique-details"><summary>Critérios e pré-requisitos</summary>
+          <div><strong>Pré-requisitos</strong><p>{practice.prerequisites.length ? practice.prerequisites.map((id) => getMuayPractice(id).title).join(' · ') : 'Nenhum; esta é uma prática de entrada.'}</p></div>
+          <div><strong>Qualidade observável</strong><ul>{practice.qualityCriteria.map((criterion) => <li key={criterion}>{criterion}</li>)}</ul></div>
+          <div><strong>Quando repetir</strong><p>{practice.repeatWhen}</p></div>
+          <div><strong>Quando considerar avanço</strong><p>{practice.advanceWhen}</p></div>
+        </details>
+        <fieldset className="muay-progress-fieldset" disabled={savingPractice !== null}><legend>Como esta prática ficou hoje?</legend>
+          <p>{saving ? 'Salvando registro…' : currentStatus ? `Registro atual: ${muayProgressOptions.find((option) => option.value === currentStatus)?.label}.` : 'Ainda sem registro.'}</p>
+          <div>{muayProgressOptions.map((option) => <button key={option.value} type="button" aria-pressed={currentStatus === option.value} onClick={async () => { setSavingPractice(practice.id); try { await onProgress(practice.id, option.value) } finally { setSavingPractice(null) } }}>{option.label}</button>)}</div>
+        </fieldset>
+        <p className="workout-video-caption">{practice.videoTitle} · {practice.provider}. {practice.sourceReview === 'visual' ? 'A transcrição e o trecho visual revisado sustentam esta adaptação.' : 'O conteúdo verbal transcrito sustenta esta adaptação; a demonstração completa não foi revisada.'} O vídeo pode ter volume, intensidade ou técnicas fora do plano.</p>
+        <a className="workout-video-link secondary-button" href={practice.videoUrl} target="_blank" rel="noopener noreferrer" aria-label={`Ver aula sobre ${practice.title} no YouTube (abre em nova aba)`}>▶ Ver aula no YouTube <span aria-hidden="true">↗</span></a>
+      </li>
+    })}</ol>
     {!online && <p className="workout-offline" role="status">Você está offline. As instruções continuam disponíveis aqui; os vídeos precisam de internet.</p>}
     <section className="workout-finish" aria-labelledby="muay-finish-title"><h2 id="muay-finish-title">Depois da sessão</h2><p>{week.consolidation ? 'Esta semana reduz um round para revisar técnica e tolerância.' : 'Avance apenas se os movimentos permanecerem confortáveis e controlados.'}</p><p>{guide.closing}</p><p>{friday ? 'Sexta é opcional. Descansar também segue o plano.' : 'Se perder equilíbrio ou controle, retome base e deslocamentos antes de combinar ações.'}</p></section>
     <button type="button" className="secondary-button workout-end-back" onClick={onBack}>Voltar à rotina</button>

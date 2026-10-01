@@ -4,12 +4,13 @@ Todas as skills usadas ou consultadas no projeto estão reunidas nesta pasta. Ca
 
 | Skill | Participação | Uso registrado |
 | --- | --- | --- |
-| [prompt-master](prompt-master/SKILL.md) | Aplicada | Prompt de criação da skill de professor de Muay Thai, preservado em `docs/muay-thai/` |
+| [prompt-master](prompt-master/SKILL.md) | Aplicada | Prompts de criação das skills de Muay Thai e nutrição, preservados em `docs/` |
 | [frontend-design](frontend-design/SKILL.md) | Aplicada | Identidade visual e componentes |
 | [ui-ux-pro-max](ui-ux-pro-max/SKILL.md) | Aplicada | UI/UX, React, acessibilidade, temas, gráficos e formulários |
 | [playwright-cli](playwright-cli/SKILL.md) | Aplicada como orientação | Validação com a suíte Playwright/Edge existente |
 | [find-skills](find-skills/SKILL.md) | Aplicada | Avaliação das skills instaladas e necessidade de capacidades adicionais |
 | [muay-thai-professor](muay-thai-professor/SKILL.md) | Criada e instalada globalmente | Professor de Muay Thai para aulas, progressão e avaliação técnica |
+| [nutricionista-ritmo](nutricionista-ritmo/SKILL.md) | Criada localmente | Educação alimentar e planejamento integrado a rotina, treino e orçamento |
 | [youtube-research](youtube-research/SKILL.md) | Aplicada | Pesquisa local dos vídeos de Muay Thai |
 | [pdf](pdf/SKILL.md) | Consultada | Formatos e revisão das exportações; não substituiu o gerador offline do app |
 | [spreadsheets](spreadsheets/SKILL.md) | Consultada | Formatos de planilha; não substituiu o gerador offline do app |

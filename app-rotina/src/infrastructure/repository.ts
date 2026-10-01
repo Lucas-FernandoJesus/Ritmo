@@ -1,10 +1,10 @@
-import { defaultSettings, isValidAccountTransfer, isValidAssetAccount, isValidCategoryBudget, isValidCheckIn, isValidCompletion, isValidDailyPlanSnapshot, isValidDeliveryShift, isValidExpense, isValidFinancialGoal, isValidFinancialRecord, isValidInstallmentPlan, isValidRecurringPlan, isValidProgress, isValidSettings, isValidStudyLog, SCHEMA_VERSION, validFinanceReferences, validateBackup } from '../core/domain'
+import { defaultSettings, isValidAccountTransfer, isValidAssetAccount, isValidBodyMeasurement, isValidCategoryBudget, isValidCheckIn, isValidCompletion, isValidDailyPlanSnapshot, isValidDeliveryShift, isValidExpense, isValidFinancialGoal, isValidFinancialRecord, isValidInstallmentPlan, isValidMealLog, isValidRecurringPlan, isValidProgress, isValidSettings, isValidStudyLog, SCHEMA_VERSION, validFinanceReferences, validateBackup } from '../core/domain'
 import { createOccurrenceRecord, planOccurrences } from '../features/finance/finance-plans'
-import type { AccountTransfer, AppSettings, AssetAccount, BackupData, CategoryBudget, DailyCheckIn, DailyCompletion, DailyPlanSnapshot, DeliveryShift, Expense, FinancialGoal, FinancialRecord, InstallmentPlan, PlanningReference, RecurringPlan, StudyLog, ThirtyDayProgress } from '../core/types'
+import type { AccountTransfer, AppSettings, AssetAccount, BackupData, BodyMeasurement, CategoryBudget, DailyCheckIn, DailyCompletion, DailyPlanSnapshot, DeliveryShift, Expense, FinancialGoal, FinancialRecord, InstallmentPlan, MealLog, PlanningReference, RecurringPlan, StudyLog, ThirtyDayProgress } from '../core/types'
 
 const DB_NAME = 'rotina-local'
-const DB_VERSION = 5
-const stores = ['completions', 'dailySnapshots', 'checkIns', 'deliveryShifts', 'expenses', 'financialRecords', 'financialGoals', 'categoryBudgets', 'recurringPlans', 'installmentPlans', 'assetAccounts', 'accountTransfers', 'studyLogs', 'progress', 'settings'] as const
+const DB_VERSION = 7
+const stores = ['completions', 'dailySnapshots', 'checkIns', 'deliveryShifts', 'expenses', 'financialRecords', 'financialGoals', 'categoryBudgets', 'recurringPlans', 'installmentPlans', 'assetAccounts', 'accountTransfers', 'studyLogs', 'progress', 'bodyMeasurements', 'mealLogs', 'settings'] as const
 type StoreName = typeof stores[number]
 
 function requestResult<T>(request: IDBRequest<T>): Promise<T> {
@@ -187,6 +187,10 @@ export const repository = {
   saveStudyLog: (log: StudyLog) => { assertValid(log, isValidStudyLog, 'Registro de estudo inválido.'); return put('studyLogs', log) },
   getProgress: () => getAll<ThirtyDayProgress>('progress'),
   saveProgress: (progress: ThirtyDayProgress) => { assertValid(progress, isValidProgress, 'Progresso inválido.'); return put('progress', progress) },
+  getBodyMeasurements: () => getAll<BodyMeasurement>('bodyMeasurements'),
+  saveBodyMeasurement: (measurement: BodyMeasurement) => { assertValid(measurement, isValidBodyMeasurement, 'Medida corporal inválida.'); return put('bodyMeasurements', measurement) },
+  getMealLogs: () => getAll<MealLog>('mealLogs'),
+  saveMealLog: (meal: MealLog) => { assertValid(meal, isValidMealLog, 'Registro de refeição inválido.'); return put('mealLogs', meal) },
   async exportAll(): Promise<BackupData> {
     const db = await openDatabase(), tx = db.transaction([...stores], 'readonly')
     const done = transactionDone(tx)
@@ -222,6 +226,8 @@ export const repository = {
     for (const item of data.accountTransfers ?? []) tx.objectStore('accountTransfers').put(item)
     for (const item of data.studyLogs) tx.objectStore('studyLogs').put(item)
     for (const item of data.progress) tx.objectStore('progress').put(item)
+    for (const item of data.bodyMeasurements ?? []) tx.objectStore('bodyMeasurements').put(item)
+    for (const item of data.mealLogs ?? []) tx.objectStore('mealLogs').put(item)
     tx.objectStore('settings').put(data.settings)
     await transactionDone(tx)
   },

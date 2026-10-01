@@ -1,10 +1,10 @@
 # Transcrições de Muay Thai
 
-Coleta em 30/09/2026 dos 143 vídeos distintos do [inventário](../inventario.md). Os arquivos `.md` preservam a fala com marcações de tempo; os `.json3` são as legendas originais baixadas do YouTube. Legendas automáticas podem errar termos. Não constituem inspeção visual da técnica.
+Coleta em 30/09/2026 dos 127 vídeos utilizáveis do [inventário](../inventario.md). Os arquivos `.md` preservam a fala com marcações de tempo; os `.json3` são as legendas originais baixadas do YouTube. Legendas automáticas podem errar termos. Não constituem inspeção visual da técnica.
 
-**Cobertura:** 127 legendas salvas; 4 vídeos públicos sem legenda/fala aproveitável no ASR local; 12 vídeos exclusivos de membros sem acesso.
+**Cobertura:** 127 legendas salvas. Fontes sem conteúdo acessível foram retiradas do acervo por decisão do usuário em 01/10/2026.
 
-A skill `youtube-transcribe` foi avaliada: seu fluxo de ASR por API exige `ASR_API_KEY`, ausente neste ambiente. As legendas foram coletadas com `yt-dlp`; os quatro áudios públicos sem legenda foram testados com `faster-whisper base.en` local. Saídas espúrias do ASR foram descartadas.
+A skill `youtube-transcribe` foi avaliada: seu fluxo de ASR por API exige `ASR_API_KEY`, ausente neste ambiente. As legendas disponíveis foram coletadas com `yt-dlp`.
 
 | Vídeo | Origem/status | Texto |
 |---|---|---|
@@ -17,9 +17,6 @@ A skill `youtube-transcribe` foi avaliada: seu fluxo de ASR por API exige `ASR_A
 | [BEGINNER MUAY THAI - Full Class, 30 Minutes // No Equipment](https://www.youtube.com/watch?v=7sLw5dHdRG4) | Legenda original | [Abrir](7sLw5dHdRG4.md) |
 | [FULL MUAYTHAI CLASS (30 Minutes) -  Follow Along \|Technique + Shadow Box + Conditioning](https://www.youtube.com/watch?v=jrCAXfCUZNk) | Legenda original | [Abrir](jrCAXfCUZNk.md) |
 | [Muay Thai \| Teep/Push Kick Series (Part 1: Basic Teeps)](https://www.youtube.com/watch?v=lQI8khlwsao) | Legenda original | [Abrir](lQI8khlwsao.md) |
-| [Muay Thai Essentials - How to wrap your hands](https://www.youtube.com/watch?v=SSMu3x3-ejI) | Sem fala utilizável | — |
-| [Muay Thai Essentials - Check kick defence](https://www.youtube.com/watch?v=JPsbtvEWKmc) | Sem fala utilizável | — |
-| [Muay Thai Essentials - Basic Teep (Push kick)](https://www.youtube.com/watch?v=FJ2NM1XFluE) | Sem fala utilizável | — |
 | [Muay Thai \| Teep/Push Kick Series (Part 2: Advanced) - Thrust Teep](https://www.youtube.com/watch?v=0AQHSBFXBaU) | Legenda original | [Abrir](0AQHSBFXBaU.md) |
 | [Handwrapping Technique for Muay Thai (2 Versions)](https://www.youtube.com/watch?v=T8lsBQY0h-Y) | Legenda original | [Abrir](T8lsBQY0h-Y.md) |
 | [100 CLUB WORKOUT! Muay Thai Conditioning Circuit](https://www.youtube.com/watch?v=uUDaosUdopQ) | Legenda original | [Abrir](uUDaosUdopQ.md) |
@@ -35,7 +32,6 @@ A skill `youtube-transcribe` foi avaliada: seu fluxo de ASR por API exige `ASR_A
 | [Muaythai Fake Switch Kick or Knee](https://www.youtube.com/watch?v=J64IawvQGRA) | Legenda original | [Abrir](J64IawvQGRA.md) |
 | [Muay Thai Conditioning Circuit - Bodyweight Exercises](https://www.youtube.com/watch?v=8BUoGsmIJmY) | Legenda original | [Abrir](8BUoGsmIJmY.md) |
 | [Muaythai Fake Rear Punch](https://www.youtube.com/watch?v=GIBApNDLbpo) | Legenda original | [Abrir](GIBApNDLbpo.md) |
-| [Training to become Sagat!](https://www.youtube.com/watch?v=CWJ3zhdaI6A) | Sem fala utilizável | — |
 | [Muay Thai Home Training - Shadow Combinations](https://www.youtube.com/watch?v=89gzKhYm8Ds) | Legenda original | [Abrir](89gzKhYm8Ds.md) |
 | [Home Conditioning and Endurance Circuit - Bodyweight Exercises](https://www.youtube.com/watch?v=S93jQuFU9qU) | Legenda original | [Abrir](S93jQuFU9qU.md) |
 | [Muay Thai at Home - Quick Footwork](https://www.youtube.com/watch?v=TQ02jJ82J1U) | Legenda original | [Abrir](TQ02jJ82J1U.md) |
@@ -111,7 +107,6 @@ A skill `youtube-transcribe` foi avaliada: seu fluxo de ASR por API exige `ASR_A
 | [FULL MUAYTHAI CLASS: ELBOWS AND KNEES (30 minutes \| No Equipment \| All Levels \| Home Friendly)](https://www.youtube.com/watch?v=SEPIVZOCYcE) | Legenda original | [Abrir](SEPIVZOCYcE.md) |
 | [FULL MUAYTHAI CLASS: Kicks \| No Equipment \| 30 Mins](https://www.youtube.com/watch?v=rJMIyA0LKbo) | Legenda original | [Abrir](rJMIyA0LKbo.md) |
 | [20 MIN BOXING CLASS - No equipment, Home and Beginner Friendly.](https://www.youtube.com/watch?v=C8k15mfE7zw) | Legenda original | [Abrir](C8k15mfE7zw.md) |
-| [Beginner Muay Thai Class - Stance, Jab Cross, Push Kicks aka Teeps (Class 1/3)](https://www.youtube.com/watch?v=2v7_J170PMQ) | Acesso de membro | — |
 | [Beginner Muay Thai Class - Hooks, Knees, Elbows + Recap of class 1 (Class 2/3)](https://www.youtube.com/watch?v=h-f5Ijd1le4) | Legenda original | [Abrir](h-f5Ijd1le4.md) |
 | [Beginner Muay Thai Class (Class 3/3) - Uppercuts + Roundhouse Kicks + Recap of class 1 & 2](https://www.youtube.com/watch?v=TUnlgE1zBCQ) | Legenda original | [Abrir](TUnlgE1zBCQ.md) |
 | [Muaythai At Home [Intermediate - Advance] - Full Class / Spinning Elbows](https://www.youtube.com/watch?v=VPA2ckUffuw) | Legenda original | [Abrir](VPA2ckUffuw.md) |
@@ -129,25 +124,14 @@ A skill `youtube-transcribe` foi avaliada: seu fluxo de ASR por API exige `ASR_A
 | [Muaythai High Intensity Workout - Home & Small Space Friendly, No Equipment.](https://www.youtube.com/watch?v=ruZSEalcR9k) | Legenda original | [Abrir](ruZSEalcR9k.md) |
 | [MUAY THAI WORKOUT - Striking + Bodyweight Exercises ; 15 Minutes](https://www.youtube.com/watch?v=zaVteJ7gxdI) | Legenda original | [Abrir](zaVteJ7gxdI.md) |
 | [MUAYTHAI CLINCH CLASS - Clinching 101s, Hand and Body Positioning, Specific Holds.](https://www.youtube.com/watch?v=oKkC4KIK3yY) | Legenda original | [Abrir](oKkC4KIK3yY.md) |
-| [MUAYTHAI BASICS HOW TO: Rear Roundhouse Kick (On a Bag) \| BEGINNER MUAYTHAI](https://www.youtube.com/watch?v=6hR_nTVVGDM) | Acesso de membro | — |
-| [MUAYTHAI BASICS HOW TO: Lead Switch Roundhouse Kick (On a Bag) \| BEGINNER MUAYTHAI](https://www.youtube.com/watch?v=G6tlOYT346Y) | Acesso de membro | — |
-| [MUAYTHAI BAG WORKOUT - 10 Minutes](https://www.youtube.com/watch?v=XeM15r0hogg) | Acesso de membro | — |
 | [YOUR FIRST MUAYTHAI CLASS - Stance , Rhythm & Basic Footwork](https://www.youtube.com/watch?v=BRJy0lhOKt4) | Legenda original | [Abrir](BRJy0lhOKt4.md) |
-| [How to Angle + Combos with Angles \| BEGINNER MUAYTHAI](https://www.youtube.com/watch?v=m5Vfu6Mg3S0) | Acesso de membro | — |
-| [Muaythai for Newbies - Punches (All Basic Punches + Follow Along Combinations)](https://www.youtube.com/watch?v=ijeaUbuZNHI) | Acesso de membro | — |
 | [MUAYTHAI SHADOW BOXING CLASS (Home & Small Space Friendly)](https://www.youtube.com/watch?v=oFKZQVw9rno) | Legenda original | [Abrir](oFKZQVw9rno.md) |
-| [LEARN KNEES \|Technique Tutorial - Muaythai Basic for Newbies (Rear Knee, Switch Knee & Step Up Knee)](https://www.youtube.com/watch?v=eagKESe_RaQ) | Acesso de membro | — |
 | [20 MINS MUAYTHAI SHADOWBOXING CLASS - Knees & Elbows (No Equipment)](https://www.youtube.com/watch?v=vTVyY5CcbiM) | Legenda original | [Abrir](vTVyY5CcbiM.md) |
 | [20 MIN MUAYTHAI CLASS - Combination Footwork Focused (How to execute strikes forward and backwards)](https://www.youtube.com/watch?v=FLvlGg7_2Vo) | Legenda original | [Abrir](FLvlGg7_2Vo.md) |
 | [10 MINUTE MUAYTHAI WARM UP - Skipping & Bodyweight Exercises](https://www.youtube.com/watch?v=qRurrKOiyNE) | Legenda original | [Abrir](qRurrKOiyNE.md) |
-| [Muaythai Newbies - How to Shadow Box?](https://www.youtube.com/watch?v=PwIJu3F4dFE) | Acesso de membro | — |
-| [MUAYTHAI CLASS - How to Teep / Push Kick + Shadow Box Combinations](https://www.youtube.com/watch?v=HLY-XI4lxW8) | Acesso de membro | — |
 | [MUAYTHAI FOLLOW ALONG CLASS - 15 mins, Shadow Boxing](https://www.youtube.com/watch?v=a5vsvuM46ks) | Legenda original | [Abrir](a5vsvuM46ks.md) |
 | [MUAY THAI AT HOME - Follow Along 15 Minutes Class \| Defence + Shadow Boxing](https://www.youtube.com/watch?v=pkTgvKA87tE) | Legenda original | [Abrir](pkTgvKA87tE.md) |
-| [Welcome to Muaythai - Your First Class (members only)](https://www.youtube.com/watch?v=e86SylXMZb4) | Acesso de membro | — |
 | [MUAY THAI + BODYWEIGHT HIIT CLASS \| 20 Mins , Follow Along](https://www.youtube.com/watch?v=d65B2TXBXLo) | Legenda original | [Abrir](d65B2TXBXLo.md) |
-| [Faking the Push Kick - How To and Examples of Use (members only)](https://www.youtube.com/watch?v=PEVMT-Rarhg) | Acesso de membro | — |
-| [How to Fake the Roundhouse Kicks (members only)](https://www.youtube.com/watch?v=zx8fBg7xCI8) | Acesso de membro | — |
 | [MUAY THAI CLASS - Faking the Body Kicks (Shadow Boxing Combinations, Follow Along)](https://www.youtube.com/watch?v=QvXUiTpf744) | Legenda original | [Abrir](QvXUiTpf744.md) |
 | [Padholding for Roundhouse Kicks + Tips on How to Kick the Pads](https://www.youtube.com/watch?v=1mqSjniwaQY) | Legenda original | [Abrir](1mqSjniwaQY.md) |
 | [BEGINNER MUAY THAI WORKOUT \| 30 Min Shadowboxing Class (No Equipment)](https://www.youtube.com/watch?v=z37V3X6tPG4) | Legenda original | [Abrir](z37V3X6tPG4.md) |

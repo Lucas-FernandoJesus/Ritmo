@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { getExerciseDemo } from './exercise-demos'
-import { getMuayPractices } from './muay-exercises'
+import { getMuayPracticeRecommendation, getMuayPractices } from './muay-exercises'
 import { clampTrainingWeek, getMuayThaiGuide, getStrengthGuide, getTrainingPlanWeek, trainingBlocks, trainingPlanWeeks } from './training-plan'
 
 describe('plano de evolução dos treinos', () => {
@@ -50,14 +50,25 @@ describe('plano de evolução dos treinos', () => {
     expect(minimum.steps.some((step) => step.title === 'Marcha confortável')).toBe(true)
   })
 
-  it('mantém o Muay Thai técnico sem contato e sem progressão automática de impacto', () => {
-    for (const week of [1, 8, 12, 16, 20, 24]) {
-      const text = JSON.stringify(getMuayThaiGuide('muay-mon', week, 'normal')).toLowerCase()
-      expect(text).toContain('sem contato')
-      expect(text).toContain('sem saco')
-      expect(text).toContain('sem movimentos explosivos')
-      expect(text).not.toContain('golpes fortes no saco')
+  it('libera modalidades e progride impacto e potência do braço esquerdo de forma gradual', () => {
+    const guides = [1, 8, 12, 16, 20, 24].map((week) =>
+      JSON.stringify(getMuayThaiGuide('muay-mon', week, 'normal')).toLowerCase(),
+    )
+
+    for (const text of guides) {
+      expect(text).toContain('braço esquerdo')
+      expect(text).toContain('dor')
+      expect(text).not.toContain('liberação específica')
     }
+
+    expect(guides[0]).toContain('sombra')
+    expect(guides[1]).toContain('saco ou manopla')
+    expect(guides[1]).toContain('contato técnico leve')
+    expect(guides[2]).toContain('uma variável por vez')
+    expect(guides[3]).toContain('impacto moderado')
+    expect(guides[4]).toContain('modalidade escolhida')
+    expect(guides[5]).toContain('parceiro')
+    expect(guides[5]).toContain('não teste potência máxima')
   })
 
   it('limita a semana persistida aos limites do plano', () => {
@@ -87,6 +98,7 @@ describe('plano de evolução dos treinos', () => {
     expect(getMuayPractices(1, 'muay-mon', 'normal').map((item) => item.id)).toEqual(['base', 'directions', 'return', 'knee'])
     expect(getMuayPractices(12, 'muay-mon', 'normal').map((item) => item.id)).toContain('check')
     expect(getMuayPractices(24, 'muay-mon', 'normal').map((item) => item.id)).toContain('shadow')
+    expect(getMuayPractices(16, 'muay-mon', 'normal').map((item) => item.id)).toContain('roundhouse')
     expect(getMuayPractices(24, 'muay-fri', 'normal').map((item) => item.id)).toEqual(['base', 'directions'])
     expect(getMuayPractices(24, 'muay-mon', 'minimo').map((item) => item.id)).toEqual(['base'])
     for (const week of [1, 5, 9, 13, 17, 21]) {
@@ -94,6 +106,43 @@ describe('plano de evolução dos treinos', () => {
         expect(practice.videoUrl).toMatch(/^https:\/\/www\.youtube\.com\/watch\?v=[\w-]{11}/)
       }
     }
+  })
+
+  it('descreve nível, pré-requisitos e critérios observáveis nas práticas de Muay Thai', () => {
+    const practices = getMuayPractices(20, 'muay-mon', 'normal')
+    for (const practice of practices) {
+      expect(practice.modality).toBe('sombra')
+      expect(['fundamento', 'desenvolvimento', 'integração']).toContain(practice.level)
+      expect(practice.qualityCriteria.length).toBeGreaterThanOrEqual(2)
+      expect(practice.repeatWhen.length).toBeGreaterThan(25)
+      expect(practice.advanceWhen.length).toBeGreaterThan(25)
+    }
+
+    const roundhouse = practices.find((practice) => practice.id === 'roundhouse')
+    expect(roundhouse?.prerequisites).toEqual(['base', 'directions', 'return', 'teep'])
+    expect(roundhouse?.instructions.toLowerCase()).toContain('sem potência')
+    expect(roundhouse?.attention.toLowerCase()).toContain('equilíbrio')
+  })
+
+  it('recomenda repetir ou avançar somente a partir do registro explícito do usuário', () => {
+    const pending = getMuayPracticeRecommendation('roundhouse', {
+      base: 'confortavel', directions: 'confortavel', return: 'praticado', teep: 'confortavel',
+    })
+    expect(pending.kind).toBe('prerequisites')
+    expect(pending.unmetPrerequisites).toEqual(['return'])
+
+    const repeat = getMuayPracticeRecommendation('roundhouse', {
+      base: 'confortavel', directions: 'confortavel', return: 'confortavel', teep: 'confortavel', roundhouse: 'repetir',
+    })
+    expect(repeat.kind).toBe('repeat')
+
+    const advance = getMuayPracticeRecommendation('roundhouse', {
+      base: 'confortavel', directions: 'confortavel', return: 'confortavel', teep: 'confortavel', roundhouse: 'confortavel',
+    })
+    expect(advance.kind).toBe('advance')
+
+    const untouched = getMuayPracticeRecommendation('roundhouse', {})
+    expect(untouched.kind).not.toBe('advance')
   })
 
   it('oferece demonstração individual para todos os exercícios das 24 semanas e da versão mínima', () => {

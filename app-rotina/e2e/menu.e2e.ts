@@ -35,7 +35,7 @@ for (const theme of ['light', 'dark'] as const) test(`menu em tela cheia, teclad
     await expect(menu.getByRole('button', { name: 'Financeiro', exact: true })).toBeFocused()
     await expect(menu.getByRole('heading', { name: 'Menu principal' })).toHaveCount(0)
     const choices = menu.getByRole('navigation').getByRole('button')
-    expect(await choices.allTextContents()).toEqual(['Hoje', 'Semana', 'Treinos', 'Registros', 'Financeiro', 'Progresso', 'Ajustes'])
+    expect(await choices.allTextContents()).toEqual(['Hoje', 'Semana', 'Treinos', 'Nutrição', 'Registros', 'Financeiro', 'Progresso', 'Ajustes'])
     await expect(menu.locator('nav svg')).toHaveCount(0)
     expect(await menu.evaluate((element) => getComputedStyle(element).backgroundColor)).toMatch(/rgba\(.+,\s*0\.[1-9]/)
     await expect(menu.locator('.main-menu-content')).toHaveCSS('transform', 'none')

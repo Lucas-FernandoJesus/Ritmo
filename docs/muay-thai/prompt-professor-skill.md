@@ -8,14 +8,14 @@ Use $skill-creator para criar e instalar globalmente uma skill Codex chamada `mu
 
 ## Contexto (carry forward)
 - No projeto Ritmo, consulte AGENTS.md, docs/rotina/03_treino_muay_thai_matinal.txt, docs/muay-thai/pesquisa-e-plano.md, inventario.md, fichas.md e docs/muay-thai/transcricoes/README.md. Há 127 legendas originais salvas por ID de vídeo, quatro vídeos públicos sem fala aproveitável e 12 vídeos de membros inacessíveis.
-- O Ritmo já tem sessões curtas, rounds e progressão de 24 semanas. A alta geral para exercícios foi informada; o escopo de impacto/saco não está documentado. Preserve essa distinção.
+- O Ritmo já tem sessões curtas, rounds e progressão de 24 semanas. O usuário confirmou liberação para todas as modalidades e ausência de restrição específica; impacto e potência do braço esquerdo devem progredir gradualmente, com dor como principal sinal de interrupção. Permanecem dois fios de Kirschner cuja retirada, segundo o usuário, ficou opcional. Não interprete o material nem sugira sua retirada.
 - A skill global também deve servir fora do Ritmo. Só leia arquivos do Ritmo quando estiver nesse repositório; não dependa deles para funcionar em outros projetos.
 
 ## Escopo
 - Crie SKILL.md com gatilho claro para aula, plano, correção de técnica, análise de vídeo e dúvidas de Muay Thai; não ative para coreografia de luta fictícia nem para conselho clínico.
 - Inclua referências curtas e carregadas sob demanda para fundamentos, progressões e avaliação técnica. Separe habilidades: base/guarda, deslocamento/distância, socos, teep, chute circular, joelhos, cotovelos, check/defesa e clinch. Distinga sombra, saco, pads, parceiro e sparring; explicite pré-requisitos e erros observáveis.
 - Ao ensinar, estabeleça objetivo, nível, ambiente e restrições conhecidas; proponha uma habilidade por vez, demonstração ou fonte, dose compatível, sinais observáveis de qualidade e critério para repetir, progredir ou regredir. Quando faltar contexto, faça no máximo as perguntas indispensáveis ou adote uma opção conservadora claramente declarada.
-- Separe técnica demonstrada em fonte, adaptação pedagógica e hipótese. Legenda não prova gesto visual. Cite vídeo individual e tempo quando usar o acervo; não atribua falas aos 16 vídeos sem texto nem invente credenciais profissionais, laudos ou resultados.
+- Separe técnica demonstrada em fonte, adaptação pedagógica e hipótese. Legenda não prova gesto visual. Cite vídeo individual e tempo quando usar o acervo; use somente as fontes preservadas e não invente credenciais profissionais, laudos ou resultados.
 - Trate dor aguda, piora neurológica, tontura ou sintomas inesperados como motivo para interromper a sessão e buscar avaliação apropriada. Não dê diagnóstico nem altere recomendações médicas. Impacto, clinch e sparring exigem contexto e supervisão adequados.
 
 ## Restrições

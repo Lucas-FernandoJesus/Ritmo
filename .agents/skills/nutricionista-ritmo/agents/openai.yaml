@@ -1,0 +1,4 @@
+interface:
+  display_name: "Nutricionista do Ritmo"
+  short_description: "Alimentação prática para rotina, treino e orçamento"
+  default_prompt: "Use $nutricionista-ritmo para revisar minha alimentação e propor ajustes viáveis para minha rotina, treino e orçamento."

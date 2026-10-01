@@ -10,6 +10,8 @@ export type AppDataSource = Pick<typeof repository,
   | 'getExpenses'
   | 'getStudyLogs'
   | 'getProgress'
+  | 'getBodyMeasurements'
+  | 'getMealLogs'
   | 'getFinancialRecords'
   | 'getFinancialGoals'
   | 'getCategoryBudgets'
@@ -21,7 +23,7 @@ export type AppDataSource = Pick<typeof repository,
 
 export async function loadAppData(source: AppDataSource, dateKey: string) {
   await source.initialize()
-  const [settings, completions, dailySnapshots, checkIn, deliveryShifts, expenses, studyLogs, progress, financialRecords, financialGoals, categoryBudgets, recurringPlans, installmentPlans, accounts, transfers] = await Promise.all([
+  const [settings, completions, dailySnapshots, checkIn, deliveryShifts, expenses, studyLogs, progress, bodyMeasurements, mealLogs, financialRecords, financialGoals, categoryBudgets, recurringPlans, installmentPlans, accounts, transfers] = await Promise.all([
     source.getSettings(),
     source.getCompletions(),
     source.getDailySnapshots(),
@@ -30,6 +32,8 @@ export async function loadAppData(source: AppDataSource, dateKey: string) {
     source.getExpenses(),
     source.getStudyLogs(),
     source.getProgress(),
+    source.getBodyMeasurements(),
+    source.getMealLogs(),
     source.getFinancialRecords(),
     source.getFinancialGoals(),
     source.getCategoryBudgets(),
@@ -48,6 +52,8 @@ export async function loadAppData(source: AppDataSource, dateKey: string) {
     expenses,
     studyLogs,
     progress,
+    bodyMeasurements,
+    mealLogs,
     financialRecords,
     financialGoals,
     categoryBudgets,

@@ -1,4 +1,4 @@
-import type { AccountTransfer, AppSettings, AssetAccount, BackupData, CategoryBudget, DailyCheckIn, DailyCompletion, DailyPlanSnapshot, DailyProgressSummary, DeliveryShift, Expense, FinancialGoal, FinancialRecord, InstallmentPlan, PaymentMethod, RecurringPlan, RoutineItem, RoutineMode, StudyLog, ThirtyDayProgress, WeeklyProgressSummary } from './types'
+import type { AccountTransfer, AppSettings, AssetAccount, BackupData, BodyMeasurement, CategoryBudget, DailyCheckIn, DailyCompletion, DailyPlanSnapshot, DailyProgressSummary, DeliveryShift, Expense, FinancialGoal, FinancialRecord, InstallmentPlan, MealLog, PaymentMethod, RecurringPlan, RoutineItem, RoutineMode, StudyLog, ThirtyDayProgress, WeeklyProgressSummary } from './types'
 import { anchoredMonth, occurrenceId, recurringDate } from './finance-schedule'
 
 export const SCHEMA_VERSION = 1
@@ -17,6 +17,8 @@ const completionStates = ['done', 'skipped'] as const
 const progressStates = ['pending', 'done'] as const
 const routineAreas = ['sono', 'saude', 'trabalho', 'treino', 'alimentacao', 'casa', 'estudos', 'financas', 'delivery', 'lazer'] as const
 const routineNatures = ['fixa', 'flexivel', 'opcional'] as const
+const mealSlots = ['breakfast', 'lunch', 'snack', 'dinner'] as const
+const mealOutcomes = ['with-protein', 'without-protein', 'skipped'] as const
 
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -242,7 +244,7 @@ export function calculateDelivery(input: Pick<DeliveryShift, 'grossRevenue' | 'f
 }
 
 export function defaultSettings(): AppSettings {
-  return { id: 'settings', scheduleOverrides: {}, disabledActivities: [], preferredMode: 'normal', trainingWeek: 1, theme: 'dark', appearanceVersion: 2, schemaVersion: SCHEMA_VERSION }
+  return { id: 'settings', scheduleOverrides: {}, disabledActivities: [], preferredMode: 'normal', trainingWeek: 1, muayProgress: {}, theme: 'dark', appearanceVersion: 2, schemaVersion: SCHEMA_VERSION }
 }
 
 export function upgradeAppearance(settings: AppSettings): AppSettings {
@@ -277,6 +279,7 @@ export function isValidSettings(value: unknown): value is AppSettings {
     || value.schemaVersion !== SCHEMA_VERSION
     || !isOneOf(value.preferredMode, routineModes)
     || (value.trainingWeek !== undefined && (!Number.isInteger(value.trainingWeek) || !isFiniteNumber(value.trainingWeek) || value.trainingWeek < 1 || value.trainingWeek > 24))
+    || (value.muayProgress !== undefined && (!isObject(value.muayProgress) || !Object.entries(value.muayProgress).every(([id, status]) => isSafeId(id) && isOneOf(status, ['praticado', 'confortavel', 'repetir'] as const))))
     || (value.theme !== undefined && !isOneOf(value.theme, ['system', 'light', 'dark'] as const))
     || (value.appearanceVersion !== undefined && value.appearanceVersion !== 2)
     || !Array.isArray(value.disabledActivities)
@@ -513,6 +516,59 @@ export function isValidProgress(value: unknown): value is ThirtyDayProgress {
   return value.state === 'done' ? isDateTime(value.completedAt) : value.completedAt === undefined
 }
 
+export function isValidBodyMeasurement(value: unknown): value is BodyMeasurement {
+  return isObject(value)
+    && isLocalDate(value.localDate)
+    && value.id === value.localDate
+    && isFiniteNumber(value.weightKg)
+    && value.weightKg >= 30
+    && value.weightKg <= 400
+    && Number.isInteger(value.weightKg * 10)
+    && (value.waistCm === undefined || (isFiniteNumber(value.waistCm) && value.waistCm >= 30 && value.waistCm <= 300 && Number.isInteger(value.waistCm * 10)))
+    && isDateTime(value.createdAt)
+    && isDateTime(value.updatedAt)
+    && Date.parse(value.updatedAt) >= Date.parse(value.createdAt)
+}
+
+export function summarizeBodyTrend(measurements: readonly Pick<BodyMeasurement, 'localDate' | 'weightKg'>[], today: string) {
+  const round = (value: number) => Math.round(value * 10) / 10
+  const average = (values: number[]) => values.length ? round(values.reduce((sum, value) => sum + value, 0) / values.length) : null
+  const currentStart = addLocalDays(today, -6)
+  const previousStart = addLocalDays(today, -13)
+  const previousEnd = addLocalDays(today, -7)
+  const eligible = measurements.filter((item) => item.localDate <= today).sort((a, b) => a.localDate.localeCompare(b.localDate))
+  const currentAverageKg = average(eligible.filter((item) => item.localDate >= currentStart).map((item) => item.weightKg))
+  const previousAverageKg = average(eligible.filter((item) => item.localDate >= previousStart && item.localDate <= previousEnd).map((item) => item.weightKg))
+  return {
+    latestWeightKg: eligible.at(-1)?.weightKg ?? null,
+    currentAverageKg,
+    previousAverageKg,
+    weeklyChangeKg: currentAverageKg === null || previousAverageKg === null ? null : round(currentAverageKg - previousAverageKg),
+  }
+}
+
+export function isValidMealLog(value: unknown): value is MealLog {
+  return isObject(value)
+    && isLocalDate(value.localDate)
+    && isOneOf(value.meal, mealSlots)
+    && value.id === `${value.localDate}:${value.meal}`
+    && isOneOf(value.outcome, mealOutcomes)
+    && isOptionalString(value.note, 500)
+    && isDateTime(value.createdAt)
+    && isDateTime(value.updatedAt)
+    && Date.parse(value.updatedAt) >= Date.parse(value.createdAt)
+}
+
+export function summarizeMealDay(logs: readonly Pick<MealLog, 'localDate' | 'outcome'>[], localDate: string) {
+  const daily = logs.filter((item) => item.localDate === localDate)
+  return {
+    registered: daily.length,
+    proteinMeals: daily.filter((item) => item.outcome === 'with-protein').length,
+    mealsEaten: daily.filter((item) => item.outcome !== 'skipped').length,
+    skipped: daily.filter((item) => item.outcome === 'skipped').length,
+  }
+}
+
 export function validateBackup(value: unknown): value is BackupData {
   if (!isObject(value)
     || value.schemaVersion !== SCHEMA_VERSION
@@ -523,6 +579,8 @@ export function validateBackup(value: unknown): value is BackupData {
     || !Array.isArray(value.expenses)
     || !Array.isArray(value.studyLogs)
     || !Array.isArray(value.progress)
+    || (value.bodyMeasurements !== undefined && !Array.isArray(value.bodyMeasurements))
+    || (value.mealLogs !== undefined && !Array.isArray(value.mealLogs))
     || (value.financialRecords !== undefined && !Array.isArray(value.financialRecords))
     || (value.financialGoals !== undefined && !Array.isArray(value.financialGoals))
     || (value.categoryBudgets !== undefined && !Array.isArray(value.categoryBudgets))
@@ -538,7 +596,9 @@ export function validateBackup(value: unknown): value is BackupData {
   const financialGoals = value.financialGoals ?? []
   const categoryBudgets = value.categoryBudgets ?? []
   const recurringPlans = value.recurringPlans ?? [], installmentPlans = value.installmentPlans ?? [], assetAccounts = value.assetAccounts ?? [], accountTransfers = value.accountTransfers ?? []
-  const groups = [value.completions, dailySnapshots, value.checkIns, value.deliveryShifts, value.expenses, financialRecords, financialGoals, categoryBudgets, recurringPlans, installmentPlans, assetAccounts, accountTransfers, value.studyLogs, value.progress]
+  const bodyMeasurements = value.bodyMeasurements ?? []
+  const mealLogs = value.mealLogs ?? []
+  const groups = [value.completions, dailySnapshots, value.checkIns, value.deliveryShifts, value.expenses, financialRecords, financialGoals, categoryBudgets, recurringPlans, installmentPlans, assetAccounts, accountTransfers, value.studyLogs, value.progress, bodyMeasurements, mealLogs]
   if (groups.some((items) => items.length > MAX_RECORDS_PER_STORE)) return false
   if (!value.completions.every(isValidCompletion)
     || !dailySnapshots.every(isValidDailyPlanSnapshot)
@@ -551,7 +611,9 @@ export function validateBackup(value: unknown): value is BackupData {
     || !recurringPlans.every(isValidRecurringPlan) || !installmentPlans.every(isValidInstallmentPlan)
     || !assetAccounts.every(isValidAssetAccount) || !accountTransfers.every(isValidAccountTransfer)
     || !value.studyLogs.every(isValidStudyLog)
-    || !value.progress.every(isValidProgress)) return false
+    || !value.progress.every(isValidProgress)
+    || !bodyMeasurements.every(isValidBodyMeasurement)
+    || !mealLogs.every(isValidMealLog)) return false
 
   const shiftIds = new Set(value.deliveryShifts.map((item) => item.id))
   if ([...value.expenses, ...financialRecords].some((item) => item.deliveryShiftId !== undefined && !shiftIds.has(item.deliveryShiftId))) return false
@@ -568,6 +630,8 @@ export function validateBackup(value: unknown): value is BackupData {
     && hasUnique(assetAccounts, (item) => item.id) && hasUnique(accountTransfers, (item) => item.id)
     && hasUnique(value.studyLogs, (item) => item.id)
     && hasUnique(value.progress, (item) => item.id)
+    && hasUnique(bodyMeasurements, (item) => item.id)
+    && hasUnique(mealLogs, (item) => item.id)
 }
 
 export function formatMoney(value: number | null): string {

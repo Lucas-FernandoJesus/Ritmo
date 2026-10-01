@@ -14,6 +14,17 @@ test('exporta um backup JSON válido e restaura os dados pela interface', async 
   await page.getByRole('button', { name: `Concluir ${strengthActivity}` }).click()
   await expect(page.getByRole('button', { name: `Desmarcar ${strengthActivity}` })).toBeVisible()
 
+  await goToTab(page, 'Nutrição')
+  const measurementForm = page.getByRole('form', { name: 'Registrar medidas' })
+  await measurementForm.getByLabel('Peso').fill('100')
+  await measurementForm.getByLabel('Cintura').fill('110.5')
+  await measurementForm.getByRole('button', { name: 'Salvar medida', exact: true }).click()
+  const mealForm = page.getByRole('form', { name: 'Registrar refeição' })
+  await mealForm.getByLabel('Refeição').selectOption('lunch')
+  await mealForm.getByRole('button', { name: 'Com proteína', exact: true }).click()
+  await mealForm.getByLabel('Observação').fill('Frango, arroz e feijão')
+  await mealForm.getByRole('button', { name: 'Salvar refeição', exact: true }).click()
+
   await goToTab(page, 'Ajustes')
   const downloadPromise = page.waitForEvent('download')
   await page.getByRole('button', { name: 'Exportar backup JSON', exact: true }).click()
@@ -29,6 +40,8 @@ test('exporta um backup JSON válido e restaura os dados pela interface', async 
     settings?: { preferredMode?: string }
     completions?: Array<{ routineItemId?: string, state?: string }>
     dailySnapshots?: Array<{ localDate?: string, mode?: string }>
+    bodyMeasurements?: Array<{ localDate?: string, weightKg?: number, waistCm?: number }>
+    mealLogs?: Array<{ localDate?: string, meal?: string, outcome?: string, note?: string }>
   }
 
   expect(backup.schemaVersion).toBeGreaterThan(0)
@@ -41,6 +54,8 @@ test('exporta um backup JSON válido e restaura os dados pela interface', async 
   expect(backup.dailySnapshots).toHaveLength(7)
   expect(backup.dailySnapshots).toContainEqual(expect.objectContaining({ localDate: '2026-09-21', mode: 'normal' }))
   expect(backup.dailySnapshots).toContainEqual(expect.objectContaining({ localDate: '2026-09-22', mode: 'reduzido' }))
+  expect(backup.bodyMeasurements).toContainEqual(expect.objectContaining({ localDate: '2026-09-22', weightKg: 100, waistCm: 110.5 }))
+  expect(backup.mealLogs).toContainEqual(expect.objectContaining({ localDate: '2026-09-22', meal: 'lunch', outcome: 'with-protein' }))
 
   await goToTab(page, 'Hoje')
   const normalMode = page.getByRole('group', { name: 'Intensidade da rotina' })
@@ -69,6 +84,9 @@ test('exporta um backup JSON válido e restaura os dados pela interface', async 
     .getByRole('button', { name: /^Reduzido/ })).toHaveAttribute('aria-pressed', 'true')
   await page.getByRole('region', { name: 'Ao longo do dia' }).getByRole('button', { name: 'Ver dia inteiro' }).click()
   await expect(page.getByRole('button', { name: `Desmarcar ${strengthActivity}` })).toHaveAttribute('aria-pressed', 'true')
+  await goToTab(page, 'Nutrição')
+  await expect(page.getByRole('row', { name: /22\/09\/2026 100,0 kg 110,5 cm/ })).toBeVisible()
+  await expect(page.getByRole('row', { name: /22\/09\/2026 Almoço Com proteína Frango, arroz e feijão/ })).toBeVisible()
 
   const restoredSnapshots = await page.evaluate(async () => new Promise<Array<{ localDate?: string, mode?: string }>>((resolve, reject) => {
     const request = indexedDB.open('rotina-local')

@@ -19,4 +19,4 @@ Ao revisar execução, nomeie o trecho e o ângulo observado. Se possível, peç
 3. Dê uma tarefa simples para a próxima repetição (por exemplo, pausar após o teep e conferir se voltou à base), com um sinal verificável.
 4. Explique quando repetir, simplificar ou levar a um professor presencial. Para correção de contato, clinch, pivô/chute complexo ou defesa contra parceiro, a observação remota tem limite real.
 
-Se a legenda divergir do gesto visto, priorize a evidência visual para descrever o movimento e marque a fala como possível erro de transcrição. Se só houver legenda, não descreva o gesto como visto. Ao usar o acervo do Ritmo, os arquivos por ID em `docs/muay-thai/transcricoes/` conservam marcações de tempo e procedência; os 16 casos S/I não sustentam correção técnica.
+Se a legenda divergir do gesto visto, priorize a evidência visual para descrever o movimento e marque a fala como possível erro de transcrição. Se só houver legenda, não descreva o gesto como visto. Ao usar o acervo do Ritmo, os arquivos por ID em `docs/muay-thai/transcricoes/` conservam marcações de tempo e procedência; use apenas fontes presentes nesse acervo utilizável.

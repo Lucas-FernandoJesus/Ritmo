@@ -20,6 +20,23 @@ function validBackup(): BackupData {
 
 const cloneBackup = () => structuredClone(validBackup())
 
+describe('progresso técnico de Muay Thai nos ajustes', () => {
+  it('aceita ajustes antigos sem progresso e um mapa válido sem exigir migração', () => {
+    const legacy = defaultSettings()
+    delete legacy.muayProgress
+    expect(domain.isValidSettings(legacy)).toBe(true)
+    expect(domain.isValidSettings({
+      ...defaultSettings(),
+      muayProgress: { base: 'praticado', directions: 'confortavel', roundhouse: 'repetir' },
+    })).toBe(true)
+  })
+
+  it('rejeita estados desconhecidos ou chaves inseguras no progresso técnico', () => {
+    expect(domain.isValidSettings({ ...defaultSettings(), muayProgress: { base: 'dominado' } })).toBe(false)
+    expect(domain.isValidSettings({ ...defaultSettings(), muayProgress: { '../base': 'praticado' } })).toBe(false)
+  })
+})
+
 const progressDomain = domain as unknown as {
   createDailyPlanSnapshot: (...args: unknown[]) => {
     id: string
@@ -360,5 +377,83 @@ describe('regras críticas', () => {
     const pendingWithDate = cloneBackup()
     pendingWithDate.progress[0].state = 'pending'
     expect(validateBackup(pendingWithDate)).toBe(false)
+  })
+
+  it('valida medidas corporais dentro de limites seguros e com identidade diária', () => {
+    const measurementDomain = domain as typeof domain & {
+      isValidBodyMeasurement?: (value: unknown) => boolean
+    }
+    const valid = { id: '2026-10-01', localDate: '2026-10-01', weightKg: 100, waistCm: 110.5, createdAt: '2026-10-01T10:00:00.000Z', updatedAt: '2026-10-01T10:00:00.000Z' }
+
+    expect(measurementDomain.isValidBodyMeasurement?.(valid)).toBe(true)
+    expect(measurementDomain.isValidBodyMeasurement?.({ ...valid, id: 'outro-dia' })).toBe(false)
+    expect(measurementDomain.isValidBodyMeasurement?.({ ...valid, weightKg: 0 })).toBe(false)
+    expect(measurementDomain.isValidBodyMeasurement?.({ ...valid, waistCm: 0 })).toBe(false)
+    expect(measurementDomain.isValidBodyMeasurement?.({ ...valid, waistCm: undefined })).toBe(true)
+  })
+
+  it('compara a média móvel dos últimos sete dias com os sete anteriores', () => {
+    const measurementDomain = domain as typeof domain & {
+      summarizeBodyTrend?: (measurements: Array<{ localDate: string, weightKg: number }>, today: string) => unknown
+    }
+    const measurements = [
+      { localDate: '2026-10-01', weightKg: 100.4 },
+      { localDate: '2026-10-04', weightKg: 100 },
+      { localDate: '2026-10-07', weightKg: 99.6 },
+      { localDate: '2026-10-08', weightKg: 99.4 },
+      { localDate: '2026-10-10', weightKg: 99 },
+      { localDate: '2026-10-14', weightKg: 98.6 },
+    ]
+
+    expect(measurementDomain.summarizeBodyTrend?.(measurements, '2026-10-14')).toEqual({
+      latestWeightKg: 98.6,
+      currentAverageKg: 99,
+      previousAverageKg: 100,
+      weeklyChangeKg: -1,
+    })
+  })
+
+  it('aceita medidas opcionais em backups novos sem exigi-las nos antigos', () => {
+    const withMeasurements = {
+      ...validBackup(),
+      bodyMeasurements: [{ id: '2026-10-01', localDate: '2026-10-01', weightKg: 100, waistCm: 110, createdAt: '2026-10-01T10:00:00.000Z', updatedAt: '2026-10-01T10:00:00.000Z' }],
+    }
+    const duplicated = { ...withMeasurements, bodyMeasurements: [...withMeasurements.bodyMeasurements, { ...withMeasurements.bodyMeasurements[0] }] }
+
+    expect(validateBackup(withMeasurements)).toBe(true)
+    expect(validateBackup(duplicated)).toBe(false)
+  })
+
+  it('valida um único resultado observado para cada refeição do dia', () => {
+    const mealDomain = domain as typeof domain & { isValidMealLog?: (value: unknown) => boolean }
+    const valid = { id: '2026-10-01:lunch', localDate: '2026-10-01', meal: 'lunch', outcome: 'with-protein', note: 'Frango, arroz e feijão', createdAt: '2026-10-01T15:00:00.000Z', updatedAt: '2026-10-01T15:00:00.000Z' }
+
+    expect(mealDomain.isValidMealLog?.(valid)).toBe(true)
+    expect(mealDomain.isValidMealLog?.({ ...valid, id: '2026-10-01:dinner' })).toBe(false)
+    expect(mealDomain.isValidMealLog?.({ ...valid, outcome: 'perfeito' })).toBe(false)
+    expect(mealDomain.isValidMealLog?.({ ...valid, note: 'x'.repeat(501) })).toBe(false)
+  })
+
+  it('resume somente as refeições registradas na data solicitada', () => {
+    const mealDomain = domain as typeof domain & {
+      summarizeMealDay?: (logs: Array<{ localDate: string, outcome: string }>, date: string) => unknown
+    }
+    const logs = [
+      { localDate: '2026-10-01', outcome: 'with-protein' },
+      { localDate: '2026-10-01', outcome: 'without-protein' },
+      { localDate: '2026-10-01', outcome: 'skipped' },
+      { localDate: '2026-09-30', outcome: 'with-protein' },
+    ]
+
+    expect(mealDomain.summarizeMealDay?.(logs, '2026-10-01')).toEqual({ registered: 3, proteinMeals: 1, mealsEaten: 2, skipped: 1 })
+  })
+
+  it('aceita refeições opcionais em backups novos e rejeita identidade duplicada', () => {
+    const meal = { id: '2026-10-01:lunch', localDate: '2026-10-01', meal: 'lunch', outcome: 'with-protein', note: 'Frango, arroz e feijão', createdAt: '2026-10-01T15:00:00.000Z', updatedAt: '2026-10-01T15:00:00.000Z' }
+    const withMeals = { ...validBackup(), mealLogs: [meal] }
+    const duplicated = { ...withMeals, mealLogs: [meal, { ...meal }] }
+
+    expect(validateBackup(withMeals)).toBe(true)
+    expect(validateBackup(duplicated)).toBe(false)
   })
 })

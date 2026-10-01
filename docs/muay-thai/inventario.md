@@ -2,9 +2,9 @@
 
 Pesquisa realizada em 25–26/09/2026, com coleta de transcrições em 30/09/2026. [Voltar ao relatório](./pesquisa-e-plano.md) · [Textos e manifesto](./transcricoes/README.md).
 
-**V**: conteúdo verbal examinado por transcrição ou legendas; texto integral da legenda disponível na pasta de transcrições. **S**: vídeo público reproduzível, sem legenda ou fala aproveitável na tentativa de ASR local. **I**: reprodução indisponível por exigir acesso de membro. Esses estados descrevem esta pesquisa, não a disponibilidade permanente no YouTube. Títulos e durações foram coletados da playlist e dos metadados individuais. A posição é a ordem exibida na playlist.
+**V**: conteúdo verbal examinado por transcrição ou legendas; texto integral da legenda disponível na pasta de transcrições. O inventário conserva somente as fontes utilizáveis no Ritmo. A posição continua sendo a ordem original exibida na playlist, por isso pode haver lacunas.
 
-**Cobertura:** 157 posições nas quatro playlists, 142 URLs únicas; o vídeo adicional totaliza 143 URLs únicas. Há 15 posições repetidas. Foram salvas legendas de **127 vídeos distintos**; **4** ficaram em S e **12** em I. Os 17 vídeos antes classificados S que passaram a V têm observação nas [fichas](./fichas.md). A pesquisa não inferiu o conteúdo de S/I a partir de títulos.
+**Cobertura utilizável:** 141 posições nas quatro playlists, 126 URLs únicas; o vídeo adicional totaliza **127 vídeos distintos**, todos com legenda salva. Há 15 posições repetidas. Fontes sem conteúdo acessível foram retiradas do acervo por decisão do usuário em 01/10/2026.
 
 ## Playlist 1 — [Muay Thai Full Classes](https://www.youtube.com/playlist?list=PL4ZomDpTKLEKk86qgtJ3A0eSGuchgBXR9)
 
@@ -23,14 +23,11 @@ Canal: Martial Spirit: Martial Arts & Fitness. 8 posições.
 
 ## Playlist 2 — [Muay Thai](https://www.youtube.com/playlist?list=PL4ZomDpTKLEI9w6NIz1nQkHwunxB0yxgu)
 
-Canal: Martial Spirit: Martial Arts & Fitness. 62 posições.
+Canal: Martial Spirit: Martial Arts & Fitness. 58 posições utilizáveis.
 
 | Pos. | Vídeo | Duração | Estado | Repetição |
 |---:|---|---:|:---:|---|
 | 1 | [Muay Thai \| Teep/Push Kick Series (Part 1: Basic Teeps)](https://www.youtube.com/watch?v=lQI8khlwsao) | 3:48 | V | — |
-| 2 | [Muay Thai Essentials - How to wrap your hands](https://www.youtube.com/watch?v=SSMu3x3-ejI) | 5:34 | S | — |
-| 3 | [Muay Thai Essentials - Check kick defence](https://www.youtube.com/watch?v=JPsbtvEWKmc) | 1:08 | S | — |
-| 4 | [Muay Thai Essentials - Basic Teep (Push kick)](https://www.youtube.com/watch?v=FJ2NM1XFluE) | 1:21 | S | — |
 | 5 | [Muay Thai \| Teep/Push Kick Series (Part 2: Advanced) - Thrust Teep](https://www.youtube.com/watch?v=0AQHSBFXBaU) | 2:43 | V | — |
 | 6 | [Handwrapping Technique for Muay Thai (2 Versions)](https://www.youtube.com/watch?v=T8lsBQY0h-Y) | 3:35 | V | — |
 | 7 | [100 CLUB WORKOUT! Muay Thai Conditioning Circuit](https://www.youtube.com/watch?v=uUDaosUdopQ) | 2:00 | V | — |
@@ -46,7 +43,6 @@ Canal: Martial Spirit: Martial Arts & Fitness. 62 posições.
 | 17 | [Muaythai Fake Switch Kick or Knee](https://www.youtube.com/watch?v=J64IawvQGRA) | 5:30 | V | — |
 | 18 | [Muay Thai Conditioning Circuit - Bodyweight Exercises](https://www.youtube.com/watch?v=8BUoGsmIJmY) | 2:45 | V | — |
 | 19 | [Muaythai Fake Rear Punch](https://www.youtube.com/watch?v=GIBApNDLbpo) | 7:17 | V | — |
-| 20 | [Training to become Sagat!](https://www.youtube.com/watch?v=CWJ3zhdaI6A) | 0:28 | S | — |
 | 21 | [Muay Thai Home Training - Shadow Combinations](https://www.youtube.com/watch?v=89gzKhYm8Ds) | 16:30 | V | — |
 | 22 | [Muay Thai Home Training - Shadow Combinations](https://www.youtube.com/watch?v=89gzKhYm8Ds) | 16:30 | V | P2-21 |
 | 23 | [Home Conditioning and Endurance Circuit - Bodyweight Exercises](https://www.youtube.com/watch?v=S93jQuFU9qU) | 6:20 | V | — |
@@ -138,7 +134,7 @@ Canal: Global Martial Arts University. 39 posições.
 
 ## Playlist 4 — [Muay Thai Full Classes](https://www.youtube.com/playlist?list=PLjlfZetP0lMLR2Ah3TzyMIR_XK-BALd3v)
 
-Canal: Spring Sia. 48 posições.
+Canal: Spring Sia. 36 posições utilizáveis.
 
 | Pos. | Vídeo | Duração | Estado | Repetição |
 |---:|---|---:|:---:|---|
@@ -151,7 +147,6 @@ Canal: Spring Sia. 48 posições.
 | 7 | [FULL MUAYTHAI CLASS: ELBOWS AND KNEES (30 minutes \| No Equipment \| All Levels \| Home Friendly)](https://www.youtube.com/watch?v=SEPIVZOCYcE) | 31:31 | V | — |
 | 8 | [FULL MUAYTHAI CLASS: Kicks \| No Equipment \| 30 Mins](https://www.youtube.com/watch?v=rJMIyA0LKbo) | 39:13 | V | — |
 | 9 | [20 MIN BOXING CLASS - No equipment, Home and Beginner Friendly.](https://www.youtube.com/watch?v=C8k15mfE7zw) | 22:45 | V | — |
-| 10 | [Beginner Muay Thai Class - Stance, Jab Cross, Push Kicks aka Teeps (Class 1/3)](https://www.youtube.com/watch?v=2v7_J170PMQ) | 16:02 | I | — |
 | 11 | [Beginner Muay Thai Class - Hooks, Knees, Elbows + Recap of class 1 (Class 2/3)](https://www.youtube.com/watch?v=h-f5Ijd1le4) | 15:35 | V | — |
 | 12 | [Beginner Muay Thai Class (Class 3/3) - Uppercuts + Roundhouse Kicks + Recap of class 1 & 2](https://www.youtube.com/watch?v=TUnlgE1zBCQ) | 12:21 | V | — |
 | 13 | [Muaythai At Home [Intermediate - Advance] - Full Class / Spinning Elbows](https://www.youtube.com/watch?v=VPA2ckUffuw) | 27:47 | V | — |
@@ -169,25 +164,14 @@ Canal: Spring Sia. 48 posições.
 | 25 | [Muaythai High Intensity Workout - Home & Small Space Friendly, No Equipment.](https://www.youtube.com/watch?v=ruZSEalcR9k) | 24:04 | V | — |
 | 26 | [MUAY THAI WORKOUT - Striking + Bodyweight Exercises ; 15 Minutes](https://www.youtube.com/watch?v=zaVteJ7gxdI) | 15:25 | V | — |
 | 27 | [MUAYTHAI CLINCH CLASS - Clinching 101s, Hand and Body Positioning, Specific Holds.](https://www.youtube.com/watch?v=oKkC4KIK3yY) | 17:36 | V | — |
-| 28 | [MUAYTHAI BASICS HOW TO: Rear Roundhouse Kick (On a Bag) \| BEGINNER MUAYTHAI](https://www.youtube.com/watch?v=6hR_nTVVGDM) | 6:23 | I | — |
-| 29 | [MUAYTHAI BASICS HOW TO: Lead Switch Roundhouse Kick (On a Bag) \| BEGINNER MUAYTHAI](https://www.youtube.com/watch?v=G6tlOYT346Y) | 6:23 | I | — |
-| 30 | [MUAYTHAI BAG WORKOUT - 10 Minutes](https://www.youtube.com/watch?v=XeM15r0hogg) | 11:32 | I | — |
 | 31 | [YOUR FIRST MUAYTHAI CLASS - Stance , Rhythm & Basic Footwork](https://www.youtube.com/watch?v=BRJy0lhOKt4) | 12:23 | V | — |
-| 32 | [How to Angle + Combos with Angles \| BEGINNER MUAYTHAI](https://www.youtube.com/watch?v=m5Vfu6Mg3S0) | 12:38 | I | — |
-| 33 | [Muaythai for Newbies - Punches (All Basic Punches + Follow Along Combinations)](https://www.youtube.com/watch?v=ijeaUbuZNHI) | 17:38 | I | — |
 | 34 | [MUAYTHAI SHADOW BOXING CLASS (Home & Small Space Friendly)](https://www.youtube.com/watch?v=oFKZQVw9rno) | 20:48 | V | — |
-| 35 | [LEARN KNEES \|Technique Tutorial - Muaythai Basic for Newbies (Rear Knee, Switch Knee & Step Up Knee)](https://www.youtube.com/watch?v=eagKESe_RaQ) | 10:03 | I | — |
 | 36 | [20 MINS MUAYTHAI SHADOWBOXING CLASS - Knees & Elbows (No Equipment)](https://www.youtube.com/watch?v=vTVyY5CcbiM) | 21:51 | V | — |
 | 37 | [20 MIN MUAYTHAI CLASS - Combination Footwork Focused (How to execute strikes forward and backwards)](https://www.youtube.com/watch?v=FLvlGg7_2Vo) | 23:55 | V | — |
 | 38 | [10 MINUTE MUAYTHAI WARM UP - Skipping & Bodyweight Exercises](https://www.youtube.com/watch?v=qRurrKOiyNE) | 12:38 | V | — |
-| 39 | [Muaythai Newbies - How to Shadow Box?](https://www.youtube.com/watch?v=PwIJu3F4dFE) | 5:42 | I | — |
-| 40 | [MUAYTHAI CLASS - How to Teep / Push Kick + Shadow Box Combinations](https://www.youtube.com/watch?v=HLY-XI4lxW8) | 15:51 | I | — |
 | 41 | [MUAYTHAI FOLLOW ALONG CLASS - 15 mins, Shadow Boxing](https://www.youtube.com/watch?v=a5vsvuM46ks) | 17:03 | V | — |
 | 42 | [MUAY THAI AT HOME - Follow Along 15 Minutes Class \| Defence + Shadow Boxing](https://www.youtube.com/watch?v=pkTgvKA87tE) | 16:10 | V | — |
-| 43 | [Welcome to Muaythai - Your First Class (members only)](https://www.youtube.com/watch?v=e86SylXMZb4) | 33:08 | I | — |
 | 44 | [MUAY THAI + BODYWEIGHT HIIT CLASS \| 20 Mins , Follow Along](https://www.youtube.com/watch?v=d65B2TXBXLo) | 20:54 | V | — |
-| 45 | [Faking the Push Kick - How To and Examples of Use (members only)](https://www.youtube.com/watch?v=PEVMT-Rarhg) | 10:09 | I | — |
-| 46 | [How to Fake the Roundhouse Kicks (members only)](https://www.youtube.com/watch?v=zx8fBg7xCI8) | 7:00 | I | — |
 | 47 | [MUAY THAI CLASS - Faking the Body Kicks (Shadow Boxing Combinations, Follow Along)](https://www.youtube.com/watch?v=QvXUiTpf744) | 11:48 | V | — |
 | 48 | [Padholding for Roundhouse Kicks + Tips on How to Kick the Pads](https://www.youtube.com/watch?v=1mqSjniwaQY) | 13:38 | V | — |
 

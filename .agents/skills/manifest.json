@@ -823,8 +823,8 @@
       "files": [
         {
           "path": "SKILL.md",
-          "sha256": "0f5ecdc787d03cae3118baff2573e4c2bc2e5b255d4ff1f2984b43cab7fb198c",
-          "bytes": 3260
+          "sha256": "ae0ae844d7d7d5aa1e3e3c97f746b1c387ea064fff4a236ece152ae5ae9c751d",
+          "bytes": 3182
         }
       ]
     },
@@ -876,8 +876,8 @@
         },
         {
           "path": "references/avaliacao.md",
-          "sha256": "912483bb3b005f06619ad48de742ecc8c7ff5893dcbe08e0487fb0834c3a9cfa",
-          "bytes": 2059
+          "sha256": "d22d5a7ec4ec29ff2e8cb49cb90e809ad294a47b1c1ae399561e2fbe58cc9b95",
+          "bytes": 2082
         },
         {
           "path": "references/fundamentos.md",
@@ -886,8 +886,42 @@
         },
         {
           "path": "references/ritmo.md",
-          "sha256": "d64e8d5ad5a2559d42694035a05a32fdc31c52ae3bd6f8e0e7ed674dbc6b87c4",
-          "bytes": 2258
+          "sha256": "1c4b971f22fdba0ebf0c67e8b63cf9159fb01b0587ad4dfcc943d1b986956194",
+          "bytes": 2388
+        }
+      ]
+    },
+    {
+      "name": "nutricionista-ritmo",
+      "path": "nutricionista-ritmo",
+      "entrypoint": "nutricionista-ritmo/SKILL.md",
+      "status": "criada-localmente",
+      "usage": "Educacao alimentar e planejamento integrado a rotina, treino e orcamento",
+      "evidence": "docs/nutricao/prompt-nutricionista-skill.md",
+      "origin": {
+        "kind": "repository-local",
+        "location": ".agents/skills/nutricionista-ritmo"
+      },
+      "files": [
+        {
+          "path": "SKILL.md",
+          "sha256": "adc9207c223c186f3c83279ea326b0ebb14355c4b80b5875d15dcdfe7153582c",
+          "bytes": 5124
+        },
+        {
+          "path": "agents/openai.yaml",
+          "sha256": "e5f24fc4361625264a4b803d1d5c529d2febfc2443c5c9a38754910bc7c0324e",
+          "bytes": 275
+        },
+        {
+          "path": "references/fundamentos-e-seguranca.md",
+          "sha256": "88839d2ffc83e3995f70936ec6716652a8ca08f14dcb591640a7e81d81ae447d",
+          "bytes": 4252
+        },
+        {
+          "path": "references/ritmo.md",
+          "sha256": "e01eafda48a11c2ee66eb72e72d734b05f1c21c2decf666f7718d100c35d1067",
+          "bytes": 2302
         }
       ]
     }

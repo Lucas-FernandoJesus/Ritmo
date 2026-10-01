@@ -68,5 +68,7 @@ test('adiciona snapshots sem apagar conclusões de um IndexedDB legado', async (
   }))
   expect(databaseState.stores).toContain('dailySnapshots')
   expect(databaseState.stores).toContain('financialRecords')
+  expect(databaseState.stores).toContain('bodyMeasurements')
+  expect(databaseState.stores).toContain('mealLogs')
   expect(databaseState.snapshots).toBe(7)
 })
