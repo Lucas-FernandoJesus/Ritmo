@@ -1,6 +1,6 @@
 # Pesquisa e plano de exercícios de Muay Thai do Ritmo
 
-Pesquisa: 25–26/09/2026. Estado: **pesquisa documentada; seleção inicial de práticas implementada na tela Treinos**. Documentos de apoio: [inventário integral](./inventario.md) e [fichas das aulas verificadas](./fichas.md).
+Pesquisa: 25–26/09/2026; transcrições coletadas em 30/09/2026. Estado: **pesquisa documentada; seleção inicial de práticas implementada na tela Treinos**. Documentos de apoio: [inventário integral](./inventario.md), [fichas das aulas verificadas](./fichas.md) e [transcrições com manifesto](./transcricoes/README.md).
 
 ## 1. Contexto real do projeto
 
@@ -19,18 +19,19 @@ O plano atualmente codificado ainda diz que o escopo da liberação para golpes 
 
 ## 2. Cobertura e método
 
-As quatro playlists somaram **157 posições e 142 vídeos distintos**. O vídeo adicional, de Sean Fagan, não está nelas e eleva o total a **143 vídeos distintos**. São **15 posições duplicadas**. Em **110 vídeos** foi possível obter e examinar texto de transcrição ou legendas do player em pontos distribuídos pela aula. Em **21**, a página abriu, mas não forneceu legenda utilizável; em **12**, a reprodução estava indisponível. Cada caso está marcado no [inventário](./inventario.md), inclusive os duplicados.
+As quatro playlists somaram **157 posições e 142 vídeos distintos**. O vídeo adicional, de Sean Fagan, não está nelas e eleva o total a **143 vídeos distintos**. São **15 posições duplicadas**. Em 30/09/2026 foram salvas legendas originais de **127 vídeos**, inclusive 17 antes classificados como S; os trechos desses 17 foram examinados em pontos distribuídos pela aula. **4 vídeos públicos** não ofereceram legenda nem fala aproveitável no ASR local; **12** exigem acesso de membro. Cada caso está marcado no [inventário](./inventario.md), inclusive os duplicados.
 
-“Conteúdo verificado” significa conteúdo falado conferido em transcrição/legenda, **não visualização integral do vídeo**. Trechos visuais da primeira aula da playlist 1 foram conferidos. Legendas automáticas e traduções podem errar termos. Onde a técnica depende de detalhe visual não confirmado, este plano evita instrução biomecânica específica. Títulos e descrições não foram usados como substituto de conteúdo para os 33 vídeos limitados.
+“Conteúdo verificado” significa conteúdo falado conferido em transcrição/legenda, **não visualização integral do vídeo**. Trechos visuais da primeira aula da playlist 1 foram conferidos. Legendas automáticas podem errar termos. Onde a técnica depende de detalhe visual não confirmado, este plano evita instrução biomecânica específica. Títulos e descrições não foram usados como substituto de conteúdo para os 16 vídeos restantes sem texto.
 
 ### Skills e ferramentas: registro para retomada
 
-Todas as skills aplicadas ou avaliadas nesta pesquisa também estão na [coleção local](../../.agents/skills/README.md). `youtube-report` e `youtube-transcribe` foram preservadas como avaliadas, sem afirmar que transcrição por ASR foi executada.
+As skills aplicadas ou avaliadas nesta pesquisa estão na [coleção local](../../.agents/skills/README.md). O método e a procedência de cada texto constam no [índice de transcrições](./transcricoes/README.md).
 
 - A [skill local `youtube-research`](../../.agents/skills/youtube-research/SKILL.md) preserva o fluxo de inventário, verificação de conteúdo e atualização destes documentos no repositório. Ela não instala ferramentas nem transcreve áudio por si só.
 - `youtube-report` **não transcreve**. Recebe texto de transcrição já disponível e produz um relatório Markdown **por vídeo**, no formato `Highlights` / `Video Details`. Poderia ser usada para fichas narrativas individuais, mas não recuperaria legendas ausentes nem substitui esta síntese integrada.
-- `youtube-transcribe` é a skill de transcrição de áudio via `yt-dlp`, `ffmpeg` e API de ASR. Na máquina desta pesquisa, faltavam `yt-dlp`, `ffmpeg` e `ASR_API_KEY`; nenhuma ferramenta adicional foi instalada.
-- As páginas, posições, durações e legendas disponíveis foram obtidas pelo navegador/Playwright. Os metadados individuais complementaram títulos truncados na playlist. **Não afirmar que os 33 casos S/I foram transcritos.**
+- `youtube-transcribe` define o fluxo de áudio via `yt-dlp`, `ffmpeg` e API de ASR. A chave `ASR_API_KEY` não estava disponível. `yt-dlp` foi instalado temporariamente para obter as legendas originais; não houve transcrição pela API da skill.
+- Os quatro vídeos públicos sem legenda foram testados com `faster-whisper base.en` local. O filtro de fala não encontrou segmentos; sem ele, a saída mostrou repetições espúrias. Esses textos foram descartados. Os 12 vídeos de membros não foram acessados.
+- As páginas, posições e durações já haviam sido obtidas pelo navegador/Playwright; a coleta atual salvou texto do próprio vídeo com marcações de tempo. **Não afirmar que os 16 casos S/I foram transcritos.**
 - Em outra máquina, a disponibilidade pode mudar. Reavaliar primeiro os casos S/I do inventário, sem tratar o título como análise de aula. Não ampliar automaticamente para outras playlists.
 
 ## 3. Síntese integrada
@@ -38,6 +39,8 @@ Todas as skills aplicadas ou avaliadas nesta pesquisa também estão na [coleç�
 **Núcleo repetido entre os canais:** base, guarda, passos curtos para frente/trás/lados, pés sem cruzamento, equilíbrio, expiração, retorno à base e à guarda. É um único núcleo pedagógico com várias fontes, não quatro exercícios duplicados. Referências principais: [GMAU, trabalho de pés](https://www.youtube.com/watch?v=qHBYtdR4xHg), [Martial Spirit, sombra parte 1](https://www.youtube.com/watch?v=s3uW3XSOdvA), [Spring Sia, primeira aula](https://www.youtube.com/watch?v=BRJy0lhOKt4).
 
 **Abordagens complementares:** a GMAU separa trabalho de pés, socos retos e teeps, mas passa cedo ao saco; a série de três aulas da Martial Spirit permite praticar fundamentos em sombra; Spring Sia usa marcadores no chão, ritmo e combinações **por camadas**, repetindo a parte conhecida antes de acrescentar outra; Sean Fagan enfatiza técnica controlada e retorno à base em uma aula de condicionamento, mas pressupõe repertório maior. Referências: [GMAU 1–3](https://www.youtube.com/watch?v=qHBYtdR4xHg), [Martial Spirit 1–3](https://www.youtube.com/watch?v=s3uW3XSOdvA), [Spring, camadas](https://www.youtube.com/watch?v=Cn5Z0bOhr1M), [adicional](https://www.youtube.com/watch?v=z37V3X6tPG4).
+
+**Ampliação após as transcrições:** o [teep básico da Martial Spirit](https://www.youtube.com/watch?v=lQI8khlwsao) trata distância e uso defensivo/ofensivo; a continuação de [teep avançado](https://www.youtube.com/watch?v=0AQHSBFXBaU) depende dessa base e de parceiro. A [aula de passos rápidos](https://www.youtube.com/watch?v=TQ02jJ82J1U) apresenta avanço, recuo e ângulos, mas sua urgência não substitui os passos curtos iniciais. As [aulas de saco](https://www.youtube.com/watch?v=d9Mt4-rhAcA) e [de cotovelos/joelhos](https://www.youtube.com/watch?v=SEPIVZOCYcE) confirmam pré-requisitos diferentes. A seleção e a dose do Ritmo permanecem as do plano existente.
 
 **Ordem sustentada pelo conjunto:** base/guarda → deslocamento sem cruzar os pés → equilíbrio/retorno → ação isolada (joelho, golpe reto leve ou teep) → duas ações em camadas → check e saída lateral/diagonal → sombra curta de 2–3 movimentos. Chute circular controlado é posterior ao domínio de base e equilíbrio. Clinch, padwork, parceiro, saco, fintas complexas, saltos e giros têm pré-requisitos e contexto diferentes; não viram automaticamente um exercício solo.
 
@@ -76,7 +79,7 @@ As [fichas das aulas verificadas](./fichas.md) registram o conteúdo observado p
 
 ## 6. Pendências explícitas para outra máquina
 
-- Reavaliar os **33 vídeos S/I** do inventário se novas formas de acesso estiverem disponíveis. São lacunas, não aulas analisadas.
+- Reavaliar os **16 vídeos S/I** do inventário se surgirem legendas, fala aproveitável ou acesso legítimo aos vídeos de membros. São lacunas, não aulas analisadas.
 - Conferir visualmente detalhes de demonstrações que a transcrição não resolve, especialmente chute circular, pivô e defesa; este plano evita pormenores não verificados.
 - Se forem produzidas fichas com `youtube-report`, alimentá-la com uma transcrição já obtida e **não** chamar o resultado de transcrição original. A skill não resolve vídeos sem texto.
-- Não foram salvas transcrições integrais neste repositório; os links, status, achados e trechos de referência necessários para retomar a pesquisa estão aqui. Não instalar dependências nem implementar conteúdo no app apenas por causa deste planejamento.
+- As 127 legendas completas foram salvas em [`transcricoes/`](./transcricoes/README.md), com manifesto e origem. Os vídeos do YouTube continuam externos ao app; as instruções essenciais do app seguem offline.

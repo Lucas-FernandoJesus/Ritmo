@@ -1,0 +1,4 @@
+interface:
+  display_name: "Professor de Muay Thai"
+  short_description: "Aulas, progressão e feedback técnico de Muay Thai"
+  default_prompt: "Use $muay-thai-professor para montar uma aula técnica adequada ao meu nível e às minhas condições."
