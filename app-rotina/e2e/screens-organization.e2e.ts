@@ -1,6 +1,6 @@
 import { expect, goToTab, openAppAt, test } from './fixtures'
 
-test('mantém os checklists na Semana e os registros de delivery e estudo em Registros', async ({ page }) => {
+test('mantém os checklists na Semana e separa Estudos de Delivery', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await openAppAt(page, '2026-09-27T10:00:00-03:00')
   await goToTab(page, 'Semana')
@@ -19,12 +19,14 @@ test('mantém os checklists na Semana e os registros de delivery e estudo em Reg
   await expect(preparation.getByRole('heading', { name: 'Manutenção da casa' })).toBeVisible()
   await expect(preparation.getByRole('heading', { name: 'Preparo de marmitas' })).toHaveCount(0)
 
-  await goToTab(page, 'Registros')
-  const kinds = page.getByRole('group', { name: 'Tipo de registro' })
-  await expect(kinds.getByRole('button', { name: 'Delivery', exact: true })).toBeVisible()
-  await expect(kinds.getByRole('button', { name: 'Estudos', exact: true })).toBeVisible()
+  await goToTab(page, 'Delivery')
   await expect(page.getByRole('form', { name: 'Turno de delivery' })).toBeVisible()
+  await expect(page.getByRole('form', { name: 'Registro de estudo' })).not.toBeVisible()
   await expect(page.getByRole('checkbox', { name: 'Decidir refeições de segunda a quarta' })).toHaveCount(0)
+
+  await goToTab(page, 'Estudos')
+  await expect(page.getByRole('form', { name: 'Registro de estudo' })).toBeVisible()
+  await expect(page.getByRole('form', { name: 'Turno de delivery' })).not.toBeVisible()
 
   await goToTab(page, 'Semana')
   await page.getByRole('group', { name: 'Escolher dia da semana' }).getByRole('button', { name: 'Dom', exact: true }).click()

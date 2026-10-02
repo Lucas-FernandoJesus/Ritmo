@@ -42,6 +42,7 @@ Ritmo/
             │   └── components/
             ├── dashboard/
             │   └── components/
+            ├── navigation/
             ├── nutrition/
             ├── progress/
             ├── records/
@@ -61,10 +62,11 @@ Ritmo/
 | `src/core/` | Modelos compartilhados, validação, cálculos gerais, precisão monetária e calendário financeiro |
 | `src/infrastructure/` | Repositório IndexedDB, testes de proteção da persistência e do serviço offline |
 | `src/features/finance/` | Movimentações, análises, planos, fechamento, exportações, testes e componentes financeiros |
+| `src/features/navigation/` | Mapa das três áreas e navegação local compartilhada pelas telas |
 | `src/features/dashboard/` | Agregações, testes e Dashboard |
 | `src/features/nutrition/` | Plano e registros alimentares, medidas e resumo semanal; testes próximos dos seletores |
 | `src/features/progress/` | Tela Progresso e plano inicial de 30 dias |
-| `src/features/records/` | Tela Registros, formulários de delivery e estudo |
+| `src/features/records/` | Formulários de Delivery e Estudos, acessados diretamente em áreas diferentes |
 | `src/features/routine/` | Telas Hoje e Semana, checklists do fim de semana, orientações e dados da rotina |
 | `src/features/settings/` | Tela Ajustes e aplicação dos temas Claro/Escuro |
 | `src/features/training/` | Tela Treinos, sessões A/B e Muay Thai, plano e catálogos de exercícios |

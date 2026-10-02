@@ -7,8 +7,10 @@ import { createDailyPlanSnapshot, defaultSettings, filterRoutineForDay, findLink
 import { applyDocumentTheme, deviceTheme, effectiveTheme, type AppearanceFeedback, type EffectiveTheme } from './features/settings/theme'
 import { useDailyReminder } from './features/settings/useDailyReminder'
 import type { FinanceRegistrationRequest } from './features/finance/components/FinanceView'
-import type { DeliverySelection, RecordKind } from './features/records/components/RecordsView'
+import type { DeliverySelection } from './features/records/components/RecordsView'
 import { MainMenu } from './components/MainMenu'
+import { AreaNavigation } from './features/navigation/components/AreaNavigation'
+import { areas, settingsDestination, type Destination } from './features/navigation/areas'
 import { useFinanceState } from './features/finance/useFinanceState'
 import { repository } from './infrastructure/repository'
 import { loadAppData } from './infrastructure/load-app-data'
@@ -26,25 +28,12 @@ const TrainingWorkoutView = lazy(() => import('./features/training/components/Tr
 const MuayWorkoutView = lazy(() => import('./features/training/components/TrainingViews').then((module) => ({ default: module.MuayWorkoutView })))
 const NutritionView = lazy(() => import('./features/nutrition/components/NutritionView').then((module) => ({ default: module.NutritionView })))
 
-type Tab = 'hoje' | 'semana' | 'treinos' | 'nutricao' | 'registros' | 'financeiro' | 'progresso' | 'ajustes'
-type QuickAction = 'shift' | 'study' | 'income' | 'expense'
+type Tab = Destination
+type QuickAction = 'income' | 'expense'
 type LinkableRecord = { kind: 'study', area: StudyLog['area'] } | { kind: 'delivery', startTime: string, endTime: string } | { kind: 'expense' }
 
 
-const navItems: { id: Tab; label: string }[] = [
-  { id: 'hoje', label: 'Hoje' },
-  { id: 'semana', label: 'Semana' },
-  { id: 'treinos', label: 'Treinos' },
-  { id: 'nutricao', label: 'Nutrição' },
-  { id: 'registros', label: 'Registros' },
-  { id: 'financeiro', label: 'Financeiro' },
-  { id: 'progresso', label: 'Progresso' },
-  { id: 'ajustes', label: 'Ajustes' },
-]
-
 const quickActions: { id: QuickAction; label: string }[] = [
-  { id: 'shift', label: 'Turno' },
-  { id: 'study', label: 'Estudo' },
   { id: 'income', label: 'Entrada' },
   { id: 'expense', label: 'Saída' },
 ]
@@ -96,7 +85,6 @@ function App() {
   const [checkIn, setCheckIn] = useState<DailyCheckIn | null>(null)
   const [deliveryShifts, setDeliveryShifts] = useState<DeliveryShift[]>([])
   const [expenses, setExpenses] = useState<Expense[]>([])
-  const [recordKind, setRecordKind] = useState<RecordKind>('delivery')
   const [recordsVisited, setRecordsVisited] = useState(false)
   const [financeRegistration, setFinanceRegistration] = useState<FinanceRegistrationRequest>()
   const [deliverySelection, setDeliverySelection] = useState<DeliverySelection>({ revision: 0 })
@@ -393,17 +381,12 @@ function App() {
       window.history.replaceState(window.history.state, '', url)
       setTrainingSelection(null)
     }
-    if (next === 'registros') setRecordsVisited(true)
+    if (next === 'registros' || next === 'estudos') setRecordsVisited(true)
     setTab(next)
     focusContent()
   }
 
   function runQuickAction(action: string) {
-    if (action === 'shift' || action === 'study') {
-      setRecordKind(action === 'shift' ? 'delivery' : 'estudo')
-      navigateTab('registros')
-      return
-    }
     setFinanceRegistration((current) => ({ intent: action === 'income' ? 'entrada' : 'saida', revision: (current?.revision ?? 0) + 1 }))
     navigateTab('financeiro')
   }
@@ -415,13 +398,14 @@ function App() {
     <div className="app-shell">
       <a className="skip-link" href="#main-content">Ir para o conteúdo</a>
       <header className="topbar">
-        <MainMenu items={navItems} actions={quickActions} current={trainingSelection ? 'treinos' : tab} onNavigate={navigateTab} onAction={runQuickAction} />
+        <MainMenu areas={areas} settings={settingsDestination} actions={quickActions} current={trainingSelection ? 'treinos' : tab} onNavigate={navigateTab} onAction={runQuickAction} />
         <div className="brand-mark" aria-hidden="true">R</div>
         <div className="brand-copy"><strong>Ritmo</strong><span>Sua rotina, no seu tempo</span></div>
         <span className={`connection ${online ? '' : 'offline'}`}>{online ? 'Local' : 'Offline'}</span>
       </header>
 
       <main className="content" id="main-content" tabIndex={-1}>
+        <AreaNavigation current={trainingSelection ? 'treinos' : tab} onNavigate={navigateTab} />
         <Suspense fallback={<section className="section-loading" role="status"><div className="spinner" /><p>Abrindo área…</p></section>}>
         {trainingSelection ? trainingSelection === 'A' || trainingSelection === 'B'
           ? <TrainingWorkoutView day={trainingSelection} trainingWeek={clampTrainingWeek(settings.trainingWeek)} mode={mode} online={online} onBack={closeWorkout} />
@@ -430,11 +414,11 @@ function App() {
           {tab === 'semana' && <WeekView settings={settings} selectedDay={selectedWeekDay} todayDay={now.getDay()} onSelectedDay={setSelectedWeekDay} onOpen={openActivity} completed={todayCompleted} onToggle={toggleCompletion} />}
           {tab === 'treinos' && <TrainingHubView trainingWeek={clampTrainingWeek(settings.trainingWeek)} mode={mode} onTrainingWeek={changeTrainingWeek} onOpenTraining={openWorkout} />}
           {tab === 'nutricao' && <NutritionView today={dateKey} measurements={bodyMeasurements} mealLogs={mealLogs} snapshots={dailySnapshots} completions={completions} shifts={deliveryShifts} expenses={expenses} records={financialRecords} onSaveMeasurement={saveBodyMeasurement} onSaveMeal={saveMealLog} />}
-          {tab === 'financeiro' && <FinanceView planning={financePlanning} operations={financeOperations} today={dateKey} shifts={deliveryShifts} expenses={expenses} records={financialRecords} goals={financialGoals} budgets={categoryBudgets} registrationRequest={financeRegistration} onGoal={saveFinancialGoal} onBudget={saveCategoryBudget} onDeleteGoal={(id) => removeFinancialPlan("goal", id)} onDeleteBudget={(id) => removeFinancialPlan("budget", id)} onSave={saveFinancialRecord} onExpense={saveLinkedExpense} onDelivery={(id) => { setDeliverySelection((current) => ({ id, revision: current.revision + 1 })); setRecordKind('delivery'); navigateTab('registros') }} />}
+          {tab === 'financeiro' && <FinanceView planning={financePlanning} operations={financeOperations} today={dateKey} shifts={deliveryShifts} expenses={expenses} records={financialRecords} goals={financialGoals} budgets={categoryBudgets} registrationRequest={financeRegistration} onGoal={saveFinancialGoal} onBudget={saveCategoryBudget} onDeleteGoal={(id) => removeFinancialPlan("goal", id)} onDeleteBudget={(id) => removeFinancialPlan("budget", id)} onSave={saveFinancialRecord} onExpense={saveLinkedExpense} onDelivery={(id) => { setDeliverySelection((current) => ({ id, revision: current.revision + 1 })); navigateTab('registros') }} />}
           {tab === 'progresso' && <ProgressView planning={financePlanning} today={dateKey} snapshots={dailySnapshots} completions={completions} studyLogs={studyLogs} deliveryShifts={deliveryShifts} expenses={expenses} financialRecords={financialRecords} financialGoals={financialGoals} categoryBudgets={categoryBudgets} onFinance={() => navigateTab('financeiro')} progress={progress} weeklySummary={weeklySummary} previousWeeklySummary={previousWeeklySummary} onToggle={async (item) => { try { await repository.saveProgress(item); setProgress((v) => [...v.filter((p) => p.id !== item.id), item]) } catch (error) { setMessage(readableError(error, 'Não foi possível salvar o progresso.')) } }} />}
           {tab === 'ajustes' && <SettingsView settings={settings} persistence={storagePersistence} appearanceSaving={appearanceSaving} appearanceFeedback={appearanceFeedback} onAppearance={changeAppearance} onSettings={async (next) => { const synchronizedNext: AppSettings = { ...next, theme: effectiveTheme(settings.theme), appearanceVersion: 2 }; const snapshotPlan = prepareWeekSnapshots(dailySnapshots, dateKey, synchronizedNext.preferredMode, synchronizedNext, dateKey); try { await repository.saveSettingsAndDailySnapshots(synchronizedNext, snapshotPlan.changed); setSettings(synchronizedNext); setMode(synchronizedNext.preferredMode); setDailySnapshots(snapshotPlan.all); setMessage('Ajustes salvos.') } catch (error) { setMessage(readableError(error, 'Não foi possível salvar os ajustes.')) } }} onMessage={setMessage} onImported={() => window.location.reload()} onCleared={() => window.location.reload()} />}
         </>}
-        {recordsVisited && <div hidden={tab !== 'registros' || !!trainingSelection}><RecordsView accounts={financePlanning.accounts} deliverySelection={deliverySelection} kind={recordKind} onKind={setRecordKind} onExpenseRegistration={() => { setFinanceRegistration((current) => ({ intent: 'saida', revision: (current?.revision ?? 0) + 1 })); navigateTab('financeiro') }} dateKey={dateKey} shifts={deliveryShifts} expenses={expenses} financialRecords={financialRecords} studyLogs={studyLogs} onShift={saveLinkedShift} onStudy={saveLinkedStudy} /></div>}
+        {recordsVisited && <div hidden={(tab !== 'registros' && tab !== 'estudos') || !!trainingSelection}><RecordsView accounts={financePlanning.accounts} deliverySelection={deliverySelection} kind={tab === 'estudos' ? 'estudo' : 'delivery'} onExpenseRegistration={() => { setFinanceRegistration((current) => ({ intent: 'saida', revision: (current?.revision ?? 0) + 1 })); navigateTab('financeiro') }} dateKey={dateKey} shifts={deliveryShifts} expenses={expenses} financialRecords={financialRecords} studyLogs={studyLogs} onShift={saveLinkedShift} onStudy={saveLinkedStudy} /></div>}
         </Suspense>
       </main>
 

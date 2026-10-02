@@ -37,7 +37,7 @@ Os dados ficam no IndexedDB do navegador de cada aparelho: não são enviados ao
 
 ## Navegação
 
-Em telas pequenas, **Menu** fica no cabeçalho fixo para não cobrir os cards. Em telas maiores, o botão permanece flutuante. Ao abrir, a lista vertical ocupa toda a tela e apresenta Hoje, Semana, Treinos, Nutrição, Registros, Financeiro, Progresso e Ajustes. Escolher uma opção navega sem recarregar; o X ou Esc fecha mantendo a tela atual. O diálogo controla foco, bloqueia o fundo e funciona offline nos dois temas.
+Em telas pequenas, **Menu** fica no cabeçalho fixo para não cobrir os cards. Em telas maiores, o botão permanece flutuante. O menu de tela inteira reúne **Rotina** (Hoje, Semana, Estudos e Progresso), **Saúde** (Treinos e Nutrição) e **Trabalho e dinheiro** (Delivery e Financeiro). Ajustes fica fora das três áreas; Entrada e Saída são ações rápidas do Financeiro. Dentro de cada área, uma navegação local mostra somente seus destinos. Escolher uma opção navega sem recarregar; o X ou Esc fecha mantendo a tela atual. O diálogo controla foco, bloqueia o fundo e funciona offline nos dois temas. As três áreas compartilham a mesma instalação, os dados locais e o backup.
 
 ## Backup
 
@@ -49,7 +49,7 @@ A tela apresenta o objetivo escolhido de déficit de 20% como **meta em calibra�
 
 ## Financeiro
 
-**Visão geral** reúne o resumo do período, alertas e histórico unificado. **Registrar** abre quatro intenções: Entrada, Saída, A receber e A pagar. Novas saídas manuais são despesas; entradas e valores em aberto usam registros financeiros. Receber ou pagar atualiza o mesmo registro, sem criar cópia. Turnos continuam sendo cadastrados em **Registros > Delivery**; o atalho **Registros > Despesas** abre o mesmo cadastro de Saída do Financeiro.
+**Visão geral** reúne o resumo do período, alertas e histórico unificado. **Registrar** abre quatro intenções: Entrada, Saída, A receber e A pagar. Novas saídas manuais são despesas; entradas e valores em aberto usam registros financeiros. Receber ou pagar atualiza o mesmo registro, sem criar cópia. Turnos são cadastrados em **Trabalho e dinheiro > Delivery**; o atalho **Registrar despesa no Financeiro** nessa tela abre o mesmo cadastro de Saída do Financeiro. Estudos tem acesso direto em **Rotina**.
 
 As áreas internas separam **Planejamento** (metas, orçamentos, recorrências e parcelas), **Patrimônio** (contas e transferências), **Análises** (comparações, projeção e detalhes do delivery) e **Ferramentas** (fechamento mensal, simulador e exportações CSV, Excel e PDF). Ocorrências planejadas só viram lançamentos quando confirmadas e não se duplicam nas projeções. O IndexedDB atual está na versão 7, preserva dados antigos e inclui as estruturas novas no backup; não há backend ou sincronização externa.
 

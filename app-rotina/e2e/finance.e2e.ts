@@ -142,7 +142,7 @@ test('digitação em centavos e restauração do backup financeiro', async ({ pa
 
 test('integra delivery e despesas vinculadas, calcula madrugada e produtividade', async ({ page }) => {
   await openAppOnTuesday(page)
-  await goToTab(page, 'Registros')
+  await goToTab(page, 'Delivery')
   await page.getByLabel('Início', { exact: true }).fill('20:00')
   await page.getByLabel('Fim', { exact: true }).fill('02:00')
   await expect(page.getByLabel('Horas em turno')).toHaveValue('6')
@@ -155,7 +155,7 @@ test('integra delivery e despesas vinculadas, calcula madrugada e produtividade'
   page.on('dialog', (dialog) => dialog.dismiss())
   await page.getByRole('button', { name: 'Salvar turno', exact: true }).click()
   await expect(page.getByRole('heading', { name: 'Últimos turnos' }).locator('..')).toContainText('165,00')
-  await page.getByRole('group', { name: 'Tipo de registro' }).getByRole('button', { name: 'Despesas', exact: true }).click()
+  await page.getByRole('button', { name: 'Registrar despesa no Financeiro' }).click()
   const expenseForm = page.getByRole('form', { name: 'Registrar saída', exact: true })
   await expenseForm.getByLabel('Descrição', { exact: true }).fill('Refeição do turno')
   await expenseForm.getByLabel('Valor (R$)', { exact: true }).fill('1500')

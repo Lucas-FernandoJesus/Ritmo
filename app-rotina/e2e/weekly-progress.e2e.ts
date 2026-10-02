@@ -94,8 +94,7 @@ test('preserva snapshots passados quando o modo atual muda', async ({ page }) =>
 
 test('oferece a conclusão do estudo, respeita cancelamento e não duplica conclusão', async ({ page }) => {
   await openAppOnTuesday(page)
-  await goToTab(page, 'Registros')
-  await page.getByRole('group', { name: 'Tipo de registro' }).getByRole('button', { name: 'Estudos', exact: true }).click()
+  await goToTab(page, 'Estudos')
 
   const area = page.getByRole('combobox')
   const minutes = page.getByLabel('Minutos')
@@ -117,7 +116,7 @@ test('oferece a conclusão do estudo, respeita cancelamento e não duplica concl
   await showFullDay(page)
   await expect(page.getByRole('button', { name: 'Concluir Programação — prática e exercícios', exact: true })).toBeVisible()
 
-  await goToTab(page, 'Registros')
+  await goToTab(page, 'Estudos')
   await minutes.fill('20')
   await content.fill('Testes automatizados')
   const acceptedOffer = page.waitForEvent('dialog')
@@ -131,7 +130,7 @@ test('oferece a conclusão do estudo, respeita cancelamento e não duplica concl
   await showFullDay(page)
   await expect(page.getByRole('button', { name: 'Desmarcar Programação — prática e exercícios', exact: true })).toBeVisible()
 
-  await goToTab(page, 'Registros')
+  await goToTab(page, 'Estudos')
   await minutes.fill('10')
   await content.fill('Revisão final')
   const unexpectedDialogs: string[] = []
@@ -148,8 +147,7 @@ test('oferece a conclusão do estudo, respeita cancelamento e não duplica concl
 
 test('corrige um estudo existente sem criar outra sessão', async ({ page }) => {
   await openAppOnTuesday(page)
-  await goToTab(page, 'Registros')
-  await page.getByRole('group', { name: 'Tipo de registro' }).getByRole('button', { name: 'Estudos', exact: true }).click()
+  await goToTab(page, 'Estudos')
   page.on('dialog', (dialog) => { void dialog.dismiss() })
 
   await page.getByLabel('Minutos').fill('30')
@@ -164,8 +162,7 @@ test('corrige um estudo existente sem criar outra sessão', async ({ page }) => 
   await expect(page.getByText('Inglês: Texto corrigido', { exact: true })).toBeVisible()
   await expect(page.getByText('Inglês: Texto inicial', { exact: true })).toHaveCount(0)
   await page.reload()
-  await goToTab(page, 'Registros')
-  await page.getByRole('group', { name: 'Tipo de registro' }).getByRole('button', { name: 'Estudos', exact: true }).click()
+  await goToTab(page, 'Estudos')
   await expect(page.getByText('Inglês: Texto corrigido', { exact: true })).toBeVisible()
   const logs = await page.evaluate(async () => new Promise<Array<{ minutes: number }>>((resolve, reject) => {
     const request = indexedDB.open('rotina-local')
@@ -184,8 +181,8 @@ test('corrige um estudo existente sem criar outra sessão', async ({ page }) => 
 
 test('oferece a conclusão da atividade financeira aplicável', async ({ page }) => {
   await openAppAt(page, '2026-09-23T10:00:00-03:00')
-  await goToTab(page, 'Registros')
-  await page.getByRole('group', { name: 'Tipo de registro' }).getByRole('button', { name: 'Despesas', exact: true }).click()
+  await goToTab(page, 'Delivery')
+  await page.getByRole('button', { name: 'Registrar despesa no Financeiro' }).click()
   const form = page.getByRole('form', { name: 'Registrar saída', exact: true })
   await form.getByLabel('Descrição', { exact: true }).fill('Mercado')
   await form.getByLabel('Valor (R$)', { exact: true }).fill('4250')
@@ -204,7 +201,7 @@ test('oferece a conclusão da atividade financeira aplicável', async ({ page })
 
 test('usa o horário para oferecer o turno de delivery inequívoco', async ({ page }) => {
   await openAppAt(page, '2026-09-26T10:00:00-03:00')
-  await goToTab(page, 'Registros')
+  await goToTab(page, 'Delivery')
 
   await page.getByLabel('Início').fill('18:30')
   await page.getByLabel('Fim').fill('20:00')

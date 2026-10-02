@@ -6,7 +6,8 @@ test('navega pelas áreas principais sem recarregar a aplicação', async ({ pag
   const destinations = [
     ['Semana', 'Sua semana'],
     ['Treinos', 'Treinos'],
-    ['Registros', 'Registros'],
+    ['Estudos', 'Estudos'],
+    ['Delivery', 'Delivery'],
     ['Financeiro', 'Financeiro'],
     ['Progresso', 'Seu progresso continua'],
     ['Ajustes', 'Ajustes'],

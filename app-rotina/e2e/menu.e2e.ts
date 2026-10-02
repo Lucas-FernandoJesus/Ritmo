@@ -1,14 +1,13 @@
 import { expect, goToTab, openAppOnTuesday, test } from './fixtures'
 
-test('oferece ações rápidas sem aumentar os destinos principais', async ({ page }) => {
+test('oferece estudos na Rotina e ações financeiras rápidas', async ({ page }) => {
   await openAppOnTuesday(page)
   await page.getByRole('button', { name: 'Abrir menu principal', exact: true }).click()
 
   const actions = page.getByRole('group', { name: 'Ações rápidas' })
-  await expect(actions.getByRole('button')).toHaveText(['Turno', 'Estudo', 'Entrada', 'Saída'])
-  await actions.getByRole('button', { name: 'Estudo', exact: true }).click()
-  await expect(page.getByRole('heading', { name: 'Registros', exact: true })).toBeVisible()
-  await expect(page.getByRole('group', { name: 'Tipo de registro' }).getByRole('button', { name: 'Estudos', exact: true })).toHaveAttribute('aria-pressed', 'true')
+  await expect(actions.getByRole('button')).toHaveText(['Entrada', 'Saída'])
+  await page.getByRole('group', { name: 'Rotina' }).getByRole('button', { name: 'Estudos', exact: true }).click()
+  await expect(page.getByRole('heading', { name: 'Estudos', exact: true })).toBeVisible()
 
   await page.getByRole('button', { name: 'Abrir menu principal', exact: true }).click()
   await page.getByRole('group', { name: 'Ações rápidas' }).getByRole('button', { name: 'Saída', exact: true }).click()
@@ -42,7 +41,7 @@ for (const theme of ['light', 'dark'] as const) test(`menu em tela cheia, teclad
     await expect(menu.getByRole('button', { name: 'Financeiro', exact: true })).toBeFocused()
     await expect(menu.getByRole('heading', { name: 'Menu principal' })).toHaveCount(0)
     const choices = menu.getByRole('navigation').getByRole('button')
-    expect(await choices.allTextContents()).toEqual(['Hoje', 'Semana', 'Treinos', 'Nutrição', 'Registros', 'Financeiro', 'Progresso', 'Ajustes'])
+    expect(await choices.allTextContents()).toEqual(['Hoje', 'Semana', 'Estudos', 'Progresso', 'Treinos', 'Nutrição', 'Delivery', 'Financeiro', 'Ajustes'])
     await expect(menu.locator('nav svg')).toHaveCount(0)
     expect(await menu.evaluate((element) => getComputedStyle(element).backgroundColor)).toMatch(/rgba\(.+,\s*0\.[1-9]/)
     await expect(menu.locator('.main-menu-content')).toHaveCSS('transform', 'none')
@@ -75,9 +74,9 @@ for (const theme of ['light', 'dark'] as const) test(`menu em tela cheia, teclad
   await page.keyboard.press('Tab')
   const inside = await page.evaluate(() => document.querySelector('dialog[open]')?.contains(document.activeElement))
   expect(inside).toBe(true)
-  await page.getByRole('dialog').getByRole('button', { name: 'Registros', exact: true }).click()
+  await page.getByRole('dialog').getByRole('button', { name: 'Delivery', exact: true }).click()
   await expect(page.getByRole('dialog', { name: 'Menu principal' })).not.toBeVisible()
-  await expect(page.getByRole('heading', { name: 'Registros', exact: true })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Delivery', exact: true })).toBeVisible()
   await expect(page.locator('#main-content')).toBeFocused()
   await expect(page.locator('.bottom-nav button')).toHaveCount(1)
   expect(await page.evaluate(() => document.documentElement.style.overflow)).not.toBe('hidden')

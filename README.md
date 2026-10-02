@@ -1,6 +1,6 @@
 # Ritmo
 
-O Ritmo reúne uma aplicação de rotina pessoal e os documentos que fundamentam seus horários, treinos e prioridades.
+O Ritmo reúne uma aplicação local com três áreas — Rotina, Saúde e Trabalho e dinheiro — e os documentos que fundamentam seus horários, treinos e prioridades.
 
 ## Estrutura
 
@@ -8,7 +8,7 @@ O Ritmo reúne uma aplicação de rotina pessoal e os documentos que fundamentam
 |---|---|
 | [`app-rotina/`](app-rotina/) | PWA, dependências, código-fonte, testes e instruções de execução/publicação |
 | [`docs/estrutura.md`](docs/estrutura.md) | Mapa dos arquivos, responsabilidades e critérios de organização |
-| [`docs/telas-e-funcionalidades.md`](docs/telas-e-funcionalidades.md) | Destino de cada ação e leitura nas oito telas |
+| [`docs/telas-e-funcionalidades.md`](docs/telas-e-funcionalidades.md) | Destino de cada ação nas três áreas e em Ajustes |
 | [`docs/nutricao/`](docs/nutricao/) | Plano alimentar inicial, registros e critérios do resumo semanal de Nutrição |
 | [`GLOSSARY.md`](GLOSSARY.md) | Termos da rotina, registros e Financeiro |
 | [`docs/financeiro.md`](docs/financeiro.md) | Arquitetura, persistência e regras do Financeiro |

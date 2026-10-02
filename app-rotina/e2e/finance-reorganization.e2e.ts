@@ -102,10 +102,10 @@ test('persiste cada intenção na fonte canônica sem criar saída paralela', as
   expect(stored).toEqual({ expenseCount: 1, financialTypes: ['credito', 'entrada', 'pendencia'] })
 })
 
-test('encaminha Registros Despesas para o mesmo cadastro canônico de saída', async ({ page }) => {
+test('encaminha a despesa do Delivery para o mesmo cadastro canônico de saída', async ({ page }) => {
   await openAppOnTuesday(page)
-  await goToTab(page, 'Registros')
-  await page.getByRole('group', { name: 'Tipo de registro' }).getByRole('button', { name: 'Despesas', exact: true }).click()
+  await goToTab(page, 'Delivery')
+  await page.getByRole('button', { name: 'Registrar despesa no Financeiro' }).click()
 
   await expect(page.getByRole('heading', { name: 'Financeiro', exact: true })).toBeVisible()
   const form = page.getByRole('form', { name: 'Registrar saída', exact: true })
@@ -127,8 +127,8 @@ test('encaminha Registros Despesas para o mesmo cadastro canônico de saída', a
   }))
   expect(counts).toEqual({ expenses: 1, financialRecords: 0 })
 
-  await goToTab(page, 'Registros')
+  await goToTab(page, 'Delivery')
   await expect(page.locator('form[aria-label="Registrar saída"]')).toHaveCount(0)
-  await page.getByRole('group', { name: 'Tipo de registro' }).getByRole('button', { name: 'Despesas', exact: true }).click()
+  await page.getByRole('button', { name: 'Registrar despesa no Financeiro' }).click()
   await expect(page.getByRole('form', { name: 'Registrar saída', exact: true })).toBeVisible()
 })

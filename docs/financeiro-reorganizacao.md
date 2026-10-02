@@ -4,9 +4,11 @@
 
 - **Etapa atual:** tarefa 8 concluída — reorganização implementada e integração final revalidada em 02/10/2026.
 - **Base analisada:** commit `c08872e`, que concluiu o mapeamento do estado existente.
-- **Decisão aprovada:** Financeiro será o caminho canônico para cadastrar e consultar informações financeiras; Delivery permanece em Registros.
+- **Decisão aprovada:** Financeiro é o caminho canônico para cadastrar e consultar informações financeiras; Delivery tem acesso direto em Trabalho e dinheiro.
 - **Implementação:** Visão geral, áreas secundárias, quatro intenções de cadastro, redirecionamento de Despesas, orientação de primeiro uso, prioridade móvel do resumo e posição do X do menu foram concluídos sem alterar schema, migrações ou contratos de backup.
 - **Próxima ação:** nenhuma pendência neste backlog.
+
+Este documento preserva o histórico da reorganização financeira. Menções posteriores a `Registros > Delivery` e `Registros > Despesas` descrevem a navegação anterior. Os caminhos atuais estão no [mapa de telas](telas-e-funcionalidades.md).
 
 ## Resultado da integração
 
@@ -21,7 +23,7 @@
 
 - **Financeiro** deve ser o ponto central de consulta das informações financeiras já cadastradas.
 - Os cadastros financeiros devem ser acessados por um submenu com intenções claras, como Entrada, Saída e Pendência.
-- Dados do delivery continuam sendo registrados em **Registros > Delivery**, mas seus resultados financeiros aparecem centralizados no Financeiro.
+- Dados do delivery são registrados em **Trabalho e dinheiro > Delivery**, mas seus resultados financeiros aparecem centralizados no Financeiro.
 - A reorganização deve orientar onde cada informação é registrada e impedir lançamentos duplicados.
 - Transferências entre contas próprias movimentam patrimônio, mas não constituem entrada nem saída financeira.
 

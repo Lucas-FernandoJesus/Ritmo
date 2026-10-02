@@ -63,7 +63,7 @@ for (const theme of ['light', 'dark'] as const) {
     await financeArea(page, 'Análises')
     await page.locator('summary').filter({ hasText: /^Saldo projetado e fluxo futuro/ }).click()
     await expect(page.getByRole('table').filter({ has: page.locator('caption', { hasText: 'Fluxo futuro por horizonte' }) })).toContainText('Próximos 7 dias')
-    await goToTab(page, 'Registros')
+    await goToTab(page, 'Delivery')
     const delivery = page.getByRole('form', { name: 'Turno de delivery', exact: true })
     await delivery.getByLabel('Início', { exact: true }).fill('20:00')
     await delivery.getByLabel('Fim', { exact: true }).fill('02:00')

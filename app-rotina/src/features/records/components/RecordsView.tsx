@@ -22,13 +22,11 @@ function useRecordDate<T extends { localDate: string }>(dateKey: string, setForm
   }, [dateKey, setForm, preserveDate])
 }
 
-export function RecordsView({ accounts, deliverySelection, kind, onKind, onExpenseRegistration, dateKey, shifts, expenses, financialRecords, studyLogs, onShift, onStudy }: { accounts: readonly AssetAccount[]; deliverySelection: DeliverySelection; kind: RecordKind; onKind: (kind: RecordKind) => void; onExpenseRegistration: () => void; dateKey: string; shifts: DeliveryShift[]; expenses: Expense[]; financialRecords: FinancialRecord[]; studyLogs: StudyLog[]; onShift: (item: DeliveryShift) => Promise<boolean>; onStudy: (item: StudyLog) => Promise<boolean> }) {
+export function RecordsView({ accounts, deliverySelection, kind, onExpenseRegistration, dateKey, shifts, expenses, financialRecords, studyLogs, onShift, onStudy }: { accounts: readonly AssetAccount[]; deliverySelection: DeliverySelection; kind: RecordKind; onExpenseRegistration: () => void; dateKey: string; shifts: DeliveryShift[]; expenses: Expense[]; financialRecords: FinancialRecord[]; studyLogs: StudyLog[]; onShift: (item: DeliveryShift) => Promise<boolean>; onStudy: (item: StudyLog) => Promise<boolean> }) {
   return <>
-    <PageTitle eyebrow="Acompanhar sem culpa" title="Registros" subtitle="Registre seus turnos de delivery e sessões de estudo. Despesas são registradas no Financeiro." />
-    <div className="subnav" role="group" aria-label="Tipo de registro">
-      {([['delivery', 'Delivery'], ['estudo', 'Estudos']] as const).map(([id, label]) => <button key={id} type="button" aria-pressed={kind === id} className={kind === id ? 'active' : ''} onClick={() => onKind(id)}>{label}</button>)}
-      <button type="button" onClick={onExpenseRegistration}>Despesas</button>
-    </div>
+    {kind === 'delivery'
+      ? <><PageTitle eyebrow="Trabalho e dinheiro" title="Delivery" subtitle="Registre seus turnos e acompanhe as estimativas. Receitas e custos aparecem no Financeiro." /><div className="record-finance-action"><button type="button" className="secondary-button" onClick={onExpenseRegistration}>Registrar despesa no Financeiro</button></div></>
+      : <PageTitle eyebrow="Rotina" title="Estudos" subtitle="Registre suas sessões de estudo e leitura." />}
     <div hidden={kind !== 'delivery'}><DeliveryRecord accounts={accounts} key={deliverySelection.revision} initial={shifts.find((shift) => shift.id === deliverySelection.id)} dateKey={dateKey} shifts={shifts} expenses={expenses} financialRecords={financialRecords} onSave={onShift} /></div>
     <div hidden={kind !== 'estudo'}><StudyRecord dateKey={dateKey} logs={studyLogs} onSave={onStudy} /></div>
   </>
