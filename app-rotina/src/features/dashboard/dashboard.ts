@@ -54,6 +54,7 @@ export interface DashboardComparisonMetric {
 
 export interface DashboardComparison {
   status: DashboardMetricStatus
+  partial: boolean
   previousInterval: DashboardInterval
   metrics: DashboardComparisonMetric[]
 }
@@ -312,13 +313,14 @@ function activityRate(stats: ActivityStats): DashboardValue {
   return available('percent', stats.requiredCompleted / stats.requiredPlanned * 100)
 }
 
-function hasMissingSnapshots(input: DashboardInput, interval: DashboardInterval): boolean {
+function snapshotCoverage(input: DashboardInput, interval: DashboardInterval): { available: number, total: number } {
   const end = realizedEnd(interval, input.today)
-  if (!end) return false
+  if (!end) return { available: 0, total: 0 }
   const availableDates = new Set(input.snapshots
     .filter((item) => item.localDate >= interval.start && item.localDate <= end)
     .map((item) => item.localDate))
-  return civilDates(interval.start, end).some((date) => !availableDates.has(date))
+  const dates = civilDates(interval.start, end)
+  return { available: dates.filter((date) => availableDates.has(date)).length, total: dates.length }
 }
 
 function aggregateActivities(
@@ -360,8 +362,9 @@ function aggregateActivities(
     }),
   }] : []
 
-  const warnings = hasMissingSnapshots(input, interval)
-    ? [warning('incomplete-snapshots', 'Há datas realizadas sem snapshot; elas permanecem sem dados.')]
+  const coverage = snapshotCoverage(input, interval)
+  const warnings = coverage.available < coverage.total
+    ? [warning('incomplete-snapshots', `Histórico disponível em ${coverage.available} de ${coverage.total} dias realizados (${Math.round(coverage.available / coverage.total * 100)}%); dias sem snapshot permanecem sem dados. Os indicadores do período consideram apenas os dias disponíveis.`)]
     : []
   return { hasData: future ? false : stats.hasData, kpis, series: timeSeries, breakdown: [], warnings }
 }
@@ -614,6 +617,7 @@ export function buildDashboard(input: DashboardInput): DashboardViewModel {
   const status = comparisonStatus(current, previous, previousInterval, input.today)
   const comparison: DashboardComparison = {
     status,
+    partial: interval.start <= input.today && input.today < interval.end && previousInterval.end < input.today,
     previousInterval,
     metrics: current.kpis.map((item) => comparisonMetric(item, previous.kpis.find((candidate) => candidate.id === item.id))),
   }

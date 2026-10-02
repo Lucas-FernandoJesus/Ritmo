@@ -199,6 +199,18 @@ describe('categorias do dashboard', () => {
     expect(kpi(model, 'required-planned')).toMatchObject({ status: 'available', value: 1 })
     expect(series(model, 'tasks-completion-rate').points[1]).toMatchObject({ key: '2026-02-02', status: 'no-data', value: null })
     expect(model.warnings.map((item) => item.code)).toContain('incomplete-snapshots')
+    expect(model.warnings.find((item) => item.code === 'incomplete-snapshots')?.message).toContain('1 de 2 dias')
+    expect(model.warnings.find((item) => item.code === 'incomplete-snapshots')?.message).toContain('50%')
+  })
+
+  it('indica comparação parcial quando o período atual ainda está em andamento', () => {
+    const model = buildDashboard({
+      ...emptyInput('estudos', 'month', '2026-03-10', '2026-03-10'),
+      studyLogs: [study('current', '2026-03-05', 'Inglês', 20), study('previous', '2026-02-05', 'Inglês', 40)],
+    })
+
+    expect(model.comparison.partial).toBe(true)
+    expect(comparisonMetric(model, 'minutes-total').change).toMatchObject({ status: 'available', value: -20 })
   })
 
   it('agrega tarefas obrigatórias, opcionais e puladas sem treino, estudo ou checklist de 30 dias', () => {

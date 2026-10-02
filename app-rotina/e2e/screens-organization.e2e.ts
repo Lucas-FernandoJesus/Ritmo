@@ -1,8 +1,8 @@
-import { expect, goToTab, openAppOnTuesday, test } from './fixtures'
+import { expect, goToTab, openAppAt, test } from './fixtures'
 
 test('mantém os checklists na Semana e os registros de delivery e estudo em Registros', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
-  await openAppOnTuesday(page)
+  await openAppAt(page, '2026-09-27T10:00:00-03:00')
   await goToTab(page, 'Semana')
   await page.getByRole('group', { name: 'Escolher dia da semana' }).getByRole('button', { name: 'Dom', exact: true }).click()
 

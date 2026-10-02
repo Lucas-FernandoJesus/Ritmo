@@ -251,9 +251,10 @@ function App() {
   async function saveLinkedStudy(item: StudyLog) {
     try {
       await repository.saveStudyLog(item)
-      setStudyLogs((current) => [item, ...current])
-      setMessage('Estudo registrado.')
-      await offerLinkedCompletion(item.localDate, { kind: 'study', area: item.area })
+      const existing = studyLogs.some((log) => log.id === item.id)
+      setStudyLogs((current) => [item, ...current.filter((log) => log.id !== item.id)])
+      setMessage(existing ? 'Estudo atualizado.' : 'Estudo registrado.')
+      if (!existing) await offerLinkedCompletion(item.localDate, { kind: 'study', area: item.area })
       return true
     } catch (error) { setMessage(readableError(error, 'Não foi possível salvar o estudo.')); return false }
   }
@@ -425,7 +426,7 @@ function App() {
           ? <TrainingWorkoutView day={trainingSelection} trainingWeek={clampTrainingWeek(settings.trainingWeek)} mode={mode} online={online} onBack={closeWorkout} />
           : <MuayWorkoutView itemId={trainingSelection} trainingWeek={clampTrainingWeek(settings.trainingWeek)} mode={mode} online={online} progress={settings.muayProgress ?? {}} onProgress={changeMuayProgress} onBack={closeWorkout} /> : <>
           {tab === 'hoje' && <TodayView key={dateKey} now={now} items={todayItems} mode={mode} modeSaving={modeSaving} onMode={changeMode} states={todayStates} savingIds={savingIds} dateKey={dateKey} checkIn={todayCheckIn} safety={safety} weeklySummary={weeklySummary} previousWeeklySummary={previousWeeklySummary} todaySummary={todaySummary} onCheckIn={saveCheckIn} onToggle={toggleCompletion} onSkip={toggleSkipped} onOpen={(item) => openActivity(item, now.getDay())} />}
-          {tab === 'semana' && <WeekView settings={settings} selectedDay={selectedWeekDay} onSelectedDay={setSelectedWeekDay} onOpen={openActivity} completed={todayCompleted} onToggle={toggleCompletion} />}
+          {tab === 'semana' && <WeekView settings={settings} selectedDay={selectedWeekDay} todayDay={now.getDay()} onSelectedDay={setSelectedWeekDay} onOpen={openActivity} completed={todayCompleted} onToggle={toggleCompletion} />}
           {tab === 'treinos' && <TrainingHubView trainingWeek={clampTrainingWeek(settings.trainingWeek)} mode={mode} onTrainingWeek={changeTrainingWeek} onOpenTraining={openWorkout} />}
           {tab === 'nutricao' && <NutritionView today={dateKey} measurements={bodyMeasurements} mealLogs={mealLogs} snapshots={dailySnapshots} completions={completions} shifts={deliveryShifts} expenses={expenses} records={financialRecords} onSaveMeasurement={saveBodyMeasurement} onSaveMeal={saveMealLog} />}
           {tab === 'financeiro' && <FinanceView planning={financePlanning} operations={financeOperations} today={dateKey} shifts={deliveryShifts} expenses={expenses} records={financialRecords} goals={financialGoals} budgets={categoryBudgets} registrationRequest={financeRegistration} onGoal={saveFinancialGoal} onBudget={saveCategoryBudget} onDeleteGoal={(id) => removeFinancialPlan("goal", id)} onDeleteBudget={(id) => removeFinancialPlan("budget", id)} onSave={saveFinancialRecord} onExpense={saveLinkedExpense} onDelivery={(id) => { setDeliverySelection((current) => ({ id, revision: current.revision + 1 })); setRecordKind('delivery'); navigateTab('registros') }} />}

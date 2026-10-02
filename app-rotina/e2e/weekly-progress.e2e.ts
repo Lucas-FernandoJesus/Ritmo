@@ -146,6 +146,42 @@ test('oferece a conclusão do estudo, respeita cancelamento e não duplica concl
   expect(unexpectedDialogs).toEqual([])
 })
 
+test('corrige um estudo existente sem criar outra sessão', async ({ page }) => {
+  await openAppOnTuesday(page)
+  await goToTab(page, 'Registros')
+  await page.getByRole('group', { name: 'Tipo de registro' }).getByRole('button', { name: 'Estudos', exact: true }).click()
+  page.on('dialog', (dialog) => { void dialog.dismiss() })
+
+  await page.getByLabel('Minutos').fill('30')
+  await page.getByLabel('Conteúdo').fill('Texto inicial')
+  await page.getByRole('button', { name: 'Salvar registro', exact: true }).click()
+  await expect(page.getByText('Inglês: Texto inicial', { exact: true })).toBeVisible()
+
+  await page.getByRole('button', { name: 'Editar estudo' }).click()
+  await page.getByLabel('Minutos').fill('45')
+  await page.getByLabel('Conteúdo').fill('Texto corrigido')
+  await page.getByRole('button', { name: 'Salvar alterações do estudo' }).click()
+  await expect(page.getByText('Inglês: Texto corrigido', { exact: true })).toBeVisible()
+  await expect(page.getByText('Inglês: Texto inicial', { exact: true })).toHaveCount(0)
+  await page.reload()
+  await goToTab(page, 'Registros')
+  await page.getByRole('group', { name: 'Tipo de registro' }).getByRole('button', { name: 'Estudos', exact: true }).click()
+  await expect(page.getByText('Inglês: Texto corrigido', { exact: true })).toBeVisible()
+  const logs = await page.evaluate(async () => new Promise<Array<{ minutes: number }>>((resolve, reject) => {
+    const request = indexedDB.open('rotina-local')
+    request.onerror = () => reject(request.error)
+    request.onsuccess = () => {
+      const database = request.result
+      const transaction = database.transaction('studyLogs', 'readonly')
+      const all = transaction.objectStore('studyLogs').getAll()
+      transaction.onerror = () => reject(transaction.error)
+      transaction.oncomplete = () => { resolve(all.result as Array<{ minutes: number }>); database.close() }
+    }
+  }))
+  expect(logs).toHaveLength(1)
+  expect(logs[0].minutes).toBe(45)
+})
+
 test('oferece a conclusão da atividade financeira aplicável', async ({ page }) => {
   await openAppAt(page, '2026-09-23T10:00:00-03:00')
   await goToTab(page, 'Registros')

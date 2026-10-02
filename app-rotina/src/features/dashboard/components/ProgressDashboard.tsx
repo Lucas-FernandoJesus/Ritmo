@@ -121,7 +121,7 @@ function signedValue(value: DashboardValue): string {
   return value.status === 'available' && value.value !== null && value.value > 0 ? `+${formatted}` : formatted
 }
 
-function Comparison({ metric, previousLabel, status }: { metric: DashboardComparisonMetric | undefined, previousLabel: string, status: DashboardValue['status'] }) {
+function Comparison({ metric, previousLabel, status, partial }: { metric: DashboardComparisonMetric | undefined, previousLabel: string, status: DashboardValue['status'], partial: boolean }) {
   const unavailable = status !== 'available' || !metric
   return <section className="dashboard-comparison" role="region" aria-label={`Comparação com ${previousLabel}`}>
     <div className="dashboard-section-heading">
@@ -135,6 +135,7 @@ function Comparison({ metric, previousLabel, status }: { metric: DashboardCompar
         <div><dt>Anterior</dt><dd>{formatDashboardValue(metric.previous)}</dd></div>
         <div><dt>Variação</dt><dd>{metric.changePercentage.status === 'available' ? signedValue(metric.changePercentage) : signedValue(metric.change)}</dd></div>
       </dl>}
+    {partial && <p>Período atual em andamento; comparação com o período anterior completo.</p>}
   </section>
 }
 
@@ -199,7 +200,7 @@ export function ProgressDashboard({ planning, today, snapshots, completions, stu
         </article>)}</div>
       </section>
 
-      <Comparison metric={comparisonMetric} previousLabel={dashboard.comparison.previousInterval.label} status={dashboard.comparison.status} />
+      <Comparison metric={comparisonMetric} previousLabel={dashboard.comparison.previousInterval.label} status={dashboard.comparison.status} partial={dashboard.comparison.partial} />
 
       {series && <ProgressChart series={series} formatValue={formatDashboardValue} statusLabel={dashboardStatusLabel} unitLabel={dashboardUnitLabel} />}
 

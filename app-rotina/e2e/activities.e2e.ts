@@ -42,6 +42,28 @@ test('busca atividades da semana por título e mostra ausência de resultados', 
   await expect(page.getByText('Nenhuma atividade encontrada.', { exact: true })).toBeVisible()
 })
 
+test('não registra checklist de sábado em uma terça-feira', async ({ page }) => {
+  await openAppOnTuesday(page)
+  await goToTab(page, 'Semana')
+  await page.getByRole('group', { name: 'Escolher dia da semana' }).getByRole('button', { name: 'Sáb', exact: true }).click()
+
+  const checklist = page.getByRole('region', { name: 'Preparação do fim de semana' })
+  await expect(checklist.getByRole('checkbox').first()).toBeDisabled()
+  await expect(checklist).toContainText('Marque estes itens no próprio sábado.')
+})
+
+test('permite marcar o checklist no sábado atual', async ({ page }) => {
+  await openAppAt(page, '2026-09-26T10:00:00-03:00')
+  await goToTab(page, 'Semana')
+  const checkbox = page.getByRole('region', { name: 'Preparação do fim de semana' }).getByRole('checkbox').first()
+  await expect(checkbox).toBeEnabled()
+  await checkbox.click()
+  await expect(checkbox).toBeChecked()
+  await page.reload()
+  await goToTab(page, 'Semana')
+  await expect(page.getByRole('region', { name: 'Preparação do fim de semana' }).getByRole('checkbox').first()).toBeChecked()
+})
+
 test('abre o treino A de hoje com instruções, exemplos, vídeo e retorno', async ({ page }) => {
   await openAppOnTuesday(page)
   await showFullDay(page)

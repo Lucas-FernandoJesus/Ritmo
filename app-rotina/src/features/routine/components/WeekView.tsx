@@ -5,7 +5,7 @@ import { dayNames, routineItems } from '../data'
 import { areaLabels } from '../view-labels'
 import { WeekendChecklists } from './WeekendChecklists'
 
-export function WeekView({ settings, selectedDay, onSelectedDay, onOpen, completed, onToggle }: { settings: AppSettings; selectedDay: number; onSelectedDay: (day: number) => void; onOpen: (item: RoutineItem, day: number) => void; completed: ReadonlySet<string>; onToggle: (id: string) => void }) {
+export function WeekView({ settings, selectedDay, todayDay, onSelectedDay, onOpen, completed, onToggle }: { settings: AppSettings; selectedDay: number; todayDay: number; onSelectedDay: (day: number) => void; onOpen: (item: RoutineItem, day: number) => void; completed: ReadonlySet<string>; onToggle: (id: string) => void }) {
   const [search, setSearch] = useState('')
   const days = [1, 2, 3, 4, 5, 6, 0] as const
   const items = routineItems.filter((item) => item.days.includes(selectedDay as 0 | 1 | 2 | 3 | 4 | 5 | 6) && item.active && !settings.disabledActivities.includes(item.id)).map((item) => ({ ...item, ...settings.scheduleOverrides[item.id] })).sort((a, b) => (a.startTime ?? '').localeCompare(b.startTime ?? ''))
@@ -16,7 +16,7 @@ export function WeekView({ settings, selectedDay, onSelectedDay, onOpen, complet
     <div className="week-selector" role="group" aria-label="Escolher dia da semana">{days.map((day) => <button key={day} type="button" className={selectedDay === day ? 'selected' : ''} aria-pressed={selectedDay === day} onClick={() => onSelectedDay(day)}><span>{dayNames[day].slice(0, 3)}</span><i aria-hidden="true" /></button>)}</div>
     <div className="week-search"><Field label="Buscar atividade"><input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Título ou categoria" /></Field></div>
     <section className="week-panel" aria-live="polite"><div className="section-heading"><div><h2>{dayNames[selectedDay]}</h2><p className="section-description">{normalizedSearch ? `${visibleItems.length} de ${items.length} atividades` : `${items.length} atividades previstas`}</p></div></div>{visibleItems.length ? <div className="week-list">{visibleItems.map((item) => { const openLabel = item.area === 'treino' ? 'Abrir treino' : 'Ver orientações'; return <button type="button" className={`week-item nature-${item.nature}`} key={item.id} onClick={() => onOpen(item, selectedDay)} aria-label={`${openLabel}: ${item.title}`}><time>{item.startTime ?? 'Livre'}</time><span className="week-copy"><strong>{item.title}</strong><span className="week-meta">{areaLabels[item.area]} · {item.nature === 'fixa' ? 'Fixa' : item.nature === 'flexivel' ? 'Flexível' : 'Opcional'}</span><span className="week-hint">{openLabel}</span></span></button> })}</div> : <div className="empty-state"><strong>{normalizedSearch && items.length ? 'Nenhuma atividade encontrada.' : 'Dia sem atividades.'}</strong><p>{normalizedSearch && items.length ? 'Tente outro título ou categoria.' : 'Aproveite o espaço livre.'}</p></div>}</section>
-    {(selectedDay === 0 || selectedDay === 6) && <WeekendChecklists day={selectedDay} completed={completed} onToggle={onToggle} />}
+    {(selectedDay === 0 || selectedDay === 6) && <WeekendChecklists day={selectedDay} isToday={selectedDay === todayDay} completed={completed} onToggle={onToggle} />}
     <p className="week-footnote">Os turnos opcionais dependem da checagem de segurança no dia.</p>
   </>
 }
