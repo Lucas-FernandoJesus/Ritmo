@@ -1,0 +1,3 @@
+# Arquivos temporários gerados ao consultar skills locais em Python.
+__pycache__/
+*.py[cod]
