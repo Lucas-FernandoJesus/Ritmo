@@ -15,7 +15,6 @@ const expectedTokens = {
     mutedForeground: '#475569',
     destructive: '#dc2626',
     focus: '#0d9488',
-    computedFocus: 'rgb(13, 148, 136)',
   },
   dark: {
     background: '#0f172a',
@@ -27,7 +26,6 @@ const expectedTokens = {
     mutedForeground: '#94a3b8',
     destructive: '#ef4444',
     focus: '#fff',
-    computedFocus: 'rgb(255, 255, 255)',
   },
 } as const
 
@@ -346,8 +344,7 @@ for (const { theme, width } of [
         headerBackground: header.backgroundImage,
       }
     })
-    const { computedFocus: _computedFocus, ...tokens } = expectedTokens[theme]
-    expect(visualState).toMatchObject({ theme, ...tokens })
+    expect(visualState).toMatchObject({ theme, ...expectedTokens[theme] })
     expect(visualState.bodyBackground).toContain('radial-gradient')
     expect(visualState.bodyBackground).not.toContain('url(')
     expect(visualState.headerBackground).not.toContain('url(')
@@ -355,19 +352,22 @@ for (const { theme, width } of [
     await goToTab(page, 'Ajustes')
     const selectedAppearance = page.getByRole('group', { name: 'Aparência' }).getByRole('button', { name: theme === 'light' ? 'Claro' : 'Escuro' })
     await selectedAppearance.focus()
+    await page.keyboard.press('Tab')
+    await page.keyboard.press('Shift+Tab')
     await expect(selectedAppearance).toBeFocused()
     await page.keyboard.press('Space')
     await expect(selectedAppearance).toHaveAttribute('aria-pressed', 'true')
     const control = await selectedAppearance.evaluate((button) => {
       const style = getComputedStyle(button)
       const box = button.getBoundingClientRect()
-      return { width: box.width, height: box.height, outlineStyle: style.outlineStyle, outlineWidth: style.outlineWidth, outlineColor: style.outlineColor }
+      return { width: box.width, height: box.height, focusVisible: button.matches(':focus-visible'), outlineStyle: style.outlineStyle, outlineWidth: style.outlineWidth, outlineColor: style.outlineColor, backgroundColor: style.backgroundColor }
     })
     expect(control.width).toBeGreaterThanOrEqual(44)
     expect(control.height).toBeGreaterThanOrEqual(44)
+    expect(control.focusVisible).toBe(true)
     expect(control.outlineStyle).not.toBe('none')
     expect(Number.parseFloat(control.outlineWidth)).toBeGreaterThanOrEqual(2)
-    expect(control.outlineColor).toBe(expectedTokens[theme].computedFocus)
+    expect(contrastRatio(control.outlineColor, control.backgroundColor)).toBeGreaterThanOrEqual(3)
 
     await goToTab(page, 'Progresso')
     const dashboard = page.getByRole('region', { name: 'Painel de progresso' })

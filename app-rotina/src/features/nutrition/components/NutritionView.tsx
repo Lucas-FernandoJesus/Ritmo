@@ -1,18 +1,20 @@
 import { useMemo, useState, type FormEvent } from 'react'
 import { summarizeBodyTrend, summarizeMealDay } from '../../../core/domain'
-import type { BodyMeasurement, MealLog, MealOutcome, MealSlot } from '../../../core/types'
+import type { BodyMeasurement, DailyCompletion, DailyPlanSnapshot, DeliveryShift, Expense, FinancialRecord, MealLog, MealOutcome, MealSlot } from '../../../core/types'
+import { summarizeNutritionWeeks } from '../weekly-summary'
+import { NutritionWeeklyOverview } from './NutritionWeeklyOverview'
 
 const meals = [
-  { name: 'Café da manhã', purpose: 'Começar com proteína', items: ['3 ovos mexidos', '50 g de pão', '1 fruta'] },
-  { name: 'Almoço', purpose: 'Marmita principal', items: ['150 g de carne ou frango', '150 g de arroz', '150 g de feijão', 'Legumes ou salada à vontade'] },
-  { name: 'Lanche', purpose: 'Evitar chegar vazio à noite', items: ['250 ml de leite', '30 g de aveia', '1 fruta'] },
-  { name: 'Jantar', purpose: 'Recuperar sem improviso', items: ['120 g de carne ou frango', '120 g de arroz', '150 g de feijão', 'Legumes ou salada à vontade'] },
+  { name: 'Café da manhã', purpose: 'Uma opção prática', items: ['Ovos ou iogurte natural', 'Pão ou aveia', 'Uma fruta, se disponível'] },
+  { name: 'Almoço', purpose: 'Marmita principal', items: ['Frango, ovos, peixe ou outra proteína acessível', 'Arroz e feijão', 'Legumes ou salada'] },
+  { name: 'Lanche', purpose: 'Conforme fome e intervalo até o jantar', items: ['Leite ou iogurte natural', 'Fruta ou aveia'] },
+  { name: 'Jantar', purpose: 'Refeição simples no fim do dia', items: ['Proteína acessível', 'Arroz, feijão ou outra base disponível', 'Legumes ou salada'] },
 ] as const
 
 const shoppingGroups = [
-  { title: 'Proteína', items: ['30 ovos', '2,5–3 kg de coxa e sobrecoxa', 'Leite para 7 porções'] },
-  { title: 'Base das marmitas', items: ['1 kg de arroz', '1 kg de feijão', '500 g de aveia'] },
-  { title: 'Volume e praticidade', items: ['14 frutas econômicas', 'Legumes da estação', 'Verduras que durem a semana'] },
+  { title: 'Proteína', items: ['Ovos', 'Frango ou outra opção acessível', 'Leite ou iogurte, se fizer parte da rotina'] },
+  { title: 'Base das marmitas', items: ['Arroz', 'Feijão ou lentilha', 'Aveia, se útil para o café ou lanche'] },
+  { title: 'Variedade e praticidade', items: ['Frutas pelo preço da semana', 'Legumes da estação', 'Verduras que durem até o preparo'] },
 ] as const
 
 const mealSlots: readonly { value: MealSlot; label: string; reference: string }[] = [
@@ -32,6 +34,11 @@ type NutritionViewProps = {
   today: string
   measurements: readonly BodyMeasurement[]
   mealLogs: readonly MealLog[]
+  snapshots: readonly DailyPlanSnapshot[]
+  completions: readonly DailyCompletion[]
+  shifts: readonly DeliveryShift[]
+  expenses: readonly Expense[]
+  records: readonly FinancialRecord[]
   onSaveMeasurement: (measurement: BodyMeasurement) => Promise<boolean>
   onSaveMeal: (meal: MealLog) => Promise<boolean>
 }
@@ -51,7 +58,7 @@ function WeightLine({ measurements }: { measurements: readonly BodyMeasurement[]
   </svg>
 }
 
-export function NutritionView({ today, measurements, mealLogs, onSaveMeasurement, onSaveMeal }: NutritionViewProps) {
+export function NutritionView({ today, measurements, mealLogs, snapshots, completions, shifts, expenses, records, onSaveMeasurement, onSaveMeal }: NutritionViewProps) {
   const todayMeasurement = measurements.find((item) => item.localDate === today)
   const [localDate, setLocalDate] = useState(today)
   const [weight, setWeight] = useState(todayMeasurement ? String(todayMeasurement.weightKg) : '')
@@ -66,6 +73,7 @@ export function NutritionView({ today, measurements, mealLogs, onSaveMeasurement
   const existing = measurements.find((item) => item.localDate === localDate)
   const orderedMeasurements = useMemo(() => [...measurements].sort((a, b) => b.localDate.localeCompare(a.localDate)), [measurements])
   const trend = useMemo(() => summarizeBodyTrend(measurements, today), [measurements, today])
+  const weeklySummary = useMemo(() => summarizeNutritionWeeks(today, { measurements, mealLogs, snapshots, completions, shifts, expenses, records }), [today, measurements, mealLogs, snapshots, completions, shifts, expenses, records])
   const existingMeal = mealLogs.find((item) => item.localDate === mealDate && item.meal === mealSlot)
   const mealSummary = useMemo(() => summarizeMealDay(mealLogs, mealDate), [mealLogs, mealDate])
   const orderedMealLogs = useMemo(() => [...mealLogs].sort((a, b) => b.localDate.localeCompare(a.localDate) || mealSlots.findIndex((slot) => slot.value === a.meal) - mealSlots.findIndex((slot) => slot.value === b.meal)), [mealLogs])
@@ -132,20 +140,22 @@ export function NutritionView({ today, measurements, mealLogs, onSaveMeasurement
       <div className="nutrition-target-copy">
         <span className="nutrition-marker" aria-hidden="true">Ponto de partida</span>
         <h2 id="nutrition-target-title">Uma referência para testar, não uma regra fixa</h2>
-        <p>Use por duas semanas completas e ajuste pela média do peso, pela fome e pelo desempenho nos treinos.</p>
+        <p>Comece com refeições simples. Observe por duas semanas a fome, a energia e as medidas registradas antes de rever o plano.</p>
       </div>
       <dl className="nutrition-numbers">
-        <div><dt>Energia diária</dt><dd>2.200 kcal</dd></div>
-        <div><dt>Proteína diária</dt><dd>120–140 g</dd></div>
+        <div><dt>Calorias e porções ainda não definidas</dt><dd>Plano flexível</dd></div>
+        <div><dt>{orderedMeasurements.length ? 'Último peso registrado' : 'Peso a confirmar na balança'}</dt><dd>{orderedMeasurements.length ? `${orderedMeasurements[0].weightKg.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} kg` : 'Sem registro'}</dd></div>
       </dl>
-      <p className="nutrition-caveat">Meta provisória enquanto altura, volume de treino e gasto real com alimentação ainda não foram calibrados.</p>
+      <p className="nutrition-caveat">A cintura pode ser registrada junto do peso medido. Uma estimativa de peso não deve virar registro nem meta alimentar.</p>
     </section>
+
+    <NutritionWeeklyOverview summary={weeklySummary} />
 
     <section className="nutrition-section" aria-labelledby="measurement-title">
       <div className="nutrition-heading">
         <div>
           <h2 id="measurement-title">Acompanhe o corpo, não um dia isolado</h2>
-          <p>Registre nas mesmas condições. O Ritmo compara a média dos últimos sete dias com os sete anteriores.</p>
+          <p>Pese de manhã, após ir ao banheiro e antes de comer, sempre em condições parecidas. O Ritmo compara os últimos sete dias com os sete anteriores.</p>
         </div>
       </div>
       <div className="measurement-workspace">
@@ -247,8 +257,8 @@ export function NutritionView({ today, measurements, mealLogs, onSaveMeasurement
     <section className="nutrition-section" aria-labelledby="nutrition-plate-title">
       <div className="nutrition-heading">
         <div>
-          <h2 id="nutrition-plate-title">Seu prato na balança</h2>
-          <p>Os pesos de arroz, feijão e carnes são do alimento já pronto para comer.</p>
+          <h2 id="nutrition-plate-title">Refeições simples para começar</h2>
+          <p>Combine o que estiver disponível e ajuste as quantidades à sua fome e saciedade. Não há porções prescritas nesta etapa.</p>
         </div>
         <span>4 refeições</span>
       </div>
@@ -262,14 +272,14 @@ export function NutritionView({ today, measurements, mealLogs, onSaveMeasurement
           </div>
         </article>)}
       </div>
-      <p className="nutrition-swap"><strong>Troca simples:</strong> prefira frango sem pele ou carne bovina sem gordura aparente. Se faltar uma refeição, retome na próxima; não tente compensar ficando sem comer.</p>
+      <p className="nutrition-swap"><strong>Troca simples:</strong> alterne ovos, frango, peixe ou leguminosas conforme preço e preferência. Se faltar uma refeição, retome na próxima; não tente compensar ficando sem comer.</p>
     </section>
 
     <section className="nutrition-section nutrition-shopping" aria-labelledby="nutrition-shopping-title">
       <div className="nutrition-heading">
         <div>
           <h2 id="nutrition-shopping-title">Compras para 7 dias</h2>
-          <p>Primeiro lote para descobrir o custo real antes de comprometer todo o vale.</p>
+          <p>Escolha quantidades para os dias que pretende preparar e confira o custo real antes de comprometer todo o vale.</p>
         </div>
         <span>Lista piloto</span>
       </div>
@@ -288,22 +298,22 @@ export function NutritionView({ today, measurements, mealLogs, onSaveMeasurement
     <section className="nutrition-section nutrition-adjustment" aria-labelledby="nutrition-adjustment-title">
       <div className="nutrition-heading">
         <div>
-          <h2 id="nutrition-adjustment-title">Como ajustar sem perder músculo</h2>
-          <p>Decida pela tendência de duas semanas, não por um único dia na balança.</p>
+        <h2 id="nutrition-adjustment-title">Como acompanhar e ajustar</h2>
+          <p>Compare semanas equivalentes; uma pesagem ou refeição isolada não define a tendência.</p>
         </div>
       </div>
       <ol className="adjustment-steps">
-        <li><strong>Pese nas mesmas condições.</strong><span>De manhã, após ir ao banheiro e antes de comer. Faça 3 a 7 medições por semana e use a média.</span></li>
-        <li><strong>Mantenha treino e proteína.</strong><span>Treino de força, proteína distribuída nas refeições e sono são as principais proteções para a massa muscular.</span></li>
-        <li><strong>Mantenha se estiver funcionando.</strong><span>Queda média de cerca de 0,25 a 0,75 kg por semana, força estável e fome controlável indicam que não é hora de cortar mais.</span></li>
-        <li><strong>Ajuste pouco e espere.</strong><span>Sem queda por duas semanas completas, retire cerca de 100–150 kcal. Se cair rápido demais ou o treino piorar, devolva 100–150 kcal.</span></li>
+        <li><strong>Confirme o ponto de partida.</strong><span>Registre o peso medido nas mesmas condições e a cintura uma vez por semana. Refeição recente pode alterar temporariamente a medida da barriga.</span></li>
+        <li><strong>Construa a rotina.</strong><span>Mantenha refeições práticas, sono e atividade leve que você consiga repetir. Comece os treinos pela fase de adaptação.</span></li>
+        <li><strong>Observe duas semanas.</strong><span>Compare registros, fome, energia e resposta aos treinos. Dados ausentes não indicam que uma refeição ou atividade foi pulada.</span></li>
+        <li><strong>Revise com cuidado.</strong><span>Se a rotina estiver difícil, simplifique primeiro. Procure avaliação profissional para definir metas individuais ou investigar pressão, glicose e colesterol.</span></li>
       </ol>
     </section>
 
     <section className="nutrition-section waist-guide" aria-labelledby="waist-title">
       <div>
         <h2 id="waist-title">Como medir a cintura</h2>
-        <p>Passe uma fita ao redor do abdômen na altura do umbigo, paralela ao chão. Fique relaxado, solte o ar normalmente e não aperte a fita. Repita sempre no mesmo horário, uma vez por semana.</p>
+        <p>Passe a fita ao redor da cintura logo acima dos ossos do quadril, paralela ao chão. Fique relaxado, solte o ar normalmente e não aperte a fita. Repita no mesmo local e horário, de preferência antes da refeição, uma vez por semana.</p>
       </div>
       <span aria-hidden="true">↔</span>
     </section>

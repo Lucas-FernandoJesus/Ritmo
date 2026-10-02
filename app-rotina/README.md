@@ -37,19 +37,23 @@ Os dados ficam no IndexedDB do navegador de cada aparelho: não são enviados ao
 
 ## Navegação
 
-O rodapé mantém somente **Menu**. Ao abrir, a lista vertical ocupa toda a tela e apresenta Hoje, Semana, Treinos, Registros, Financeiro, Progresso e Ajustes. Escolher uma opção navega sem recarregar; o X ou Esc fecha mantendo a tela atual. O diálogo controla foco, bloqueia o fundo e funciona offline nos dois temas.
+O rodapé mantém somente **Menu**. Ao abrir, a lista vertical ocupa toda a tela e apresenta Hoje, Semana, Treinos, Nutrição, Registros, Financeiro, Progresso e Ajustes. Escolher uma opção navega sem recarregar; o X ou Esc fecha mantendo a tela atual. O diálogo controla foco, bloqueia o fundo e funciona offline nos dois temas.
 
 ## Backup
 
 Em **Ajustes**, selecione **Exportar backup JSON**. Guarde o arquivo fora do aparelho. Para restaurar, use **Importar backup JSON**; o formato e a versão são validados antes da confirmação. Backups novos incluem os snapshots diários usados no progresso semanal, enquanto backups antigos sem esse campo continuam aceitos.
 
+## Nutrição
+
+A tela reúne um plano alimentar inicial flexível, registros de peso e cintura e um diário de quatro refeições. O resumo semanal compara os últimos sete dias completos aos sete anteriores usando somente medidas, refeições, treinos e gastos alimentares registrados. Ausência de histórico aparece como **Sem dados**; a comparação não atribui causa às mudanças. Calorias, porções e peso-alvo ainda não foram definidos. Os registros são locais, funcionam offline e entram no backup.
+
 ## Financeiro
 
-**Planejar próximos passos** reúne recorrências semanais/mensais/anuais, compras parceladas com centavos reconciliados, patrimônio com saldo inicial e transferências, fechamento mensal e simulações sem alterar os registros. Ocorrências só viram lançamentos quando confirmadas e não se duplicam nas projeções. CSV, Excel (.xlsx) e PDF reais podem ser exportados pelo período. IndexedDB versão 5 preserva dados antigos e inclui todas as novas estruturas no backup; não há backend ou sincronização externa.
+**Planejar próximos passos** reúne recorrências semanais/mensais/anuais, compras parceladas com centavos reconciliados, patrimônio com saldo inicial e transferências, fechamento mensal e simulações sem alterar os registros. Ocorrências só viram lançamentos quando confirmadas e não se duplicam nas projeções. CSV, Excel (.xlsx) e PDF reais podem ser exportados pelo período. O IndexedDB atual está na versão 7, preserva dados antigos e inclui as estruturas novas no backup; não há backend ou sincronização externa.
 
 A aba **Financeiro** consolida automaticamente receitas e custos dos turnos de delivery, despesas de **Registros** e movimentações avulsas. Permite cadastrar entrada, saída, crédito e pendência; editar lançamentos; receber créditos ou pagar pendências sem criar cópias. O histórico oferece filtros por período, tipo, categoria, origem e status, além de busca por descrição. Hoje, semana civil, mês civil, ano civil e período personalizado atualizam os resumos e as análises. **Progresso** mostra um resumo financeiro correspondente ao mês ou ano selecionado na Dashboard.
 
-Metas têm progresso automático; orçamentos mensais acompanham o consumo por categoria ou custo específico do delivery. Comparações e tendências distinguem histórico ausente de zero. O fluxo dos próximos 7, 15 e 30 dias separa saldo realizado e projeção, incluindo alertas de vencimento e risco de saldo negativo. Delivery mostra bruto, despesas pagas, líquido operacional e resultado após reserva, além de taxas por hora, médias, custos e comparações de turnos. Metas e orçamentos são planejamento, nunca movimentações. A Dashboard destaca uma meta e os alertas prioritários. Tudo permanece offline, com IndexedDB 5 e backup compatível com versões anteriores.
+Metas têm progresso automático; orçamentos mensais acompanham o consumo por categoria ou custo específico do delivery. Comparações e tendências distinguem histórico ausente de zero. O fluxo dos próximos 7, 15 e 30 dias separa saldo realizado e projeção, incluindo alertas de vencimento e risco de saldo negativo. Delivery mostra bruto, despesas pagas, líquido operacional e resultado após reserva, além de taxas por hora, médias, custos e comparações de turnos. Metas e orçamentos são planejamento, nunca movimentações. A Dashboard destaca uma meta e os alertas prioritários. Tudo permanece offline, com backup compatível com versões anteriores.
 
 O saldo é entradas recebidas menos saídas pagas no período; não inclui saldo inicial de conta, créditos, pendências nem datas futuras. Sem registros realizados, aparece **Sem dados**. A reserva de manutenção do delivery permanece uma previsão: reduz a renda líquida estimada e aparece como valor reservado, sem simular um pagamento. Despesas adicionais entram no resultado do delivery quando vinculadas explicitamente a um turno; não registre novamente um gasto já informado nele.
 

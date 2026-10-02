@@ -15,6 +15,7 @@ Ritmo/
 │   ├── estrutura.md
 │   ├── telas-e-funcionalidades.md
 │   ├── financeiro.md
+│   ├── nutricao/
 │   ├── rotina/
 │   ├── muay-thai/
 │   └── design-system/ritmo/
@@ -41,6 +42,7 @@ Ritmo/
             │   └── components/
             ├── dashboard/
             │   └── components/
+            ├── nutrition/
             ├── progress/
             ├── records/
             ├── routine/
@@ -60,6 +62,7 @@ Ritmo/
 | `src/infrastructure/` | Repositório IndexedDB, testes de proteção da persistência e do serviço offline |
 | `src/features/finance/` | Movimentações, análises, planos, fechamento, exportações, testes e componentes financeiros |
 | `src/features/dashboard/` | Agregações, testes e Dashboard |
+| `src/features/nutrition/` | Plano e registros alimentares, medidas e resumo semanal; testes próximos dos seletores |
 | `src/features/progress/` | Tela Progresso e plano inicial de 30 dias |
 | `src/features/records/` | Tela Registros, formulários de delivery e estudo |
 | `src/features/routine/` | Telas Hoje e Semana, checklists do fim de semana, orientações e dados da rotina |
@@ -83,7 +86,7 @@ Ritmo/
 - Skills locais ficam somente em `.agents/skills/` na raiz; o lock correspondente também fica na raiz. Não há instalação ou configuração global nesta reorganização.
 - Consulte o [índice da coleção](../.agents/skills/README.md) para distinguir aplicação, leitura e avaliação. O manifesto local registra todas as cópias; o lock na raiz conserva os metadados originais da ferramenta de instalação. As fontes globais e de plugins foram preservadas para outros projetos.
 - `node_modules/`, `dist/` e `test-results/` são gerados e ignorados pelo Git. Não mova esses resultados para `src/` ou `docs/`.
-- Caminhos `sourceFile` da rotina continuam relativos à raiz em `docs/rotina/`. IDs persistidos, banco versão 5, migrations e formatos de backup são preservados.
+- Caminhos `sourceFile` da rotina continuam relativos à raiz em `docs/rotina/`. IDs persistidos e formatos de backup são preservados; o IndexedDB atual está na versão 7, com migrações para dados anteriores.
 
 ## Verificação
 

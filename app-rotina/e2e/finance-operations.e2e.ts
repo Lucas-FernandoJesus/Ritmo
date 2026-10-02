@@ -271,7 +271,7 @@ for (const theme of ['light', 'dark'] as const) test(`visão anual de gastos rec
   await expect(page.getByRole('region', { name: 'Gastos recorrentes do ano' })).toContainText('Conta anual')
 })
 
-test('migração 4 para 5 preserva dados e backup antigo restaura novas coleções vazias', async ({ page }) => {
+test('migração 4 para 7 preserva dados e backup antigo restaura novas coleções vazias', async ({ page }) => {
   await openStoragePage(page)
   await page.evaluate(async () => new Promise<void>((resolve, reject) => {
     const request = indexedDB.open('rotina-local', 4)
@@ -283,7 +283,7 @@ test('migração 4 para 5 preserva dados e backup antigo restaura novas coleçõ
   await goToTab(page, 'Financeiro')
   await expect(page.getByRole('region', { name: 'Resumo financeiro', exact: true })).toContainText('90,00')
   const version = await page.evaluate(async () => new Promise<number>(resolve => { const request = indexedDB.open('rotina-local'); request.onsuccess = () => { resolve(request.result.version); request.result.close() } }))
-  expect(version).toBe(5)
+  expect(version).toBe(7)
   const old = await backup(page)
   for (const key of ['recurringPlans', 'installmentPlans', 'assetAccounts', 'accountTransfers']) delete old[key]
   await goToTab(page, 'Financeiro')

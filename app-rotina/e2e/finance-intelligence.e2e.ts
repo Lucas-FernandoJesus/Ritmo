@@ -213,7 +213,7 @@ test('classifica custo vinculado, limita orçamento específico e não duplica p
   await expect(history.getByRole('article').filter({ hasText: 'Taxa vinculada' })).toHaveCount(1)
 })
 
-test('migra IndexedDB 3 para 5 preservando fontes e importa backup sem planejamento', async ({ page }) => {
+test('migra IndexedDB 3 para 7 preservando fontes e importa backup sem planejamento', async ({ page }) => {
   await openStoragePage(page)
   await page.evaluate(async () => new Promise<void>((resolve, reject) => {
     const request = indexedDB.open('rotina-local', 3)
@@ -240,7 +240,7 @@ test('migra IndexedDB 3 para 5 preservando fontes e importa backup sem planejame
       tx.onerror = () => reject(tx.error)
     }
   }))
-  expect(state).toEqual({ version: 5, goals: 0, budgets: 0 })
+  expect(state).toEqual({ version: 7, goals: 0, budgets: 0 })
   await goToTab(page, 'Financeiro')
   await expect(page.getByRole('region', { name: 'Resumo financeiro', exact: true })).toContainText('90,00')
   await page.getByRole('navigation', { name: 'Áreas do Financeiro' }).getByRole('button', { name: 'Planejamento', exact: true }).click()

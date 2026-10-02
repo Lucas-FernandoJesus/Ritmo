@@ -18,7 +18,7 @@ Categorias gerais continuam strings: Moradia, Alimentação, Transporte, Saúde,
 
 ## Arquitetura
 
-Os arquivos financeiros estão agrupados em `app-rotina/src/features/finance/`, com componentes em `components/` e testes unitários próximos dos módulos. Modelos, validação, máscara monetária e calendário compartilhados ficam em `src/core/`; o repositório fica em `src/infrastructure/`. Veja o [mapa de organização](estrutura.md). Essa realocação preserva o IndexedDB 5, migrations, backup e regras de cálculo.
+Os arquivos financeiros estão agrupados em `app-rotina/src/features/finance/`, com componentes em `components/` e testes unitários próximos dos módulos. Modelos, validação, máscara monetária e calendário compartilhados ficam em `src/core/`; o repositório fica em `src/infrastructure/`. Veja o [mapa de organização](estrutura.md). Essa realocação preservou os dados, o backup e as regras de cálculo. O IndexedDB atual está na versão 7.
 
 ```text
 Formulários → MoneyInput/números → validação → repository.ts → IndexedDB
@@ -44,7 +44,7 @@ Totais, saldos, percentuais, médias, status, tendências e projeções não sã
 
 ## Persistência, migração e backup
 
-IndexedDB `rotina-local`, versão **5**. A migração 3 → 4 criou `financialGoals` e `categoryBudgets`; a migração 4 → 5 cria `recurringPlans`, `installmentPlans`, `assetAccounts` e `accountTransfers` quando ausentes. As coleções anteriores são preservadas. A migração 2 → 3 já criava `financialRecords`; o mesmo laço mantém compatibilidade com bancos 1 a 4 sem apagar ou inventar registros. Outras abas abertas recebem `versionchange`; uma atualização bloqueada orienta fechar as abas, sem alterar os dados.
+IndexedDB `rotina-local`, versão atual **7**. Na evolução do Financeiro, a versão 3 → 4 adicionou `financialGoals` e `categoryBudgets`; a 4 → 5 adicionou `recurringPlans`, `installmentPlans`, `assetAccounts` e `accountTransfers`. A versão 2 → 3 já incluía `financialRecords`; as versões posteriores acrescentaram registros de Nutrição. O repositório cria somente stores ausentes e preserva as coleções anteriores. Outras abas abertas recebem `versionchange`; uma atualização bloqueada orienta fechar as abas, sem alterar os dados.
 
 Metas usam ID estável na edição. Orçamentos têm ID determinístico por mês e categoria ou custo específico. Salvar novamente o mesmo escopo/mês atualiza o limite, evitando duplicação. Alterar a identidade de um orçamento exige criar outro planejamento; edição modifica o limite. Exclusão de planejamento não apaga movimentações.
 
@@ -154,7 +154,7 @@ Custos mostram total, participação nas despesas, percentual da receita bruta, 
 
 ## Interface, gráficos, Dashboard e acessibilidade
 
-A identidade existente é preservada: tokens, superfícies, tipografia, claro/escuro e campos. O rodapé agora mantém somente Menu, que abre a lista central dos sete destinos em tela cheia. Cinco cards principais; planejamento em listas; comparações, projeção e análises detalhadas em seções recolhidas. Formulários de metas/orçamento são abertos por ação explícita. Cadastro/histórico continuam disponíveis.
+A identidade existente é preservada: tokens, superfícies, tipografia, claro/escuro e campos. O rodapé mantém somente Menu, que abre a lista central dos oito destinos em tela cheia. Cinco cards principais; planejamento em listas; comparações, projeção e análises detalhadas em seções recolhidas. Formulários de metas/orçamento são abertos por ação explícita. Cadastro/histórico continuam disponíveis.
 
 Gráficos SVG reutilizam `ProgressChart` e suas convenções, sem biblioteca nova: fluxo de entradas/saídas, saldo acumulado, distribuição por categoria/origem e evolução de indicadores do delivery. Fluxo diferencia barras cheias/contornadas e explica os valores em texto; gráficos possuem tabela alternativa. Séries longas são mensais, com limite de 1.200 buckets; totais/histórico permanecem completos. Saldo acumulado do gráfico começa em zero dentro do período e não presume saldo de conta.
 

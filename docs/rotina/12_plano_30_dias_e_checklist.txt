@@ -6,6 +6,8 @@ SEMANA 1: CONSTRUIR A BASE
 [ ] Aprender os treinos A e B com um circuito, sem piorar sintomas.
 [ ] Arrumar cama e cozinha diariamente.
 [ ] Planejar alimentação simples.
+[ ] Confirmar o peso na balança e medir a cintura em condições comparáveis,
+    sem transformar a estimativa de peso em registro.
 [ ] Registrar como o braço responde ao treino e à pilotagem prolongada.
 
 SEMANA 2: DAR CONTINUIDADE

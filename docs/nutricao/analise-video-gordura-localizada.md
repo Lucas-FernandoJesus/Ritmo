@@ -3,7 +3,7 @@
 **Vídeo:** [Como Queimar Gordura nas Piores partes? - E qual a mais difícil?](https://www.youtube.com/watch?v=G2IGuPV4kTo)  
 **Canal:** Gabriel Arones - Fitness Flexível  
 **ID:** `G2IGuPV4kTo`  
-**Material analisado:** legenda automática em português extraída integralmente em 1º de outubro de 2026.
+**Material analisado:** legenda automática em português extraída integralmente em 1º de outubro de 2026; quadro dos três déficits conferido visualmente no vídeo em aproximadamente 17min25s–18min.
 
 ## Síntese executiva
 
@@ -42,6 +42,8 @@ Gabriel reforça que exercícios básicos com progressão também desenvolvem o 
 O vídeo explica a maior resistência de algumas áreas pela distribuição de receptores adrenérgicos alfa e beta. Reconhece que não se escolhe diretamente a região de perda e propõe o “efeito V”: desenvolver ombros e costas para alterar a proporção visual enquanto a gordura corporal total diminui.
 
 Para pessoas que não progridem apenas com escolhas qualitativas, recomenda registrar alimentação e usa uma regra aproximada de 10–13 kcal por libra. Na reação, isso é traduzido em multiplicadores de 32,6, 28,8 e 25,6 kcal/kg, apresentados como déficits de 15%, 20% e 25%. O bloco também promove produtos pagos dos dois criadores.
+
+**Quadro conferido no vídeo:** 15% aparece como moderado e mais sustentável (32,6 kcal/kg), 20% como moderado a agressivo (28,8 kcal/kg) e 25% como o mais agressivo (25,6 kcal/kg). As faixas de perda semanal mostradas são exemplos do vídeo, não previsões individuais. O plano atual do Ritmo não seleciona nenhum desses percentuais nem fixa meta calórica; uma versão anterior da tela mostrava 2.200 kcal sem dados suficientes para classificar o déficit correspondente.
 
 **Leitura crítica:** o mecanismo dos receptores é uma simplificação e não permite prever uma ordem individual exata. Os multiplicadores por peso ignoram idade, sexo, composição corporal, atividade, adaptação e erro de registro; não devem virar meta automática. Um “déficit de 25%” ou perda de 0,7–1 kg por semana pode ser inadequado para muitas pessoas. A presença de publicidade exige separar educação de conversão comercial.
 
@@ -106,4 +108,4 @@ Ao final, revisar padrão, custo e aderência. Só então decidir se uma estimat
 
 ## Limitações desta análise
 
-A legenda é automática e contém erros de pontuação e reconhecimento. A análise cobre integralmente o conteúdo falado, mas não valida medidas mostradas somente na tela, referências que apareceram sem serem lidas, transformações fotográficas ou execução dos exercícios. Dados internos dos criadores, depoimentos e publicidade foram tratados como alegações do vídeo, não como evidência independente.
+A legenda é automática e contém erros de pontuação e reconhecimento. A análise cobre integralmente o conteúdo falado e o quadro dos três déficits indicado acima; não valida outras medidas mostradas somente na tela, referências que apareceram sem serem lidas, transformações fotográficas ou execução dos exercícios. Dados internos dos criadores, depoimentos e publicidade foram tratados como alegações do vídeo, não como evidência independente.

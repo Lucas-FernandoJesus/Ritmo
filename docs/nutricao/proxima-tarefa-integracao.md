@@ -1,4 +1,6 @@
-# Handoff — integração de nutrição, treino e orçamento
+# Integração semanal de nutrição, treino e orçamento
+
+Estado: implementação concluída em 01/10/2026.
 
 ## Estado atual
 
@@ -15,7 +17,7 @@ O IndexedDB está na versão **7**, com as stores `bodyMeasurements` e
 `mealLogs`. Backups anteriores continuam válidos porque as duas coleções
 são opcionais durante a importação.
 
-## Próxima tarefa
+## Tarefa executada
 
 ### Objetivo
 
@@ -42,7 +44,7 @@ causalidade e sem transformar ausência de histórico em zero.
 ### Fora de escopo
 
 - estimar calorias ou nutrientes a partir do texto das observações;
-- definir peso-alvo ou alterar automaticamente a meta de 2.200 kcal;
+- definir peso-alvo ou estabelecer meta calórica automática;
 - concluir que uma refeição ou treino causou mudança de peso;
 - criar gastos alimentares novos ou duplicar registros do Financeiro;
 - alterar o planejamento de treinos;
@@ -94,3 +96,26 @@ coleção já é tratada como fonte canônica pela tela Financeiro. Não somar
 5. Validar ausência de dupla contagem financeira.
 6. Executar verificação completa e atualizar este documento se decisões
    arquiteturais mudarem.
+
+## Implementação
+
+- `src/features/nutrition/weekly-summary.ts` calcula dois períodos completos
+  de sete dias sem incluir hoje; `weekly-summary.test.ts` confere limites,
+  médias, cobertura, conclusões de treino e ausência de dados.
+- `NutritionView` mostra o resumo no início da área Nutrição, com valores
+  observados e cobertura explícita. Não atribui causa às mudanças.
+- O teste de navegador cobre duas semanas preenchidas, gastos das duas fontes
+  financeiras canônicas e recarga offline, além dos estados vazios.
+- Os gastos são filtrados dos movimentos canônicos do Financeiro, incluindo
+  despesas legadas e registros financeiros realizados, sem somar diretamente
+  as duas coleções outra vez. Ausência de lançamento aparece como sem dados.
+- A implementação utiliza apenas as coleções já existentes, sem alterar
+  IndexedDB, migrações ou backup.
+
+## Verificação
+
+- Lint e typecheck aprovados.
+- Suíte unitária: 213 testes aprovados.
+- Build e suíte E2E no Edge: 81 testes aprovados.
+- Capturas da tela Nutrição revisadas em claro e escuro, incluindo 320 px;
+  sem rolagem horizontal nessa largura.
