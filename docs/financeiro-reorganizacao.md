@@ -2,20 +2,20 @@
 
 ## Estado do trabalho
 
-- **Etapa atual:** tarefa 8 concluída — reorganização implementada e integração final verificada.
+- **Etapa atual:** tarefa 8 concluída — reorganização implementada e integração final revalidada em 02/10/2026.
 - **Base analisada:** commit `c08872e`, que concluiu o mapeamento do estado existente.
 - **Decisão aprovada:** Financeiro será o caminho canônico para cadastrar e consultar informações financeiras; Delivery permanece em Registros.
 - **Implementação:** Visão geral, áreas secundárias, quatro intenções de cadastro, redirecionamento de Despesas, orientação de primeiro uso, prioridade móvel do resumo e posição do X do menu foram concluídos sem alterar schema, migrações ou contratos de backup.
-- **Próxima ação:** revisar o diff e criar o commit quando desejado.
+- **Próxima ação:** nenhuma pendência neste backlog.
 
 ## Resultado da integração
 
 - `npm run lint`: aprovado sem avisos.
 - `npm run typecheck`: aprovado para aplicação e E2E.
-- `npm test`: 11 arquivos e 193 testes aprovados.
-- E2E completo no Edge: 62 testes aprovados com um worker, incluindo temas, responsividade, offline, migrações e backup.
-- `npm run build`: aprovado; permanece apenas o aviso conhecido do Vite sobre chunk principal acima de 500 kB.
-- Revisão visual: Visão geral e menu conferidos em mobile, desktop, Claro, Escuro, orientação horizontal e movimento reduzido.
+- `npm test`: 15 arquivos e 215 testes aprovados.
+- E2E completo no Edge: 84 testes aprovados com dois workers, incluindo temas, responsividade, offline, migrações e backup.
+- `npm run build`: aprovado, sem avisos.
+- Revisão visual: capturas do Financeiro e do menu conferidas em mobile, desktop, Claro e Escuro; testes cobrem 320, 390, 768 e 1440 px, orientação horizontal e movimento reduzido.
 
 ## Direção de produto já definida
 
