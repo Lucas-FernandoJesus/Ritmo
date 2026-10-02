@@ -415,8 +415,9 @@ function App() {
     <div className="app-shell">
       <a className="skip-link" href="#main-content">Ir para o conteúdo</a>
       <header className="topbar">
+        <MainMenu items={navItems} actions={quickActions} current={trainingSelection ? 'treinos' : tab} onNavigate={navigateTab} onAction={runQuickAction} />
         <div className="brand-mark" aria-hidden="true">R</div>
-        <div><strong>Ritmo</strong><span>Sua rotina, no seu tempo</span></div>
+        <div className="brand-copy"><strong>Ritmo</strong><span>Sua rotina, no seu tempo</span></div>
         <span className={`connection ${online ? '' : 'offline'}`}>{online ? 'Local' : 'Offline'}</span>
       </header>
 
@@ -437,7 +438,6 @@ function App() {
         </Suspense>
       </main>
 
-      <MainMenu items={navItems} actions={quickActions} current={trainingSelection ? 'treinos' : tab} onNavigate={navigateTab} onAction={runQuickAction} />
       {message && <div className="toast" role="status">{message}</div>}
       <ActivityDetailsDialog selection={detailActivity} trainingWeek={clampTrainingWeek(settings.trainingWeek)} mode={mode} onClose={() => setDetailActivity(null)} />
     </div>

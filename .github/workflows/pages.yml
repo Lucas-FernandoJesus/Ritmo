@@ -3,20 +3,57 @@ name: Publicar Ritmo no GitHub Pages
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
-  group: github-pages
+  group: ritmo-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
-  deploy:
+  validate:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app-rotina
+    steps:
+      - name: Obter código
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Preparar Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: lts/*
+          cache: npm
+          cache-dependency-path: app-rotina/package-lock.json
+      - name: Instalar dependências
+        run: npm ci
+      - name: Lint
+        run: npm run lint
+      - name: Testes unitários
+        run: npm test
+      - name: Verificar tipos
+        run: npm run typecheck
+      - name: Gerar versão para os testes de navegador
+        run: npm run build
+        env:
+          RITMO_BASE_PATH: /
+      - name: Instalar Chromium para os testes
+        run: npx playwright install --with-deps chromium
+      - name: Testes de navegador
+        run: npx playwright test
+
+  deploy:
+    if: github.event_name != 'pull_request'
+    needs: validate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -34,8 +71,6 @@ jobs:
           cache-dependency-path: app-rotina/package-lock.json
       - name: Instalar dependências
         run: npm ci
-      - name: Validar aplicação
-        run: npm run lint && npm test
       - name: Gerar versão de produção
         run: npm run build
         env:

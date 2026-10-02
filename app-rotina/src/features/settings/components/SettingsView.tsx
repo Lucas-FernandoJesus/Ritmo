@@ -5,6 +5,7 @@ import { PageTitle } from '../../../components/FormPrimitives'
 import { repository } from '../../../infrastructure/repository'
 import { routineItems } from '../../routine/data'
 import { areaLabels } from '../../routine/view-labels'
+import { backupReminder, LAST_BACKUP_EXPORT_KEY, readLastBackupAt, writeLastBackupAt } from '../backup-reminder'
 import { REMINDER_STORAGE_KEY } from '../reminder'
 import { effectiveTheme, type AppearanceFeedback, type EffectiveTheme } from '../theme'
 import { ReminderSettings } from './ReminderSettings'
@@ -13,7 +14,12 @@ const readableError = (error: unknown, fallback: string) => error instanceof Err
 
 export function SettingsView({ settings, persistence, appearanceSaving, appearanceFeedback, onAppearance, onSettings, onMessage, onImported, onCleared }: { settings: AppSettings; persistence: StoragePersistence; appearanceSaving: boolean; appearanceFeedback: AppearanceFeedback; onAppearance: (theme: EffectiveTheme) => Promise<boolean>; onSettings: (settings: AppSettings) => Promise<void>; onMessage: (message: string) => void; onImported: () => void; onCleared: () => void }) {
   const [draft, setDraft] = useState(settings)
+  const [lastBackupAt, setLastBackupAt] = useState(() => readLastBackupAt(window.localStorage))
   const selectedTheme = effectiveTheme(settings.theme)
+  const backupStatus = backupReminder(new Date(), lastBackupAt)
+  const backupText = backupStatus.lastExportAt
+    ? `Última exportação neste aparelho: ${new Intl.DateTimeFormat('pt-BR').format(new Date(backupStatus.lastExportAt))}.${backupStatus.due ? ' Faça um novo backup.' : ''}`
+    : 'Nenhuma exportação registrada neste aparelho. Faça um backup.'
   async function updateAppearance(nextTheme: EffectiveTheme) {
     const previousTheme = selectedTheme
     setDraft((current) => ({ ...current, theme: nextTheme, appearanceVersion: 2 }))
@@ -21,7 +27,30 @@ export function SettingsView({ settings, persistence, appearanceSaving, appearan
   }
   function updateTime(item: RoutineItem, startTime: string) { setDraft((current) => withScheduleStart(current, item.id, startTime)) }
   function toggleActive(id: string) { setDraft((current) => ({ ...current, disabledActivities: current.disabledActivities.includes(id) ? current.disabledActivities.filter((item) => item !== id) : [...current.disabledActivities, id] })) }
-  async function exportData() { try { const data = await repository.exportAll(); const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const anchor = document.createElement('a'); anchor.href = url; anchor.download = `ritmo-backup-${localDateKey()}.json`; document.body.appendChild(anchor); anchor.click(); anchor.remove(); window.setTimeout(() => URL.revokeObjectURL(url), 1000); onMessage('Backup JSON exportado.') } catch (error) { onMessage(readableError(error, 'Não foi possível exportar o backup.')) } }
+  async function exportData() {
+    try {
+      const data = await repository.exportAll()
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+      const url = URL.createObjectURL(blob)
+      const anchor = document.createElement('a')
+      anchor.href = url
+      anchor.download = `ritmo-backup-${localDateKey()}.json`
+      document.body.appendChild(anchor)
+      anchor.click()
+      anchor.remove()
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000)
+      try {
+        const exportedAt = new Date().toISOString()
+        writeLastBackupAt(window.localStorage, exportedAt)
+        setLastBackupAt(exportedAt)
+        onMessage('Backup JSON exportado.')
+      } catch {
+        onMessage('Backup JSON exportado, mas não foi possível registrar a data neste aparelho.')
+      }
+    } catch (error) {
+      onMessage(readableError(error, 'Não foi possível exportar o backup.'))
+    }
+  }
   async function importData(file: File) { try { if (file.size > MAX_BACKUP_BYTES) return window.alert('O backup excede o limite de 10 MB. Nenhum dado foi alterado.'); const parsed: unknown = JSON.parse(await file.text()); if (!validateBackup(parsed)) return window.alert('Backup inválido ou de versão incompatível. Nenhum dado foi alterado.'); if (!window.confirm('Importar este backup substituirá todos os dados atuais. Deseja continuar?')) return; await repository.importAll(parsed); onImported() } catch { onMessage('Não foi possível ler ou importar o arquivo. Nenhum dado foi alterado.') } }
   async function clearData() {
     if (!window.confirm('Esta ação apagará permanentemente os registros, o progresso e os ajustes deste aparelho, incluindo o lembrete. Continuar?')) return
@@ -33,6 +62,7 @@ export function SettingsView({ settings, persistence, appearanceSaving, appearan
     }
     try {
       window.localStorage.removeItem(REMINDER_STORAGE_KEY)
+      window.localStorage.removeItem(LAST_BACKUP_EXPORT_KEY)
     } catch {
       window.alert('Os registros foram apagados, mas não foi possível remover a preferência do lembrete. Apague os dados do site no navegador para removê-la.')
     }
@@ -43,6 +73,6 @@ export function SettingsView({ settings, persistence, appearanceSaving, appearan
     <section className="settings-section"><h2>Aparência</h2><p className="section-description">Escolha como o Ritmo aparece neste aparelho. A mudança é salva imediatamente.</p><div className="appearance-options" role="group" aria-label="Aparência">{([['light', 'Claro'], ['dark', 'Escuro']] as const).map(([value, label]) => <button key={value} type="button" aria-pressed={selectedTheme === value} className={selectedTheme === value ? 'selected' : ''} disabled={appearanceSaving} onClick={() => updateAppearance(value)}>{label}</button>)}</div><p className={`appearance-status ${appearanceFeedback.kind}`} role={appearanceFeedback.kind === 'error' ? 'alert' : 'status'} aria-live={appearanceFeedback.kind === 'error' ? 'assertive' : 'polite'} aria-atomic="true" aria-label="Status da aparência">{appearanceFeedback.message}</p></section>
     <section className="settings-section"><div className="section-heading"><div><h2>Atividades e horários</h2><p className="section-description">Mostre o que importa e ajuste o início de cada atividade.</p></div></div><details className="settings-disclosure"><summary>Personalizar rotina <span>{routineItems.length} atividades</span></summary><div className="settings-list">{routineItems.map((item) => { const enabled = !draft.disabledActivities.includes(item.id); return <div className="setting-row" key={item.id}><button className={`toggle ${enabled ? 'on' : ''}`} role="switch" aria-checked={enabled} aria-label={`${enabled ? 'Desativar' : 'Ativar'} ${item.title}`} onClick={() => toggleActive(item.id)}><span /></button><div><strong>{item.title}</strong><small>{areaLabels[item.area]}</small></div><input aria-label={`Horário inicial de ${item.title}`} type="time" value={draft.scheduleOverrides[item.id]?.startTime ?? item.startTime ?? ''} onChange={(e) => updateTime(item, e.target.value)} /></div> })}</div></details><div className="settings-actions"><button className="primary-button" disabled={appearanceSaving} onClick={() => onSettings({ ...draft, theme: selectedTheme, appearanceVersion: 2 })}>Salvar ajustes</button><button className="text-button" onClick={() => { if (window.confirm('Restaurar atividades, horários, ritmo e semana do treino para os padrões? Salve para confirmar a mudança.')) setDraft({ ...defaultSettings(), theme: selectedTheme }) }}>Restaurar padrões</button></div></section>
     <ReminderSettings />
-    <section className="settings-section"><h2>Dados neste aparelho</h2><div className="storage-status"><span className={persistence === 'granted' ? 'status-good' : 'status-warn'} aria-hidden="true" /><div><strong>Armazenamento local</strong><p>{storageText}</p></div></div><div className="action-grid"><button className="secondary-button" onClick={exportData}>Exportar backup JSON</button><label className="secondary-button file-button">Importar backup JSON<input type="file" accept="application/json,.json" onChange={(e) => e.target.files?.[0] && importData(e.target.files[0])} /></label></div><p className="fine-print">O app funciona sem conta e sem servidor. Guarde uma cópia do backup fora do celular periodicamente.</p></section>
+    <section className="settings-section"><h2>Dados neste aparelho</h2><div className="storage-status"><span className={persistence === 'granted' ? 'status-good' : 'status-warn'} aria-hidden="true" /><div><strong>Armazenamento local</strong><p>{storageText}</p></div></div><p className={backupStatus.due ? 'backup-reminder-due' : 'backup-reminder-current'} role="status">{backupText}</p><div className="action-grid"><button className="secondary-button" onClick={exportData}>Exportar backup JSON</button><label className="secondary-button file-button">Importar backup JSON<input type="file" accept="application/json,.json" onChange={(e) => e.target.files?.[0] && importData(e.target.files[0])} /></label></div><p className="fine-print">O app funciona sem conta e sem servidor. Guarde uma cópia do backup fora do celular periodicamente.</p></section>
     <section className="danger-section"><h2>Apagar todos os dados</h2><p>Remove registros, progresso, ajustes e lembrete somente deste aparelho.</p><button className="danger-button" onClick={clearData}>Apagar todos os dados</button></section></>
 }

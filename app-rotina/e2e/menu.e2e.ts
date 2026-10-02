@@ -27,6 +27,13 @@ for (const theme of ['light', 'dark'] as const) test(`menu em tela cheia, teclad
     expect(triggerBox).not.toBeNull()
     expect(triggerBox!.x).toBeLessThanOrEqual(24)
     expect(triggerBox!.width).toBeLessThanOrEqual(64)
+    if (size.width <= 900) {
+      const headerBox = await page.locator('.topbar').boundingBox()
+      expect(headerBox).not.toBeNull()
+      expect(triggerBox!.y).toBeGreaterThanOrEqual(headerBox!.y)
+      expect(triggerBox!.y + triggerBox!.height).toBeLessThanOrEqual(headerBox!.y + headerBox!.height)
+    }
+    if (size.width === 390) await page.screenshot({ path: test.info().outputPath(`menu-trigger-${theme}-390.png`) })
     await expect(trigger).toHaveText('')
     await trigger.click()
     const menu = page.getByRole('dialog', { name: 'Menu principal' })

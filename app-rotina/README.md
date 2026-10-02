@@ -29,7 +29,7 @@ Abra o endereço exibido pelo Vite. Em `localhost`, a instalação pode ser test
 
 ## Publicar no GitHub Pages e instalar no celular
 
-O projeto inclui um fluxo em `.github/workflows/pages.yml` que valida, compila e publica `dist` ao receber alterações na branch `main`. Depois de enviar este código para um repositório GitHub, abra **Settings → Pages → Build and deployment → Source** e escolha **GitHub Actions**. O endereço será `https://USUARIO.github.io/REPOSITORIO/` para um repositório comum, ou `https://USUARIO.github.io/` para um repositório com esse nome. O build detecta automaticamente esses dois formatos. Se usar domínio próprio na raiz, defina a variável de repositório `RITMO_BASE_PATH` como `/` em **Settings → Secrets and variables → Actions → Variables**.
+O fluxo em `.github/workflows/pages.yml` executa lint, testes unitários, checagem de tipos, build e testes de navegador em PRs para `main` e em alterações na branch `main`. A publicação de `dist` só começa depois dessas verificações. Depois de enviar este código para um repositório GitHub, abra **Settings → Pages → Build and deployment → Source** e escolha **GitHub Actions**. O endereço será `https://USUARIO.github.io/REPOSITORIO/` para um repositório comum, ou `https://USUARIO.github.io/` para um repositório com esse nome. O build detecta automaticamente esses dois formatos. Se usar domínio próprio na raiz, defina a variável de repositório `RITMO_BASE_PATH` como `/` em **Settings → Secrets and variables → Actions → Variables**.
 
 Abra o endereço publicado no navegador do celular **com internet uma vez** e aguarde o carregamento. No Android, use o menu do Chrome → **Instalar app**. No iPhone, use o Safari → **Compartilhar** → **Adicionar à Tela de Início**. Antes de depender do modo offline, abra o ícone instalado uma vez e teste com o modo avião ativado. Depois da instalação e do cache inicial, as telas e os registros locais funcionam sem rede. Atualizações do aplicativo exigem uma nova conexão. A primeira instalação exige HTTPS; um endereço HTTP da rede local não oferece a mesma instalação offline.
 
@@ -37,11 +37,11 @@ Os dados ficam no IndexedDB do navegador de cada aparelho: não são enviados ao
 
 ## Navegação
 
-O rodapé mantém somente **Menu**. Ao abrir, a lista vertical ocupa toda a tela e apresenta Hoje, Semana, Treinos, Nutrição, Registros, Financeiro, Progresso e Ajustes. Escolher uma opção navega sem recarregar; o X ou Esc fecha mantendo a tela atual. O diálogo controla foco, bloqueia o fundo e funciona offline nos dois temas.
+Em telas pequenas, **Menu** fica no cabeçalho fixo para não cobrir os cards. Em telas maiores, o botão permanece flutuante. Ao abrir, a lista vertical ocupa toda a tela e apresenta Hoje, Semana, Treinos, Nutrição, Registros, Financeiro, Progresso e Ajustes. Escolher uma opção navega sem recarregar; o X ou Esc fecha mantendo a tela atual. O diálogo controla foco, bloqueia o fundo e funciona offline nos dois temas.
 
 ## Backup
 
-Em **Ajustes**, selecione **Exportar backup JSON**. Guarde o arquivo fora do aparelho. Para restaurar, use **Importar backup JSON**; o formato e a versão são validados antes da confirmação. Backups novos incluem os snapshots diários usados no progresso semanal, enquanto backups antigos sem esse campo continuam aceitos.
+Em **Ajustes**, selecione **Exportar backup JSON**. Guarde o arquivo fora do aparelho. A tela mostra a última exportação registrada neste aparelho e lembra de exportar novamente após 30 dias. Esse registro local não confirma que o arquivo foi guardado em segurança. Para restaurar, use **Importar backup JSON**; o formato e a versão são validados antes da confirmação. Backups novos incluem os snapshots diários usados no progresso semanal, enquanto backups antigos sem esse campo continuam aceitos.
 
 ## Nutrição
 
