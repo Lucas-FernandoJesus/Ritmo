@@ -118,6 +118,7 @@ test('abre Muay Thai da segunda diretamente de Semana, com instruções e vídeo
   await expect(page.getByText(/As modalidades estão liberadas/)).toBeVisible()
   await expect(page.getByText(/Modalidade: Sombra/)).toBeVisible()
   await expect(page.getByText(/impacto e potência do braço esquerdo seguem a progressão gradual/)).toBeVisible()
+  await expect(page.getByText(/Condicionamento: nesta fase, mantenha os rounds técnicos/)).toBeVisible()
   await expect(page.locator('.workout-exercise').first()).toContainText('Base, guarda e ritmo')
   await expect(page.locator('.workout-exercise').first()).toContainText('Como praticar no Ritmo')
   await expect(page.locator('.workout-exercise').first().getByRole('link', { name: /Ver aula/ })).toHaveAttribute('target', '_blank')

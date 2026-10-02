@@ -45,7 +45,7 @@ Em **Ajustes**, selecione **Exportar backup JSON**. Guarde o arquivo fora do apa
 
 ## Nutrição
 
-A tela reúne um plano alimentar inicial flexível, registros de peso e cintura e um diário de quatro refeições. O resumo semanal compara os últimos sete dias completos aos sete anteriores usando somente medidas, refeições, treinos e gastos alimentares registrados. Ausência de histórico aparece como **Sem dados**; a comparação não atribui causa às mudanças. Calorias, porções e peso-alvo ainda não foram definidos. Os registros são locais, funcionam offline e entram no backup.
+A tela apresenta o objetivo escolhido de déficit de 20% como **meta em calibração**: ingestão de referência igual a 0,8 vezes o gasto de manutenção, ainda não medido. Mostra refeições práticas ligadas a força e Muay Thai, registros de peso e cintura e um diário qualitativo de quatro refeições. O resumo semanal compara os últimos sete dias completos aos sete anteriores usando somente medidas, refeições, treinos e gastos alimentares registrados. Ausência de histórico aparece como **Sem dados**; a comparação não atribui causa às mudanças. O diário não calcula calorias e nenhuma meta calórica, porção ou peso-alvo é fixada a partir de dados insuficientes. Os registros são locais, funcionam offline e entram no backup. O método de calibração e as refeições por dia estão em [alimentação e marmitas](../docs/rotina/07_alimentacao_e_marmitas.txt).
 
 ## Financeiro
 
@@ -78,6 +78,8 @@ Registros de estudo, delivery e despesa podem oferecer a conclusão da atividade
 ## Consultar o treino do dia
 
 Em **Hoje** ou **Semana**, a atividade de segunda/quarta abre o Muay Thai técnico, terça abre o fortalecimento A, quinta abre o fortalecimento B e sexta abre o Muay Thai leve opcional. A aba **Treinos** reúne esses quatro acessos e a escolha manual da semana do plano; **Progresso** mostra o andamento semanal e o checklist de 30 dias. O botão de retorno e o Voltar do navegador devolvem à tela anterior. Os endereços `?treino=A`, `?treino=B`, `?treino=muay-mon` e `?treino=muay-fri` também abrem as sessões diretamente.
+
+O condicionamento mais intenso usa os rounds já previstos de Muay Thai: adaptação técnica nas semanas 1–4, no máximo uma manhã condicional nas semanas 5–7 e até duas nas semanas seguintes quando a recuperação e a técnica permitirem. As semanas de consolidação e a sexta opcional continuam leves. Os treinos A e B não são substituídos pelo cardio.
 
 A tela segue a semana e o modo Normal, Reduzido ou Mínimo salvos no aparelho. Cada movimento de fortalecimento mostra a prescrição do plano, um exemplo prático em português e um link individual que abre o YouTube em outra aba. As práticas de Muay Thai são opções dentro dos rounds existentes, com instruções adaptadas e trechos das aulas pesquisadas. As fontes de Muay tiveram conteúdo verbal verificado; detalhes visuais dos trechos ainda devem ser conferidos no vídeo antes de copiar a técnica. As instruções continuam disponíveis offline; os vídeos exigem conexão. Os catálogos ficam em `src/features/training/exercise-demos.ts` e `src/features/training/muay-exercises.ts`, com pesquisa e limitações documentadas em `docs/muay-thai/`.
 

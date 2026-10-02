@@ -43,7 +43,7 @@ O vídeo explica a maior resistência de algumas áreas pela distribuição de r
 
 Para pessoas que não progridem apenas com escolhas qualitativas, recomenda registrar alimentação e usa uma regra aproximada de 10–13 kcal por libra. Na reação, isso é traduzido em multiplicadores de 32,6, 28,8 e 25,6 kcal/kg, apresentados como déficits de 15%, 20% e 25%. O bloco também promove produtos pagos dos dois criadores.
 
-**Quadro conferido no vídeo:** 15% aparece como moderado e mais sustentável (32,6 kcal/kg), 20% como moderado a agressivo (28,8 kcal/kg) e 25% como o mais agressivo (25,6 kcal/kg). As faixas de perda semanal mostradas são exemplos do vídeo, não previsões individuais. O plano atual do Ritmo não seleciona nenhum desses percentuais nem fixa meta calórica; uma versão anterior da tela mostrava 2.200 kcal sem dados suficientes para classificar o déficit correspondente.
+**Quadro conferido no vídeo:** 15% aparece como moderado e mais sustentável (32,6 kcal/kg), 20% como moderado a agressivo (28,8 kcal/kg) e 25% como o mais agressivo (25,6 kcal/kg). As faixas de perda semanal mostradas são exemplos do vídeo, não previsões individuais. Depois da análise, o usuário escolheu 20% como objetivo a calibrar; o Ritmo ainda não fixa meta calórica nem considera esse percentual alcançado. Uma versão anterior da tela mostrava 2.200 kcal sem dados suficientes para classificar o déficit correspondente.
 
 **Leitura crítica:** o mecanismo dos receptores é uma simplificação e não permite prever uma ordem individual exata. Os multiplicadores por peso ignoram idade, sexo, composição corporal, atividade, adaptação e erro de registro; não devem virar meta automática. Um “déficit de 25%” ou perda de 0,7–1 kg por semana pode ser inadequado para muitas pessoas. A presença de publicidade exige separar educação de conversão comercial.
 
@@ -70,7 +70,7 @@ Há pesquisa recente sugerindo pequena redução localizada em protocolo abdomin
 
 ### Preservar agora
 
-- Manter a decisão existente de não fixar calorias ou peso-alvo sem peso exato, consumo habitual, condições clínicas, medicamentos, alergias e preferências.
+- Manter a decisão de não fixar calorias ou peso-alvo sem gasto de manutenção e ingestão suficientemente observados; o objetivo de 20% depende dessa calibração.
 - Manter emagrecimento gradual, arroz e feijão como opções válidas, preparo principal no domingo e reposição na quarta.
 - Usar Muay Thai e fortalecimento já planejados como base. Não acrescentar automaticamente 15–30 minutos de cardio após cada treino nem HIIT duas vezes por semana; primeiro observar recuperação, sono, braço e carga total do delivery.
 - Priorizar refeições caseiras e marmitas por ajudarem simultaneamente alimentação, custo e desperdício.

@@ -1,9 +1,23 @@
 import { describe, expect, it } from 'vitest'
 import { getExerciseDemo } from './exercise-demos'
 import { getMuayPracticeRecommendation, getMuayPractices } from './muay-exercises'
-import { clampTrainingWeek, getMuayThaiGuide, getStrengthGuide, getTrainingPlanWeek, trainingBlocks, trainingPlanWeeks } from './training-plan'
+import { clampTrainingWeek, getMuayConditioningPlan, getMuayThaiGuide, getStrengthGuide, getTrainingPlanWeek, trainingBlocks, trainingPlanWeeks } from './training-plan'
 
 describe('plano de evolução dos treinos', () => {
+  it('encaixa até dois cardios curtos nos rounds, sem intensidade na adaptação, consolidação ou sexta', () => {
+    expect(getMuayConditioningPlan('muay-mon', 1, 'normal').weeklyIntenseSessions).toBe(0)
+    expect(getMuayConditioningPlan('muay-mon', 5, 'normal').weeklyIntenseSessions).toBe(1)
+    expect(getMuayConditioningPlan('muay-mon', 8, 'normal').weeklyIntenseSessions).toBe(0)
+    expect(getMuayConditioningPlan('muay-mon', 9, 'normal').weeklyIntenseSessions).toBe(2)
+    expect(getMuayConditioningPlan('muay-mon', 9, 'normal').description).toContain('1 trecho de 20 segundos por round')
+    expect(getMuayConditioningPlan('muay-mon', 12, 'normal').weeklyIntenseSessions).toBe(0)
+    expect(getMuayConditioningPlan('muay-fri', 9, 'normal').weeklyIntenseSessions).toBe(0)
+    expect(getMuayConditioningPlan('muay-mon', 9, 'reduzido').weeklyIntenseSessions).toBe(0)
+    expect(getMuayConditioningPlan('muay-mon', 9, 'minimo').weeklyIntenseSessions).toBe(0)
+    const guide = getMuayThaiGuide('muay-mon', 9, 'normal')
+    expect(guide.steps[1].description).toContain('dentro dos rounds')
+    expect(guide.steps[1].description).toContain('braço esquerdo')
+  })
   it('cobre exatamente 24 semanas em seis blocos contínuos', () => {
     expect(trainingBlocks).toHaveLength(6)
     expect(trainingBlocks.every((block) => block.weeks.length === 4)).toBe(true)

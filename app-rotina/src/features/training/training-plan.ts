@@ -334,14 +334,41 @@ export function getMuaySession(itemId: MuayTrainingId, weekNumber: number | unde
   return { block, week, muay, rounds, duration, mainDescription }
 }
 
+export function getMuayConditioningPlan(itemId: MuayTrainingId, weekNumber: number | undefined, mode: RoutineMode) {
+  const { week } = getTrainingPlanWeek(weekNumber)
+  if (itemId === 'muay-fri') {
+    return {
+      weeklyIntenseSessions: 0,
+      description: 'Condicionamento: sexta é uma revisão leve opcional ou descanso, sem intervalos intensos.',
+    }
+  }
+  if (mode !== 'normal' || week.consolidation || week.week <= 4) {
+    return {
+      weeklyIntenseSessions: 0,
+      description: 'Condicionamento: nesta fase, mantenha os rounds técnicos em ritmo confortável, sem intervalos intensos. Retome a progressão somente com boa recuperação.',
+    }
+  }
+  if (week.week <= 8) {
+    return {
+      weeklyIntenseSessions: 1,
+      description: 'Condicionamento: somente na segunda, se a técnica e a recuperação estiverem estáveis, faça até 2 trechos de 15 segundos de passos e joelhadas rápidos e controlados dentro dos rounds; complete cada round em ritmo leve. Quarta é técnica confortável. Não acrescente rounds nem acelere golpes com o braço esquerdo.',
+    }
+  }
+  return {
+    weeklyIntenseSessions: 2,
+    description: 'Condicionamento: segunda e quarta, somente se recuperado, faça até 1 trecho de 20 segundos por round dentro dos rounds previstos, com passos e joelhadas rápidos e controlados; complete cada round em ritmo leve. Respire mais forte sem perder base, guarda ou equilíbrio. Não acrescente rounds nem acelere golpes com o braço esquerdo.',
+  }
+}
+
 export function getMuayThaiGuide(itemId: MuayTrainingId, weekNumber: number | undefined, mode: RoutineMode): ActivityGuide {
   const { block, week, muay, rounds, duration, mainDescription } = getMuaySession(itemId, weekNumber, mode)
+  const conditioning = getMuayConditioningPlan(itemId, weekNumber, mode)
   return {
     introduction: `Semana ${week.week} · ${block.title}. As modalidades estão liberadas; impacto e potência do braço esquerdo seguem a progressão gradual deste bloco.`,
     steps: [
       { title: 'Checagem e aquecimento', amount: mode === 'minimo' ? '1 min' : '4–5 min', description: 'Observe se há dor no braço esquerdo e aqueça com marcha, base, passos laterais e deslocamentos confortáveis.' },
       rounds > 0
-        ? { title: itemId === 'muay-fri' ? 'Sessão opcional' : 'Rounds técnicos', amount: `${rounds} × ${muay.roundDuration}`, description: `${mainDescription} Modalidade: ${muay.modality} ${muay.leftArmProgression} Faça ${muay.recovery} entre os rounds.` }
+        ? { title: itemId === 'muay-fri' ? 'Sessão opcional' : 'Rounds técnicos', amount: `${rounds} × ${muay.roundDuration}`, description: `${mainDescription} Modalidade: ${muay.modality} ${muay.leftArmProgression} Faça ${muay.recovery} entre os rounds. ${conditioning.description}` }
         : { title: 'Versão mínima ou descanso', amount: duration, description: 'Faça somente base e deslocamentos confortáveis, ou descanse se sono, fadiga ou braço não estiverem favoráveis.' },
       { title: 'Desacelerar', amount: mode === 'normal' ? '3–4 min' : '1–2 min', description: 'Caminhe devagar, recupere a respiração e confira força, pegada, sensibilidade e movimento.' },
     ],

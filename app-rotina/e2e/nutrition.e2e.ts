@@ -7,7 +7,10 @@ for (const theme of ['light', 'dark'] as const) test(`plano nutricional de consu
   await goToTab(page, 'Nutrição')
 
   await expect(page.getByRole('heading', { name: 'Nutrição', exact: true })).toBeVisible()
-  await expect(page.getByText('Calorias e porções ainda não definidas', { exact: true })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Déficit de 20% em calibração' })).toBeVisible()
+  await expect(page.getByText('Meta calórica individual', { exact: true })).toBeVisible()
+  await expect(page.getByText('0,8 × gasto de manutenção', { exact: true })).toBeVisible()
+  await expect(page.getByText(/O diário de refeições não calcula calorias/)).toBeVisible()
   await expect(page.getByText('Peso a confirmar na balança', { exact: true })).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Refeições simples para começar', exact: true })).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Compras para 7 dias', exact: true })).toBeVisible()

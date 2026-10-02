@@ -1,10 +1,27 @@
 ALIMENTACAO E MARMITAS
 
 OBJETIVO
-Comer de forma mais planejada, apoiar emagrecimento gradual,
-evitar desperdício e reduzir tempo diário de cozinha.
-Sem estabelecer calorias, porções fixas ou peso-alvo antes de confirmar
-medidas e conhecer a alimentação, a fome e a rotina reais.
+Comer de forma mais planejada, apoiar perda gradual de gordura e treinos de
+força e Muay Thai, evitar desperdício e reduzir tempo diário de cozinha.
+O déficit de 20% foi escolhido como objetivo de teste: ingestão planejada =
+0,8 x gasto diário de manutenção observado ou estimado. Ainda não equivale a
+um déficit medido. Não fixar calorias, porções ou peso-alvo apenas pelo peso
+corporal ou por uma fórmula de metabolismo de repouso.
+
+COMO CALIBRAR O OBJETIVO DE 20%
+- Durante aproximadamente duas semanas, registrar peso em condições
+  comparáveis, refeições com quantidades aproximadas, bebidas, óleo usado no
+  preparo, doces/lanches, sono, fome, atividade e recuperação.
+- O diário de Nutrição do app é qualitativo; suas observações não calculam
+  calorias. Se for importante seguir um percentual, estimar a ingestão por
+  método apropriado e rever o gasto de manutenção com a tendência de várias
+  semanas. Uma estimativa inicial deve ser ajustada, não tratada como medição.
+- Após estimar a manutenção, 20% significa 0,8 vezes esse valor. Por exemplo,
+  2.500 kcal de manutenção levariam a 2.000 kcal/dia como ponto de partida;
+  esses números são apenas exemplo, não meta individual.
+- Se fome intensa, tontura, queda de desempenho, piora do sono ou recuperação
+  ruim aparecerem, aliviar a restrição e buscar avaliação de nutricionista.
+  Não compensar comida com exercício, jejum ou sessões extras.
 
 HORARIOS-BASE
 06h55        Café da manhã.
@@ -28,6 +45,38 @@ Não é necessário eliminar arroz e feijão.
 Escolher quantidades conforme fome, saciedade e disponibilidade, sem usar a
 estimativa de peso como medida confirmada. O lanche é opcional conforme o
 intervalo até o jantar e a fome.
+
+APLICAÇÃO AO LONGO DA SEMANA
+- Segunda e quarta: Muay Thai pela manhã dentro dos rounds do plano. Água ao
+  acordar; se houver fome ou mal-estar em jejum, testar uma fruta ou outra
+  opção pequena tolerada antes. Tomar café da manhã após o treino, com fonte
+  de proteína e carboidrato. Não acelerar golpes para aumentar o cardio.
+- Terça e quinta: fortalecimento A/B. Manter café após o treino, almoço e
+  jantar com proteína; não cortar refeições para "pagar" o treino.
+- Sexta: Muay Thai leve opcional ou descanso. Se houver delivery à noite,
+  jantar antes de sair e levar água e comida prática conforme duração e fome.
+- Sábado: organizar refeições antes, entre e depois dos turnos de delivery,
+  preservando a pausa e a segurança para pilotar.
+- Domingo: preparar proteína, base de arroz/feijão e vegetais para segunda a
+  quarta; repor na quarta para quinta e sexta.
+
+PADRÃO PRÁTICO DAS REFEIÇÕES
+- Café: pão com ovos e fruta, ou iogurte natural com aveia e fruta.
+- Almoço: manter arroz e carne/ovo/frango/peixe como base. Feijão, legumes ou
+  salada podem entrar separados, conforme aceitação, sem exigir mistura no
+  prato. Registrar as quantidades reais antes de decidir reduções.
+- Vontade de doce após o almoço: planejar uma sobremesa que caiba na rotina,
+  comer com atenção e registrar o que foi consumido. Fruta, iogurte ou uma
+  porção de doce desejado são opções; não usar proibição nem compensação.
+- Bebidas: registrar tipo, volume e frequência do refrigerante. Se tiver
+  açúcar, uma troca gradual de parte do volume por água ou uma alternativa sem
+  açúcar pode facilitar o déficit; não presumir que toda bebida tem as mesmas
+  calorias. Café preto sem açúcar não substitui o registro do doce consumido.
+- Lanche: opcional, conforme fome e intervalo até o jantar; fruta com leite,
+  iogurte ou outra fonte de proteína acessível.
+- Jantar: deixar marmita ou ovos, pão e outro acompanhamento simples prontos
+  para a noite cansativa. O objetivo é ter uma escolha disponível, não rotular
+  comida como "porcaria".
 
 ACOMPANHAMENTO INICIAL
 - Confirmar o peso em uma balança, de manhã, após ir ao banheiro e antes de
@@ -63,3 +112,15 @@ conforme o local de trabalho.
 OBSERVAR PARA EMAGRECER
 Porções, bebidas açucaradas, beliscos durante jogos, óleo no preparo e
 pedidos de comida por falta de planejamento. Acompanhar sem dietas extremas.
+
+FONTES E LIMITES
+- O planejador de peso do NIDDK considera alimentação, atividade e mudanças
+  do gasto ao longo da perda de peso; uma conta inicial não mede manutenção:
+  https://www.niddk.nih.gov/bwp
+- A OMS recomenda fortalecimento dos grandes grupos musculares em pelo menos
+  dois dias da semana e aumento gradual de atividade após inatividade:
+  https://www.who.int/initiatives/behealthy/physical-activity/
+  https://www.who.int/health-topics/noncommunicable-diseases/physical-activity
+- Revisão de 2025 encontrou que treino de força durante perda de peso ajuda a
+  atenuar perda de massa livre de gordura, sem garantir ganho muscular:
+  https://pubmed.ncbi.nlm.nih.gov/40909191/

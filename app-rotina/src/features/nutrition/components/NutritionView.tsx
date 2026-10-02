@@ -5,10 +5,10 @@ import { summarizeNutritionWeeks } from '../weekly-summary'
 import { NutritionWeeklyOverview } from './NutritionWeeklyOverview'
 
 const meals = [
-  { name: 'Café da manhã', purpose: 'Uma opção prática', items: ['Ovos ou iogurte natural', 'Pão ou aveia', 'Uma fruta, se disponível'] },
-  { name: 'Almoço', purpose: 'Marmita principal', items: ['Frango, ovos, peixe ou outra proteína acessível', 'Arroz e feijão', 'Legumes ou salada'] },
+  { name: 'Café da manhã', purpose: 'Depois do treino matinal', items: ['Ovos ou iogurte natural', 'Pão ou aveia', 'Uma fruta, se disponível'] },
+  { name: 'Almoço', purpose: 'Marmita principal', items: ['Frango, ovos, peixe ou outra proteína acessível', 'Arroz; feijão ou lentilha se gostar', 'Legumes ou salada, mesmo separados'] },
   { name: 'Lanche', purpose: 'Conforme fome e intervalo até o jantar', items: ['Leite ou iogurte natural', 'Fruta ou aveia'] },
-  { name: 'Jantar', purpose: 'Refeição simples no fim do dia', items: ['Proteína acessível', 'Arroz, feijão ou outra base disponível', 'Legumes ou salada'] },
+  { name: 'Jantar', purpose: 'Alternativa pronta para a noite cansativa', items: ['Marmita preparada ou ovos com pão', 'Feijão, lentilha ou outra proteína disponível', 'Legumes, salada ou fruta conforme a refeição'] },
 ] as const
 
 const shoppingGroups = [
@@ -131,22 +131,22 @@ export function NutritionView({ today, measurements, mealLogs, snapshots, comple
 
   return <div className="nutrition-view">
     <header className="page-title nutrition-title">
-      <p className="eyebrow">Plano inicial de consulta</p>
+      <p className="eyebrow">Plano de recomposição · em calibração</p>
       <h1>Nutrição</h1>
-      <p>Emagrecer preservando força e massa muscular, com comida simples, marmitas e um orçamento ainda em calibração.</p>
+      <p>Buscar perda de gordura com dois treinos de força, Muay Thai progressivo e refeições simples que apoiem a recuperação.</p>
     </header>
 
     <section className="nutrition-target" aria-labelledby="nutrition-target-title">
       <div className="nutrition-target-copy">
-        <span className="nutrition-marker" aria-hidden="true">Ponto de partida</span>
-        <h2 id="nutrition-target-title">Uma referência para testar, não uma regra fixa</h2>
-        <p>Comece com refeições simples. Observe por duas semanas a fome, a energia e as medidas registradas antes de rever o plano.</p>
+        <span className="nutrition-marker" aria-hidden="true">Meta escolhida</span>
+        <h2 id="nutrition-target-title">Déficit de 20% em calibração</h2>
+        <p>A referência é consumir cerca de 80% do gasto de manutenção real. Registre alimentação, bebidas, peso e recuperação por duas semanas para estimar esse gasto antes de definir calorias.</p>
       </div>
       <dl className="nutrition-numbers">
-        <div><dt>Calorias e porções ainda não definidas</dt><dd>Plano flexível</dd></div>
+        <div><dt>Meta calórica individual</dt><dd>0,8 × gasto de manutenção</dd></div>
         <div><dt>{orderedMeasurements.length ? 'Último peso registrado' : 'Peso a confirmar na balança'}</dt><dd>{orderedMeasurements.length ? `${orderedMeasurements[0].weightKg.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} kg` : 'Sem registro'}</dd></div>
       </dl>
-      <p className="nutrition-caveat">A cintura pode ser registrada junto do peso medido. Uma estimativa de peso não deve virar registro nem meta alimentar.</p>
+      <p className="nutrition-caveat">O percentual é uma intenção, não um déficit já medido. O peso isolado não revela seu gasto diário. Uma estimativa de peso não deve virar registro nem meta alimentar.</p>
     </section>
 
     <NutritionWeeklyOverview summary={weeklySummary} />
@@ -199,9 +199,9 @@ export function NutritionView({ today, measurements, mealLogs, snapshots, comple
       <div className="nutrition-heading">
         <div>
           <h2 id="meal-journal-title">Diário de refeições</h2>
-          <p>Registre o que aconteceu. Uma refeição isolada não define o seu padrão.</p>
+          <p>Registre o que aconteceu. Uma refeição isolada não define o seu padrão. O diário de refeições não calcula calorias.</p>
         </div>
-        <span>Sem contar calorias</span>
+        <span>Registro qualitativo</span>
       </div>
 
       <div className="meal-journal-workspace">
@@ -258,7 +258,7 @@ export function NutritionView({ today, measurements, mealLogs, snapshots, comple
       <div className="nutrition-heading">
         <div>
           <h2 id="nutrition-plate-title">Refeições simples para começar</h2>
-          <p>Combine o que estiver disponível e ajuste as quantidades à sua fome e saciedade. Não há porções prescritas nesta etapa.</p>
+          <p>Combine o que estiver disponível e ajuste as quantidades à fome, saciedade e treino. As porções ainda precisam ser calibradas para testar os 20%.</p>
         </div>
         <span>4 refeições</span>
       </div>
@@ -272,7 +272,9 @@ export function NutritionView({ today, measurements, mealLogs, snapshots, comple
           </div>
         </article>)}
       </div>
-      <p className="nutrition-swap"><strong>Troca simples:</strong> alterne ovos, frango, peixe ou leguminosas conforme preço e preferência. Se faltar uma refeição, retome na próxima; não tente compensar ficando sem comer.</p>
+      <p className="nutrition-swap"><strong>Troca simples:</strong> alterne ovos, frango, peixe ou leguminosas conforme preço e preferência. Deixe uma opção de jantar pronta para evitar depender de pedidos por cansaço. Se faltar uma refeição, retome na próxima; não tente compensar ficando sem comer.</p>
+      <p className="nutrition-swap"><strong>Doce após o almoço:</strong> você pode planejar uma sobremesa e registrá-la. Fruta, iogurte ou uma porção do doce que deseja são opções; não há necessidade de proibir ou compensar depois.</p>
+      <p className="nutrition-swap"><strong>Bebidas:</strong> anote tipo, volume e frequência do refrigerante. Se tiver açúcar, trocar parte por água gradualmente pode ajudar na calibração, sem exigir que você corte o arroz.</p>
     </section>
 
     <section className="nutrition-section nutrition-shopping" aria-labelledby="nutrition-shopping-title">
@@ -304,9 +306,10 @@ export function NutritionView({ today, measurements, mealLogs, snapshots, comple
       </div>
       <ol className="adjustment-steps">
         <li><strong>Confirme o ponto de partida.</strong><span>Registre o peso medido nas mesmas condições e a cintura uma vez por semana. Refeição recente pode alterar temporariamente a medida da barriga.</span></li>
-        <li><strong>Construa a rotina.</strong><span>Mantenha refeições práticas, sono e atividade leve que você consiga repetir. Comece os treinos pela fase de adaptação.</span></li>
-        <li><strong>Observe duas semanas.</strong><span>Compare registros, fome, energia e resposta aos treinos. Dados ausentes não indicam que uma refeição ou atividade foi pulada.</span></li>
-        <li><strong>Revise com cuidado.</strong><span>Se a rotina estiver difícil, simplifique primeiro. Procure avaliação profissional para definir metas individuais ou investigar pressão, glicose e colesterol.</span></li>
+        <li><strong>Observe a ingestão real.</strong><span>Por duas semanas, anote também quantidades aproximadas, bebidas, óleo do preparo e lanches. Este diário não estima calorias a partir das observações.</span></li>
+        <li><strong>Calibre os 20%.</strong><span>Estime o gasto de manutenção a partir de atividade, ingestão observada e tendência de peso, depois use 0,8 × esse gasto como ponto de partida revisável; consulte nutricionista para um valor individual.</span></li>
+        <li><strong>Proteja os treinos.</strong><span>Faça força terça e quinta e Muay Thai segunda e quarta; os trechos intensos só entram gradualmente dentro dos rounds. Observe fome, energia, sono e resposta do braço.</span></li>
+        <li><strong>Revise com cuidado.</strong><span>Compare semanas equivalentes. Queda de desempenho, tontura, fome intensa ou recuperação ruim pedem reduzir a restrição e buscar avaliação profissional.</span></li>
       </ol>
     </section>
 
