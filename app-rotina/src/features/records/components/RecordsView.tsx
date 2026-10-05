@@ -22,13 +22,13 @@ function useRecordDate<T extends { localDate: string }>(dateKey: string, setForm
   }, [dateKey, setForm, preserveDate])
 }
 
-export function RecordsView({ accounts, deliverySelection, kind, onExpenseRegistration, dateKey, shifts, expenses, financialRecords, studyLogs, onShift, onStudy }: { accounts: readonly AssetAccount[]; deliverySelection: DeliverySelection; kind: RecordKind; onExpenseRegistration: () => void; dateKey: string; shifts: DeliveryShift[]; expenses: Expense[]; financialRecords: FinancialRecord[]; studyLogs: StudyLog[]; onShift: (item: DeliveryShift) => Promise<boolean>; onStudy: (item: StudyLog) => Promise<boolean> }) {
+export function RecordsView({ accounts, deliverySelection, kind, onExpenseRegistration, dateKey, shifts, expenses, financialRecords, studyLogs, onShift, onStudy, onDeleteShift, onDeleteStudy }: { accounts: readonly AssetAccount[]; deliverySelection: DeliverySelection; kind: RecordKind; onExpenseRegistration: () => void; dateKey: string; shifts: DeliveryShift[]; expenses: Expense[]; financialRecords: FinancialRecord[]; studyLogs: StudyLog[]; onShift: (item: DeliveryShift) => Promise<boolean>; onStudy: (item: StudyLog) => Promise<boolean>; onDeleteShift: (id: string) => Promise<boolean>; onDeleteStudy: (id: string) => Promise<boolean> }) {
   return <>
     {kind === 'delivery'
       ? <><PageTitle eyebrow="Trabalho e dinheiro" title="Delivery" subtitle="Registre seus turnos e acompanhe as estimativas. Receitas e custos aparecem no Financeiro." /><div className="record-finance-action"><button type="button" className="secondary-button" onClick={onExpenseRegistration}>Registrar despesa no Financeiro</button></div></>
       : <PageTitle eyebrow="Rotina" title="Estudos" subtitle="Registre suas sessões de estudo e leitura." />}
-    <div hidden={kind !== 'delivery'}><DeliveryRecord accounts={accounts} key={deliverySelection.revision} initial={shifts.find((shift) => shift.id === deliverySelection.id)} dateKey={dateKey} shifts={shifts} expenses={expenses} financialRecords={financialRecords} onSave={onShift} /></div>
-    <div hidden={kind !== 'estudo'}><StudyRecord dateKey={dateKey} logs={studyLogs} onSave={onStudy} /></div>
+    <div hidden={kind !== 'delivery'}><DeliveryRecord accounts={accounts} key={deliverySelection.revision} initial={shifts.find((shift) => shift.id === deliverySelection.id)} dateKey={dateKey} shifts={shifts} expenses={expenses} financialRecords={financialRecords} onSave={onShift} onDelete={onDeleteShift} /></div>
+    <div hidden={kind !== 'estudo'}><StudyRecord dateKey={dateKey} logs={studyLogs} onSave={onStudy} onDelete={onDeleteStudy} /></div>
   </>
 }
 
@@ -36,12 +36,13 @@ function deliveryForm(item: DeliveryShift | undefined, dateKey: string) {
   return { localDate: item?.localDate ?? dateKey, startTime: item?.startTime ?? '', endTime: item?.endTime ?? '', kilometers: item?.kilometers == null ? '' : String(item.kilometers), grossRevenue: item?.grossRevenue ?? null, fuelCost: item?.fuelCost ?? null, maintenanceReserve: item?.maintenanceReserve ?? null, otherExpenses: item?.otherExpenses ?? null, paymentMethod: item?.paymentMethod ?? '' as PaymentMethod | '', fatigueLevel: item?.fatigueLevel == null ? '' : String(item.fatigueLevel), armCondition: item?.armCondition ?? '', accountId: item?.accountId ?? '', note: item?.note ?? '' }
 }
 
-function DeliveryRecord({ accounts, initial, dateKey, shifts, expenses, financialRecords, onSave }: { accounts: readonly AssetAccount[]; initial?: DeliveryShift; dateKey: string; shifts: DeliveryShift[]; expenses: Expense[]; financialRecords: FinancialRecord[]; onSave: (item: DeliveryShift) => Promise<boolean> }) {
+function DeliveryRecord({ accounts, initial, dateKey, shifts, expenses, financialRecords, onSave, onDelete }: { accounts: readonly AssetAccount[]; initial?: DeliveryShift; dateKey: string; shifts: DeliveryShift[]; expenses: Expense[]; financialRecords: FinancialRecord[]; onSave: (item: DeliveryShift) => Promise<boolean>; onDelete: (id: string) => Promise<boolean> }) {
   const blank = deliveryForm(undefined, dateKey)
   const [form, setForm] = useState(() => deliveryForm(initial, dateKey))
   const [editing, setEditing] = useState<DeliveryShift | null>(initial ?? null)
   useRecordDate(dateKey, setForm, !!editing)
   const [saving, setSaving] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   const [error, setError] = useState('')
   const latestShifts = useMemo(() => recentRecords(shifts, 8), [shifts])
   const set = (key: keyof typeof blank, value: string | number | null) => setForm((current) => ({ ...current, [key]: value }))
@@ -59,6 +60,14 @@ function DeliveryRecord({ accounts, initial, dateKey, shifts, expenses, financia
       if (await onSave({ ...preview, id: editing?.id ?? uid() })) { setForm(blank); setEditing(null) }
       else setError('O turno não foi salvo. Confira os dados e tente novamente.')
     } finally { setSaving(false) }
+  }
+  async function remove(item: DeliveryShift) {
+    const localDate = new Date(`${item.localDate}T12:00`).toLocaleDateString('pt-BR')
+    if (saving || deleting || !window.confirm(`Excluir o turno de ${localDate}, ${item.startTime}–${item.endTime}? Esta ação não pode ser desfeita.`)) return
+    setDeleting(true)
+    try {
+      if (await onDelete(item.id) && editing?.id === item.id) { setEditing(null); setForm(blank) }
+    } finally { setDeleting(false) }
   }
   function edit(item: DeliveryShift) {
     setEditing(item)
@@ -79,24 +88,31 @@ function DeliveryRecord({ accounts, initial, dateKey, shifts, expenses, financia
       <button className="primary-button" disabled={saving}>{saving ? 'Salvando turno…' : editing ? 'Salvar alterações do turno' : 'Salvar turno'}</button>
       {editing && <button type="button" className="text-button" disabled={saving} onClick={() => { setEditing(null); setForm(blank) }}>Cancelar edição</button>}
     </form>
-    <RecordList title="Últimos turnos" empty="Nenhum turno registrado.">{latestShifts.map((item) => { const values = deliveryFinancials(item, expenses, financialRecords, dateKey); return <div className="record-row" key={item.id}><div><strong>{new Date(`${item.localDate}T12:00`).toLocaleDateString('pt-BR')}</strong><span>{item.startTime}–{item.endTime} · {values.hours ?? '—'}h · {item.kilometers ?? '—'} km</span><span>Bruta {formatMoney(item.grossRevenue)} · despesas e reserva {formatMoney(values.expenses)}</span><span>Forma de pagamento: {paymentMethodLabel(item.paymentMethod)}</span><span>Líquida estimada {formatMoney(values.net)} · {formatMoney(values.perHour)}/h</span><button type="button" className="text-button" onClick={() => edit(item)}>Editar turno</button></div><strong>{formatMoney(values.net)}</strong></div> })}</RecordList>
+    <RecordList title="Últimos turnos" empty="Nenhum turno registrado.">{latestShifts.map((item) => { const values = deliveryFinancials(item, expenses, financialRecords, dateKey); const date = new Date(`${item.localDate}T12:00`).toLocaleDateString('pt-BR'); return <div className="record-row" key={item.id}><div><strong>{date}</strong><span>{item.startTime}–{item.endTime} · {values.hours ?? '—'}h · {item.kilometers ?? '—'} km</span><span>Bruta {formatMoney(item.grossRevenue)} · despesas e reserva {formatMoney(values.expenses)}</span><span>Forma de pagamento: {paymentMethodLabel(item.paymentMethod)}</span><span>Líquida estimada {formatMoney(values.net)} · {formatMoney(values.perHour)}/h</span><button type="button" className="text-button" onClick={() => edit(item)}>Editar turno</button><button type="button" className="text-button" aria-label={`Excluir turno de ${date}, ${item.startTime}–${item.endTime}`} disabled={saving || deleting} onClick={() => void remove(item)}>{deleting ? 'Excluindo…' : 'Excluir turno'}</button></div><strong>{formatMoney(values.net)}</strong></div> })}</RecordList>
   </div>
 }
 
-function StudyRecord({ dateKey, logs, onSave }: { dateKey: string; logs: StudyLog[]; onSave: (item: StudyLog) => Promise<boolean> }) {
+function StudyRecord({ dateKey, logs, onSave, onDelete }: { dateKey: string; logs: StudyLog[]; onSave: (item: StudyLog) => Promise<boolean>; onDelete: (id: string) => Promise<boolean> }) {
   const [form, setForm] = useState({ localDate: dateKey, area: 'Inglês', minutes: '', content: '', note: '' })
   const [editing, setEditing] = useState<StudyLog | null>(null)
   useRecordDate(dateKey, setForm, !!editing)
   const [saving, setSaving] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   const latestLogs = useMemo(() => recentRecords(logs, 10), [logs])
   async function submit(event: FormEvent) { event.preventDefault(); if (saving) return; const item: StudyLog = { id: editing?.id ?? uid(), localDate: form.localDate, area: form.area as StudyLog['area'], minutes: Number(form.minutes), content: form.content, note: form.note, createdAt: editing?.createdAt ?? new Date().toISOString() }; setSaving(true); try { if (await onSave(item)) { setForm({ ...form, localDate: dateKey, minutes: '', content: '', note: '' }); setEditing(null) } } finally { setSaving(false) } }
+  async function remove(item: StudyLog) {
+    if (saving || deleting || !window.confirm(`Excluir o estudo “${item.area}: ${item.content}”? Esta ação não pode ser desfeita.`)) return
+    setDeleting(true)
+    try { if (await onDelete(item.id) && editing?.id === item.id) { setEditing(null); setForm({ localDate: dateKey, area: 'Inglês', minutes: '', content: '', note: '' }) } }
+    finally { setDeleting(false) }
+  }
   function edit(item: StudyLog) {
     setEditing(item)
     setForm({ localDate: item.localDate, area: item.area, minutes: String(item.minutes), content: item.content, note: item.note ?? '' })
     document.querySelector<HTMLFormElement>('[aria-label="Registro de estudo"]')?.scrollIntoView({ block: 'start' })
     document.querySelector<HTMLInputElement>('[aria-label="Registro de estudo"] input')?.focus()
   }
-  return <div className="records-layout"><form className="form-card" aria-label="Registro de estudo" onSubmit={submit}><h2>{editing ? 'Editar estudo ou leitura' : 'Novo estudo ou leitura'}</h2><div className="form-grid"><Field label="Data"><input type="date" required value={form.localDate} onChange={(e) => setForm({ ...form, localDate: e.target.value })} /></Field><Field label="Área"><select value={form.area} onChange={(e) => setForm({ ...form, area: e.target.value })}><option>Inglês</option><option>Programação</option><option>Leitura</option><option>Outro</option></select></Field><Field label="Minutos"><input type="number" min="1" required value={form.minutes} onChange={(e) => setForm({ ...form, minutes: e.target.value })} /></Field></div><Field label="Conteúdo"><input required value={form.content} onChange={(e) => setForm({ ...form, content: e.target.value })} placeholder="O que você praticou?" /></Field><Field label="Observação curta"><textarea value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} /></Field><button className="primary-button" disabled={saving}>{saving ? 'Salvando registro…' : editing ? 'Salvar alterações do estudo' : 'Salvar registro'}</button>{editing && <button type="button" className="text-button" disabled={saving} onClick={() => { setEditing(null); setForm({ localDate: dateKey, area: 'Inglês', minutes: '', content: '', note: '' }) }}>Cancelar edição</button>}</form><RecordList title="Atividades recentes" empty="Nenhum estudo registrado.">{latestLogs.map((item) => <div className="record-row" key={item.id}><div><strong>{item.area}: {item.content}</strong><span>{item.minutes} min · {new Date(`${item.localDate}T12:00`).toLocaleDateString('pt-BR')}</span><button type="button" className="text-button" onClick={() => edit(item)}>Editar estudo</button></div></div>)}</RecordList></div>
+  return <div className="records-layout"><form className="form-card" aria-label="Registro de estudo" onSubmit={submit}><h2>{editing ? 'Editar estudo ou leitura' : 'Novo estudo ou leitura'}</h2><div className="form-grid"><Field label="Data"><input type="date" required value={form.localDate} onChange={(e) => setForm({ ...form, localDate: e.target.value })} /></Field><Field label="Área"><select value={form.area} onChange={(e) => setForm({ ...form, area: e.target.value })}><option>Inglês</option><option>Programação</option><option>Leitura</option><option>Outro</option></select></Field><Field label="Minutos"><input type="number" min="1" required value={form.minutes} onChange={(e) => setForm({ ...form, minutes: e.target.value })} /></Field></div><Field label="Conteúdo"><input required value={form.content} onChange={(e) => setForm({ ...form, content: e.target.value })} placeholder="O que você praticou?" /></Field><Field label="Observação curta"><textarea value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} /></Field><button className="primary-button" disabled={saving || deleting}>{saving ? 'Salvando registro…' : editing ? 'Salvar alterações do estudo' : 'Salvar registro'}</button>{editing && <button type="button" className="text-button" disabled={saving || deleting} onClick={() => { setEditing(null); setForm({ localDate: dateKey, area: 'Inglês', minutes: '', content: '', note: '' }) }}>Cancelar edição</button>}</form><RecordList title="Atividades recentes" empty="Nenhum estudo registrado.">{latestLogs.map((item) => { const date = new Date(`${item.localDate}T12:00`).toLocaleDateString('pt-BR'); return <div className="record-row" key={item.id}><div><strong>{item.area}: {item.content}</strong><span>{item.minutes} min · {date}</span><button type="button" className="text-button" onClick={() => edit(item)}>Editar estudo</button><button type="button" className="text-button" aria-label={`Excluir estudo: ${item.area}: ${item.content}`} disabled={saving || deleting} onClick={() => void remove(item)}>{deleting ? 'Excluindo…' : 'Excluir estudo'}</button></div></div> })}</RecordList></div>
 }
 
 function RecordList({ title, empty, children }: { title: string; empty: string; children: React.ReactNode }) { const hasChildren = Array.isArray(children) ? children.length > 0 : !!children; return <section className="record-list"><h2>{title}</h2>{hasChildren ? children : <div className="empty-state"><p>{empty}</p></div>}</section> }

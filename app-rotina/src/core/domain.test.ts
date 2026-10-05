@@ -379,6 +379,10 @@ describe('regras críticas', () => {
     expect(validateBackup(pendingWithDate)).toBe(false)
   })
 
+  it('inicia novas instalações no tema Claro sem alterar a migração legada', () => {
+    expect(defaultSettings().theme).toBe('light')
+  })
+
   it('valida medidas corporais dentro de limites seguros e com identidade diária', () => {
     const measurementDomain = domain as typeof domain & {
       isValidBodyMeasurement?: (value: unknown) => boolean

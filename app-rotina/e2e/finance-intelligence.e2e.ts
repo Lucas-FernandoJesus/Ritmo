@@ -1,5 +1,5 @@
 import { readFile } from 'node:fs/promises'
-import { expect, goToTab, openAppOnTuesday, openStoragePage, test } from './fixtures'
+import { expect, goToTab, openAppOnTuesday, openStoragePage, restoreBackup, test } from './fixtures'
 import type { Page } from '@playwright/test'
 
 type FinanceArea = 'Visão geral' | 'Planejamento' | 'Análises'
@@ -110,9 +110,7 @@ for (const theme of ['light', 'dark'] as const) {
     await budget.getByRole('button', { name: 'Salvar orçamento', exact: true }).click()
     await expect(planning).toContainText('60% utilizado')
     await goToTab(page, 'Ajustes')
-    page.removeAllListeners('dialog')
-    page.once('dialog', (dialog) => dialog.accept())
-    await page.locator('input[type="file"]').setInputFiles({ name: 'planejamento.json', mimeType: 'application/json', buffer })
+    await restoreBackup(page, { name: 'planejamento.json', mimeType: 'application/json', buffer })
     await expect(page.getByRole('heading', { name: 'Um dia de cada vez.', exact: true })).toBeVisible()
     await goToTab(page, 'Financeiro')
     await financeArea(page, 'Planejamento')
@@ -253,8 +251,7 @@ test('migra IndexedDB 3 para 7 preservando fontes e importa backup sem planejame
   await page.getByRole('button', { name: 'Exportar backup JSON', exact: true }).click()
   const saved = JSON.parse((await readFile((await (await downloading).path())!)).toString('utf8'))
   delete saved.financialGoals; delete saved.categoryBudgets
-  page.once('dialog', (dialog) => dialog.accept())
-  await page.locator('input[type="file"]').setInputFiles({ name: 'antigo.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(saved)) })
+  await restoreBackup(page, { name: 'antigo.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(saved)) })
   await expect(page.getByRole('heading', { name: 'Um dia de cada vez.', exact: true })).toBeVisible()
   await goToTab(page, 'Financeiro')
   await expect(page.getByRole('region', { name: 'Resumo financeiro', exact: true })).toContainText('90,00')

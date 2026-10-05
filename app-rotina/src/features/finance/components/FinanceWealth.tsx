@@ -2,13 +2,13 @@ import { useState, type FormEvent } from 'react'
 import { formatMoney } from '../../../core/domain'
 import { dateLabel } from '../finance-analysis'
 import { accountBalances, assetKindLabels } from '../finance-plans'
-import type { AccountTransfer, AssetAccount, AssetKind, DeliveryShift, Expense, FinancialRecord } from '../../../core/types'
+import type { AccountTransfer, AssetAccount, AssetKind, DeliveryShift, Expense, FinancialRecord, InstallmentPlan, RecurringPlan } from '../../../core/types'
 import { Field } from '../../../components/FormPrimitives'
 import { MoneyInput } from '../../../components/MoneyInput'
 import { AccountField } from './FinanceSchedules'
 import { entityId, useFinanceFormFocus } from './finance-form-utils'
 
-export interface WealthCallbacks { onAccount: (account: AssetAccount) => Promise<boolean>; onTransfer: (transfer: AccountTransfer) => Promise<boolean> }
+export interface WealthCallbacks { onAccount: (account: AssetAccount) => Promise<boolean>; onDeleteAccount: (id: string) => Promise<boolean>; onTransfer: (transfer: AccountTransfer) => Promise<boolean> }
 
 function AssetForm({ today, initial, locked, onAccount, onCancel }: { today: string; initial?: AssetAccount; locked: boolean; onAccount: WealthCallbacks['onAccount']; onCancel: () => void }) {
   const ref = useFinanceFormFocus()
@@ -31,7 +31,7 @@ function TransferForm({ today, accounts, onTransfer, onCancel }: { today: string
   return <form ref={ref} className="form-card planning-form" aria-label="Transferência entre contas" onSubmit={submit}><h3>Transferir entre contas</h3><AccountField accounts={accounts} value={form.from} onChange={from => setForm({ ...form, from })} label="Conta de origem" /><AccountField accounts={accounts} value={form.to} onChange={to => setForm({ ...form, to })} label="Conta de destino" /><div className="form-grid"><Field label="Valor da transferência (R$)"><MoneyInput required value={form.amount} onChange={amount => setForm({ ...form, amount })} /></Field><Field label="Data da transferência"><input type="date" required max={today} value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} /></Field></div><p className="fine-print">Transferências não são renda nem despesa. O total do patrimônio é preservado; não há transferência para passivos.</p>{error && <p role="alert" className="warning-text">{error}</p>}<div className="finance-row-actions"><button className="primary-button" disabled={saving}>{saving ? 'Salvando…' : 'Salvar transferência'}</button><button type="button" className="text-button" disabled={saving} onClick={onCancel}>Cancelar</button></div></form>
 }
 
-export function FinanceWealth({ shifts, today, accounts, transfers, records, expenses, ...callbacks }: WealthCallbacks & { shifts: readonly DeliveryShift[]; today: string; accounts: readonly AssetAccount[]; transfers: readonly AccountTransfer[]; records: readonly FinancialRecord[]; expenses: readonly Expense[] }) {
+export function FinanceWealth({ shifts, today, accounts, transfers, records, expenses, recurringPlans, installmentPlans, ...callbacks }: WealthCallbacks & { shifts: readonly DeliveryShift[]; today: string; accounts: readonly AssetAccount[]; transfers: readonly AccountTransfer[]; records: readonly FinancialRecord[]; expenses: readonly Expense[]; recurringPlans: readonly RecurringPlan[]; installmentPlans: readonly InstallmentPlan[] }) {
   const [form, setForm] = useState<'account' | 'transfer' | null>(null), [editing, setEditing] = useState<AssetAccount>(), [busy, setBusy] = useState(false)
   const wealth = accountBalances(accounts, records, expenses, transfers, today, shifts)
   const show = (value: number | null) => value === null ? 'Sem dados' : formatMoney(value)
@@ -40,11 +40,26 @@ export function FinanceWealth({ shifts, today, accounts, transfers, records, exp
     setBusy(true)
     try { const timestamp = new Date().toISOString(); await callbacks.onTransfer({ ...transfer, voidedAt: timestamp, updatedAt: timestamp }) } finally { setBusy(false) }
   }
+  function isLinked(account: AssetAccount) {
+    return shifts.some(shift => shift.accountId === account.id)
+      || records.some(record => record.accountId === account.id || record.liabilityAccountId === account.id)
+      || expenses.some(expense => expense.accountId === account.id)
+      || transfers.some(transfer => transfer.fromAccountId === account.id || transfer.toAccountId === account.id)
+      || [...recurringPlans, ...installmentPlans].some(plan => plan.accountId === account.id || plan.liabilityAccountId === account.id)
+  }
+  async function removeAccount(account: AssetAccount) {
+    if (busy || isLinked(account) || !window.confirm(`Excluir a conta ${account.name}? O saldo inicial e a conta serão removidos; lançamentos financeiros permanecem.`)) return
+    setBusy(true)
+    try {
+      const removed = await callbacks.onDeleteAccount(account.id)
+      if (removed && editing?.id === account.id) setForm(null)
+    } finally { setBusy(false) }
+  }
   return <section aria-label="Patrimônio financeiro"><h3>Patrimônio</h3><div className="result-strip"><div><span>Ativos</span><strong>{show(wealth.assets)}</strong></div><div><span>Passivos</span><strong>{show(wealth.liabilities)}</strong></div><div><span>Patrimônio líquido</span><strong>{show(wealth.netWorth)}</strong></div></div><p className="fine-print">Posição até {dateLabel(today)}: ativos menos passivos. Somente saldos iniciais, lançamentos vinculados e transferências compõem as contas. Histórico sem vínculo continua no Financeiro.</p>{wealth.unassignedCount > 0 && <p className="warning-text">{wealth.unassignedCount} lançamento(s) realizado(s) sem conta. A posição patrimonial pode estar incompleta.</p>}<div className="finance-row-actions"><button type="button" className="secondary-button" onClick={() => { setEditing(undefined); setForm('account') }}>Cadastrar conta ou dívida</button><button type="button" className="secondary-button" disabled={accounts.filter(a => a.kind !== 'liability').length < 2} onClick={() => setForm('transfer')}>Transferir entre contas</button></div>
-    {form === 'account' && <AssetForm key={editing?.id ?? 'new'} today={today} initial={editing} locked={!!editing && (shifts.some(s => s.accountId === editing.id) || records.some(r => r.accountId === editing.id || r.liabilityAccountId === editing.id) || expenses.some(e => e.accountId === editing.id) || transfers.some(t => t.fromAccountId === editing.id || t.toAccountId === editing.id))} onAccount={callbacks.onAccount} onCancel={() => setForm(null)} />}
+    {form === 'account' && <AssetForm key={editing?.id ?? 'new'} today={today} initial={editing} locked={!!editing && isLinked(editing)} onAccount={callbacks.onAccount} onCancel={() => setForm(null)} />}
     {form === 'transfer' && <TransferForm today={today} accounts={accounts} onTransfer={callbacks.onTransfer} onCancel={() => setForm(null)} />}
     {!accounts.length && <p className="empty-state">Cadastre uma conta, dinheiro, poupança, reserva, investimento ou dívida para começar.</p>}
-    <div className="planning-columns">{wealth.balances.map(({ account, balance }) => <article className="planning-item" key={account.id}><h4>{account.name}</h4><p>{assetKindLabels[account.kind]} · <strong>{show(balance)}</strong></p><p className="fine-print">Inicial: {formatMoney(account.openingBalance)} em {dateLabel(account.openingDate)}{account.openingDate > today && ' · ainda não iniciado'}</p>{balance !== null && balance < 0 && <p className="warning-text">{account.kind === 'liability' ? 'Pagamentos superam a dívida informada. Confira os vínculos e o saldo inicial.' : 'Saldo registrado negativo. Confira lançamentos e transferências.'}</p>}<button type="button" className="text-button" onClick={() => { setEditing(account); setForm('account') }}>Editar conta {account.name}</button></article>)}</div>
+    <div className="planning-columns">{wealth.balances.map(({ account, balance }) => { const linked = isLinked(account); return <article className="planning-item" key={account.id}><h4>{account.name}</h4><p>{assetKindLabels[account.kind]} · <strong>{show(balance)}</strong></p><p className="fine-print">Inicial: {formatMoney(account.openingBalance)} em {dateLabel(account.openingDate)}{account.openingDate > today && ' · ainda não iniciado'}</p>{balance !== null && balance < 0 && <p className="warning-text">{account.kind === 'liability' ? 'Pagamentos superam a dívida informada. Confira os vínculos e o saldo inicial.' : 'Saldo registrado negativo. Confira lançamentos e transferências.'}</p>}{linked && <p className="fine-print">Não pode ser excluída porque possui vínculos. Remova-os primeiro para manter os cálculos patrimoniais válidos.</p>}<div className="finance-row-actions"><button type="button" className="text-button" onClick={() => { setEditing(account); setForm('account') }}>Editar conta {account.name}</button>{!linked && <button type="button" className="text-button" disabled={busy} onClick={() => void removeAccount(account)}>Excluir conta {account.name}</button>}</div></article> })}</div>
     {transfers.length > 0 && <details><summary>Transferências registradas</summary>{[...transfers].sort((a, b) => b.localDate.localeCompare(a.localDate)).map(t => <article className="planning-item" key={t.id}><p>{accounts.find(a => a.id === t.fromAccountId)?.name} para {accounts.find(a => a.id === t.toAccountId)?.name} · {formatMoney(t.amount)}</p><p className="fine-print">{dateLabel(t.localDate)} · {t.voidedAt ? 'Cancelada' : 'Realizada; fora de entradas/saídas'}</p>{!t.voidedAt && <button type="button" className="text-button" disabled={busy} onClick={() => cancelTransfer(t)}>Cancelar transferência</button>}</article>)}</details>}
   </section>
 }

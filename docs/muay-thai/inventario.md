@@ -2,7 +2,7 @@
 
 Pesquisa realizada em 25–26/09/2026, com coleta de transcrições em 30/09/2026. [Voltar ao relatório](./pesquisa-e-plano.md) · [Textos e manifesto](./transcricoes/README.md).
 
-**V**: conteúdo verbal examinado por transcrição ou legendas; texto integral da legenda disponível na pasta de transcrições. O inventário conserva somente as fontes utilizáveis no Ritmo. A posição continua sendo a ordem original exibida na playlist, por isso pode haver lacunas.
+**V**: conteúdo verbal examinado por transcrição ou legendas; texto integral da legenda disponível na pasta de transcrições. **RV** seguido de um horário indica somente um trecho visual pontual conferido — não a aula toda nem validação individual da técnica. O inventário conserva somente as fontes utilizáveis no Ritmo. A posição continua sendo a ordem original exibida na playlist, por isso pode haver lacunas.
 
 **Cobertura utilizável:** 141 posições nas quatro playlists, 126 URLs únicas; o vídeo adicional totaliza **127 vídeos distintos**, todos com legenda salva. Há 15 posições repetidas. Fontes sem conteúdo acessível foram retiradas do acervo por decisão do usuário em 01/10/2026.
 
@@ -79,8 +79,8 @@ Canal: Martial Spirit: Martial Arts & Fitness. 58 posições utilizáveis.
 | 54 | [MUAYTHAI WORKOUT (FULL CLASS) - Skipping + Shadow + Bag Work + Conditioning//Iso & Beginner Friendly](https://www.youtube.com/watch?v=ZBbOqQCuQqA) | 33:43 | V | P1-3 |
 | 55 | [MUAYTHAI BAG CIRCUIT (Mostly Kicks) - 15 Minute Workout // Beginner Friendly // Follow Along](https://www.youtube.com/watch?v=CyMmpTra9vU) | 15:40 | V | — |
 | 56 | [MUAYTHAI WORKOUT  (30 Mins/Beginner Friendly Class) \| Shadow + Bag + Conditioning](https://www.youtube.com/watch?v=YujRTImepa8) | 33:42 | V | P1-2 |
-| 57 | [BEGINNER MUAY THAI SHADOW BOXING \| Stance, Jab, Cross, Teep [Follow Along, 10 Minutes] (PART 1)](https://www.youtube.com/watch?v=s3uW3XSOdvA) | 11:31 | V | — |
-| 58 | [BEGINNER MUAY THAI SHADOW BOXING \| Knees & Horizontal Elbows  [Follow Along, 10 Minutes] (PART 2)](https://www.youtube.com/watch?v=QrcEYNzuZQg) | 11:50 | V | — |
+| 57 | [BEGINNER MUAY THAI SHADOW BOXING \| Stance, Jab, Cross, Teep [Follow Along, 10 Minutes] (PART 1)](https://www.youtube.com/watch?v=s3uW3XSOdvA) | 11:31 | V + RV 05:34–05:39 (jab) | — |
+| 58 | [BEGINNER MUAY THAI SHADOW BOXING \| Knees & Horizontal Elbows  [Follow Along, 10 Minutes] (PART 2)](https://www.youtube.com/watch?v=QrcEYNzuZQg) | 11:50 | V + RV 04:43 | — |
 | 59 | [BEGINNER MUAY THAI SHADOW BOXING \|Roundhouse Kicks [Follow Along, 10 Minutes] (PART 3)](https://www.youtube.com/watch?v=66-DnUrbU0o) | 11:26 | V | — |
 | 60 | [BEGINNER MUAYTHAI FULL CLASS - 30 Mins & No Equipment!](https://www.youtube.com/watch?v=cYYf9-_hwyU) | 36:40 | V | P1-1 |
 | 61 | [Basic Muaythai Kicks - BAG WORKOUT \| 15 MINS \| FOLLOW ALONG](https://www.youtube.com/watch?v=d9Mt4-rhAcA) | 15:24 | V | — |
@@ -92,9 +92,9 @@ Canal: Global Martial Arts University. 39 posições.
 
 | Pos. | Vídeo | Duração | Estado | Repetição |
 |---:|---|---:|:---:|---|
-| 1 | [Intro to Muay Thai Kickboxing - The Footwork Class](https://www.youtube.com/watch?v=qHBYtdR4xHg) | 13:48 | V | — |
+| 1 | [Intro to Muay Thai Kickboxing - The Footwork Class](https://www.youtube.com/watch?v=qHBYtdR4xHg) | 13:48 | V + RV 04:13–04:27 e 04:48–04:55 (passos) | — |
 | 2 | [Intro to Muay Thai Kickboxing - The Straight Punches Class](https://www.youtube.com/watch?v=D4dRRozyYKQ) | 14:45 | V | — |
-| 3 | [Intro to Muay Thai Kickboxing - The Straight Kicks Class](https://www.youtube.com/watch?v=wx8JZfwH3P0) | 14:52 | V | — |
+| 3 | [Intro to Muay Thai Kickboxing - The Straight Kicks Class](https://www.youtube.com/watch?v=wx8JZfwH3P0) | 14:52 | V + RV 03:50–04:25 (teep) | — |
 | 4 | [Muay Thai - Level 1 - Class 1 (Lead Strikes)](https://www.youtube.com/watch?v=uzoYU8HZknU) | 21:02 | V | — |
 | 5 | [Muay Thai - Level 1 - Solo Bag Class 1](https://www.youtube.com/watch?v=AQjxlXcI_dM) | 31:34 | V | — |
 | 6 | [Muay Thai - Level 1 - Class #3](https://www.youtube.com/watch?v=RpuIx1xO-Vc) | 21:08 | V | — |
@@ -164,7 +164,7 @@ Canal: Spring Sia. 36 posições utilizáveis.
 | 25 | [Muaythai High Intensity Workout - Home & Small Space Friendly, No Equipment.](https://www.youtube.com/watch?v=ruZSEalcR9k) | 24:04 | V | — |
 | 26 | [MUAY THAI WORKOUT - Striking + Bodyweight Exercises ; 15 Minutes](https://www.youtube.com/watch?v=zaVteJ7gxdI) | 15:25 | V | — |
 | 27 | [MUAYTHAI CLINCH CLASS - Clinching 101s, Hand and Body Positioning, Specific Holds.](https://www.youtube.com/watch?v=oKkC4KIK3yY) | 17:36 | V | — |
-| 31 | [YOUR FIRST MUAYTHAI CLASS - Stance , Rhythm & Basic Footwork](https://www.youtube.com/watch?v=BRJy0lhOKt4) | 12:23 | V | — |
+| 31 | [YOUR FIRST MUAYTHAI CLASS - Stance , Rhythm & Basic Footwork](https://www.youtube.com/watch?v=BRJy0lhOKt4) | 12:23 | V + RV 01:00 | — |
 | 34 | [MUAYTHAI SHADOW BOXING CLASS (Home & Small Space Friendly)](https://www.youtube.com/watch?v=oFKZQVw9rno) | 20:48 | V | — |
 | 36 | [20 MINS MUAYTHAI SHADOWBOXING CLASS - Knees & Elbows (No Equipment)](https://www.youtube.com/watch?v=vTVyY5CcbiM) | 21:51 | V | — |
 | 37 | [20 MIN MUAYTHAI CLASS - Combination Footwork Focused (How to execute strikes forward and backwards)](https://www.youtube.com/watch?v=FLvlGg7_2Vo) | 23:55 | V | — |

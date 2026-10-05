@@ -21,6 +21,7 @@ interface FinanceViewProps extends PlanningCallbacks {
   records: readonly FinancialRecord[]
   onSave: (record: FinancialRecord) => Promise<boolean>
   onExpense: (expense: Expense) => Promise<boolean>
+  onDeleteMovement: (source: 'expense' | 'financial', id: string) => Promise<boolean>
   onDelivery: (id?: string) => void
   registrationRequest?: FinanceRegistrationRequest
 }
@@ -44,7 +45,7 @@ const registerIntents: readonly { id: RegisterIntent; label: string }[] = [
   { id: 'pendencia', label: 'A pagar' },
 ]
 
-export function FinanceView({ planning, operations, today, shifts, expenses, records, onSave, onExpense, onDelivery, registrationRequest, goals, budgets, onGoal, onBudget, onDeleteGoal, onDeleteBudget }: FinanceViewProps) {
+export function FinanceView({ planning, operations, today, shifts, expenses, records, onSave, onExpense, onDeleteMovement, onDelivery, registrationRequest, goals, budgets, onGoal, onBudget, onDeleteGoal, onDeleteBudget }: FinanceViewProps) {
   const [area, setArea] = useState<FinanceArea>('overview')
   const [registering, setRegistering] = useState<RegisterIntent | null>(registrationRequest?.intent ?? null)
   const [handledRegistrationRevision, setHandledRegistrationRevision] = useState(registrationRequest?.revision)
@@ -60,6 +61,7 @@ export function FinanceView({ planning, operations, today, shifts, expenses, rec
   const [editing, setEditing] = useState<FinancialRecord | undefined>()
   const [editingExpense, setEditingExpense] = useState<Expense | undefined>()
   const [settling, setSettling] = useState<string | null>(null)
+  const [deleting, setDeleting] = useState<string | null>(null)
   const [limit, setLimit] = useState(50)
   const [guideDismissed, setGuideDismissed] = useState(false)
   const formContainer = useRef<HTMLDivElement>(null)
@@ -120,6 +122,21 @@ export function FinanceView({ planning, operations, today, shifts, expenses, rec
     setSettling(record.id)
     try { await onSave(settleFinancialRecord(record, today, new Date().toISOString())) } finally { setSettling(null) }
   }
+  async function remove(row: FinancialMovement) {
+    if ((row.source !== 'expense' && row.source !== 'financial') || deleting) return
+    const confirmedRecord = row.source === 'financial' ? records.find((record) => record.id === row.sourceId) : undefined
+    const consequence = confirmedRecord?.planningRef
+      ? 'A ocorrência correspondente voltará a aparecer como pendente no planejamento.'
+      : row.deliveryShiftId ? 'As métricas do turno de delivery associado serão recalculadas.' : ''
+    const question = `Excluir “${row.description}” de ${new Date(`${row.localDate}T12:00:00`).toLocaleDateString('pt-BR')}?${consequence ? ` ${consequence}` : ''} Esta ação não pode ser desfeita.`
+    if (!window.confirm(question)) return
+    setDeleting(row.id)
+    try {
+      if (await onDeleteMovement(row.source, row.sourceId)) {
+        if (row.source === 'financial' && editing?.id === row.sourceId || row.source === 'expense' && editingExpense?.id === row.sourceId) closeForm()
+      }
+    } finally { setDeleting(null) }
+  }
 
   const areaNavigation = <nav className="finance-area-nav" aria-label="Áreas do Financeiro">{financeAreas.map(item => <button type="button" key={item.id} aria-current={area === item.id ? 'page' : undefined} onClick={() => openArea(item.id)}>{item.label}</button>)}</nav>
 
@@ -149,7 +166,7 @@ export function FinanceView({ planning, operations, today, shifts, expenses, rec
         <div className="finance-filters"><Field label="Tipo do histórico"><select value={type} onChange={(event) => setType(event.target.value as FinancialType | '')}><option value="">Todos os tipos</option>{Object.entries(financialTypeLabels).map(([id, label]) => <option key={id} value={id}>{label}</option>)}</select></Field><Field label="Categoria do histórico"><select value={category} onChange={(event) => setCategory(event.target.value)}><option value="">Todas as categorias</option>{categories.map((label) => <option key={label}>{label}</option>)}</select></Field><Field label="Origem do histórico"><select value={origin} onChange={(event) => setOrigin(event.target.value)}><option value="">Todas as origens</option>{['Delivery', 'Despesas', 'Financeiro', 'Recorrências', 'Parcelamentos'].map((label) => <option key={label}>{label}</option>)}</select></Field><Field label="Status do histórico"><select value={status} onChange={(event) => setStatus(event.target.value as FinancialStatus | '')}><option value="">Todos os status</option>{Object.entries(financialStatusLabels).map(([id, label]) => <option key={id} value={id}>{label}</option>)}</select></Field></div>
         <Field label="Buscar descrição"><input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar movimentação" /></Field>
         {!visibleRows.length && <div className="empty-state"><p>Nenhuma movimentação neste filtro. Registre um valor ou escolha outro período.</p></div>}
-        {visibleRows.slice(0, limit).map((row) => <article key={row.id} className={`finance-movement finance-${row.type}`}><div className="finance-movement-heading"><span className="finance-type">{financialTypeLabels[row.type]}</span><strong>{row.amount === null ? 'Não informado' : formatMoney(row.amount)}</strong></div><h3>{row.description}</h3><p className="section-description"><time dateTime={row.localDate}>{new Date(`${row.localDate}T12:00:00`).toLocaleDateString('pt-BR')}</time> · {row.category} · {row.origin}</p><p className="finance-status">{financialStatusLabels[row.status]}{row.deliveryShiftId && ' · Vinculado ao delivery'} · Forma de pagamento: {paymentMethodLabel(row.paymentMethod)}</p>{row.note && <p className="fine-print finance-note">{row.note}</p>}<div className="finance-row-actions">{row.source === 'planning' ? <button type="button" className="text-button" onClick={() => openArea('planning')}>Ver planejamento</button> : row.source === 'delivery' ? <button type="button" className="text-button" onClick={() => onDelivery(row.sourceId)}>Editar em Registros</button> : <button type="button" className="text-button" onClick={() => edit(row)}>Editar</button>}{row.source === 'financial' && row.status === 'aberto' && <button type="button" className="secondary-button" disabled={!!settling} onClick={() => settle(row)}>{settling === row.sourceId ? 'Salvando…' : row.type === 'credito' ? 'Receber' : 'Pagar'}</button>}</div></article>)}
+        {visibleRows.slice(0, limit).map((row) => <article key={row.id} className={`finance-movement finance-${row.type}`}><div className="finance-movement-heading"><span className="finance-type">{financialTypeLabels[row.type]}</span><strong>{row.amount === null ? 'Não informado' : formatMoney(row.amount)}</strong></div><h3>{row.description}</h3><p className="section-description"><time dateTime={row.localDate}>{new Date(`${row.localDate}T12:00:00`).toLocaleDateString('pt-BR')}</time> · {row.category} · {row.origin}</p><p className="finance-status">{financialStatusLabels[row.status]}{row.deliveryShiftId && ' · Vinculado ao delivery'} · Forma de pagamento: {paymentMethodLabel(row.paymentMethod)}</p>{row.note && <p className="fine-print finance-note">{row.note}</p>}<div className="finance-row-actions">{row.source === 'planning' ? <button type="button" className="text-button" onClick={() => openArea('planning')}>Ver planejamento</button> : row.source === 'delivery' ? <button type="button" className="text-button" onClick={() => onDelivery(row.sourceId)}>Editar em Registros</button> : <button type="button" className="text-button" onClick={() => edit(row)}>Editar</button>}{row.source === 'financial' && row.status === 'aberto' && <button type="button" className="secondary-button" disabled={!!settling} onClick={() => settle(row)}>{settling === row.sourceId ? 'Salvando…' : row.type === 'credito' ? 'Receber' : 'Pagar'}</button>}{(row.source === 'financial' || row.source === 'expense') && <button type="button" className="text-button" aria-label={`Excluir ${row.source === 'expense' ? 'despesa' : 'lançamento'}: ${row.description}`} disabled={!!deleting} onClick={() => void remove(row)}>{deleting === row.id ? 'Excluindo…' : row.source === 'expense' ? 'Excluir despesa' : 'Excluir lançamento'}</button>}</div></article>)}
         {visibleRows.length > limit && <button type="button" className="secondary-button" onClick={() => setLimit(limit + 50)}>Mostrar mais movimentações</button>}
       </section>
     </div>

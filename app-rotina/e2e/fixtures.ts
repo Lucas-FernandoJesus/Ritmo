@@ -54,3 +54,12 @@ export async function goToTab(page: Page, name: 'Hoje' | 'Semana' | 'Estudos' | 
   await expect(button).toHaveAttribute('aria-current', 'page')
   await expect(page.locator('#main-content')).toBeFocused()
 }
+
+export async function restoreBackup(page: Page, file: { name: string; mimeType: string; buffer: Buffer }) {
+  const loaded = page.waitForEvent('load')
+  await page.locator('input[type="file"][accept*="json"]').setInputFiles(file)
+  const preview = page.getByRole('region', { name: 'Prévia do backup' })
+  await expect(preview).toBeVisible()
+  await preview.getByRole('button', { name: 'Substituir dados por este backup' }).click()
+  await loaded
+}

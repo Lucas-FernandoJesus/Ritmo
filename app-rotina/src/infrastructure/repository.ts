@@ -151,10 +151,23 @@ export const repository = {
   saveCheckIn: (checkIn: DailyCheckIn) => { assertValid(checkIn, isValidCheckIn, 'Checagem diária inválida.'); return put('checkIns', { ...checkIn, id: checkIn.localDate }) },
   getDeliveryShifts: () => getAll<DeliveryShift>('deliveryShifts'),
   saveDeliveryShift: (shift: DeliveryShift) => { assertValid(shift, isValidDeliveryShift, 'Turno de delivery inválido.'); return financialTransaction((state, tx) => { state.deliveryShifts = [...state.deliveryShifts.filter(s => s.id !== shift.id), shift]; tx.objectStore('deliveryShifts').put(shift) }) },
+  deleteDeliveryShift: (id: string) => financialTransaction((state, tx) => {
+    if (state.expenses.some(item => item.deliveryShiftId === id) || state.financialRecords.some(item => item.deliveryShiftId === id)) throw new Error('Há despesas financeiras vinculadas a este turno. Desvincule-as antes de excluir o turno.')
+    state.deliveryShifts = state.deliveryShifts.filter(shift => shift.id !== id)
+    tx.objectStore('deliveryShifts').delete(id)
+  }),
   getExpenses: () => getAll<Expense>('expenses'),
   saveExpense: (expense: Expense) => { assertValid(expense, isValidExpense, 'Despesa inválida.'); return putFinancialSource('expenses', expense) },
+  deleteExpense: (id: string) => financialTransaction((state, tx) => {
+    state.expenses = state.expenses.filter(expense => expense.id !== id)
+    tx.objectStore('expenses').delete(id)
+  }),
   getFinancialRecords: () => getAll<FinancialRecord>('financialRecords'),
   saveFinancialRecord: (record: FinancialRecord) => { assertValid(record, isValidFinancialRecord, 'Movimentação financeira inválida.'); return putFinancialSource('financialRecords', record) },
+  deleteFinancialRecord: (id: string) => financialTransaction((state, tx) => {
+    state.financialRecords = state.financialRecords.filter(record => record.id !== id)
+    tx.objectStore('financialRecords').delete(id)
+  }),
   getFinancialGoals: () => getAll<FinancialGoal>('financialGoals'),
   saveFinancialGoal: (goal: FinancialGoal) => { assertValid(goal, isValidFinancialGoal, 'Meta financeira inválida.'); return put('financialGoals', goal) },
   deleteFinancialGoal: (id: string) => remove('financialGoals', id),
@@ -163,10 +176,30 @@ export const repository = {
   deleteCategoryBudget: (id: string) => remove('categoryBudgets', id),
   getRecurringPlans: () => getAll<RecurringPlan>('recurringPlans'),
   saveRecurringPlan: (plan: RecurringPlan) => { assertValid(plan, isValidRecurringPlan, 'Recorrência inválida.'); return saveDefinition('recurringPlans', plan) },
+  deleteRecurringPlan: (id: string) => financialTransaction((state, tx) => {
+    if (state.financialRecords.some(record => record.planningRef?.kind === 'recurring' && record.planningRef.planId === id)) throw new Error('Esta recorrência possui lançamentos vinculados. Pause-a para preservar o histórico.')
+    state.recurringPlans = state.recurringPlans.filter(plan => plan.id !== id)
+    tx.objectStore('recurringPlans').delete(id)
+  }),
   getInstallmentPlans: () => getAll<InstallmentPlan>('installmentPlans'),
   saveInstallmentPlan: (plan: InstallmentPlan) => { assertValid(plan, isValidInstallmentPlan, 'Parcelamento inválido.'); return saveDefinition('installmentPlans', plan) },
+  deleteInstallmentPlan: (id: string) => financialTransaction((state, tx) => {
+    if (state.financialRecords.some(record => record.planningRef?.kind === 'installment' && record.planningRef.planId === id)) throw new Error('Este parcelamento possui lançamentos vinculados. Pause-o para preservar o histórico.')
+    state.installmentPlans = state.installmentPlans.filter(plan => plan.id !== id)
+    tx.objectStore('installmentPlans').delete(id)
+  }),
   getAssetAccounts: () => getAll<AssetAccount>('assetAccounts'),
   saveAssetAccount: (account: AssetAccount) => { assertValid(account, isValidAssetAccount, 'Conta patrimonial inválida.'); return saveDefinition('assetAccounts', account) },
+  deleteAssetAccount: (id: string) => financialTransaction((state, tx) => {
+    const linked = state.financialRecords.some(record => record.accountId === id || record.liabilityAccountId === id)
+      || state.expenses.some(expense => expense.accountId === id)
+      || state.deliveryShifts.some(shift => shift.accountId === id)
+      || state.accountTransfers.some(transfer => transfer.fromAccountId === id || transfer.toAccountId === id)
+      || [...state.recurringPlans, ...state.installmentPlans].some(plan => plan.accountId === id || plan.liabilityAccountId === id)
+    if (linked) throw new Error('Esta conta possui lançamentos ou planejamentos vinculados. Remova os vínculos antes de excluí-la.')
+    state.assetAccounts = state.assetAccounts.filter(account => account.id !== id)
+    tx.objectStore('assetAccounts').delete(id)
+  }),
   getAccountTransfers: () => getAll<AccountTransfer>('accountTransfers'),
   saveAccountTransfer: (transfer: AccountTransfer) => { assertValid(transfer, isValidAccountTransfer, 'Transferência inválida.'); return saveDefinition('accountTransfers', transfer) },
   async confirmOccurrence(ref: PlanningReference, date: string): Promise<FinancialRecord> {
@@ -185,12 +218,15 @@ export const repository = {
   },
   getStudyLogs: () => getAll<StudyLog>('studyLogs'),
   saveStudyLog: (log: StudyLog) => { assertValid(log, isValidStudyLog, 'Registro de estudo inválido.'); return put('studyLogs', log) },
+  deleteStudyLog: (id: string) => remove('studyLogs', id),
   getProgress: () => getAll<ThirtyDayProgress>('progress'),
   saveProgress: (progress: ThirtyDayProgress) => { assertValid(progress, isValidProgress, 'Progresso inválido.'); return put('progress', progress) },
   getBodyMeasurements: () => getAll<BodyMeasurement>('bodyMeasurements'),
   saveBodyMeasurement: (measurement: BodyMeasurement) => { assertValid(measurement, isValidBodyMeasurement, 'Medida corporal inválida.'); return put('bodyMeasurements', measurement) },
+  deleteBodyMeasurement: (id: string) => remove('bodyMeasurements', id),
   getMealLogs: () => getAll<MealLog>('mealLogs'),
   saveMealLog: (meal: MealLog) => { assertValid(meal, isValidMealLog, 'Registro de refeição inválido.'); return put('mealLogs', meal) },
+  deleteMealLog: (id: string) => remove('mealLogs', id),
   async exportAll(): Promise<BackupData> {
     const db = await openDatabase(), tx = db.transaction([...stores], 'readonly')
     const done = transactionDone(tx)

@@ -52,7 +52,8 @@
 ## Aparência
 
 - Existem somente os modos Claro e Escuro. Valores antigos persistidos como `system` devem ser normalizados futuramente para o modo correspondente à preferência atual do dispositivo.
-- Substitua o fundo amadeirado por um fundo abstrato estático feito em CSS, com gradientes discretos em teal e azul, cards legíveis e contraste mínimo de 4.5:1.
-- Paleta clara: fundo `#F0F7F6`, cards `#FFFFFF`, texto `#134E4A`, primária `#0D9488`, destaque `#EA580C`.
+- O modo Claro segue a opção visual Azul claro aprovada pelo usuário: fundo plano sem gradientes, superfícies brancas, tipografia de sistema sem serifa e azul concentrado em ações e indicadores. Mantenha cards legíveis e contraste mínimo de 4.5:1.
+- Paleta clara: fundo `#F4F8FF`, cards `#FFFFFF`, texto `#172554`, primária `#1D4ED8`, destaque secundário `#315D85`.
 - Paleta escura: fundo `#0F172A`, cards `#192134`, texto `#F8FAFC`, primária `#14B8A6`, destaque `#22C55E`.
+- Novas instalações iniciam no modo Claro; preferências já persistidas não devem ser alteradas automaticamente.
 - Não dependa somente de cores para transmitir significado.

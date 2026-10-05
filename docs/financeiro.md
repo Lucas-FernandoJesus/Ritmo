@@ -175,6 +175,8 @@ Responsividade verificada em 320, 390, 768 e 1440px no Financeiro; larguras exis
 - Ano: mantém mês/dia; 29/02 vira 28/02 em anos comuns e retorna a 29/02 nos bissextos.
 - Fim é inclusivo. Pausar retira ocorrências não confirmadas de histórico/projeções/alertas sem excluir lançamentos confirmados. Retomar preserva as mesmas identidades.
 
+Recorrências sem lançamentos confirmados podem ser excluídas após confirmação; se já houver histórico, a exclusão fica bloqueada e a pausa preserva o vínculo.
+
 `PlanOccurrence` é derivado. `planningRef` guarda origem, plano, chave e vencimento original no lançamento confirmado. ID determinístico: `occurrence:<kind>:<planId>:<chave>`. Confirmação é uma transação readwrite que relê o plano e o lançamento: duas confirmações simultâneas retornam o mesmo registro. Não duplica ao recarregar, restaurar ou confirmar em outra data.
 
 Entrada/saída confirmadas usam a data efetiva informada, até hoje. Crédito/pendência confirmados mantêm o vencimento e ficam em aberto até Receber/Pagar no histórico; baixa conserva o ID e `planningRef`. Valor e vínculo de uma ocorrência confirmada são preservados na edição; descrição, observação e conta podem ser corrigidas. Após confirmar, calendário/frequência/tipo e estrutura de parcelas ficam protegidos. Para outra estrutura, pause e crie um novo plano. Alterar o valor de uma recorrência vale para ocorrências não confirmadas, preservando valores anteriores.
@@ -194,6 +196,8 @@ parcela(i) = (base + 1 se i < resto; senão base) ÷ 100
 
 Exemplo: R$ 100,00 / 3 → R$ 33,34 + R$ 33,33 + R$ 33,33. Todas as parcelas têm pelo menos um centavo e a soma é exatamente o total. Vencimentos usam a mesma âncora de mês das recorrências. Parcela confirmada em aberto continua não paga; futura continua não paga até a data efetiva. Não existem pagamento parcial, juros ou renegociação nesta estrutura simples. Criar compra parcelada não cria automaticamente despesa realizada nem dívida patrimonial; o usuário pode vinculá-la a um passivo já cadastrado.
 
+Parcelamentos sem parcelas confirmadas podem ser excluídos após confirmação; com histórico, permanecem editáveis nos campos permitidos e podem ser pausados, sem apagar lançamentos.
+
 ## Patrimônio
 
 `AssetAccount` contém nome, tipo (dinheiro, conta, poupança, reserva financeira, investimento ou dívida/passivo), saldo inicial positivo/zero e data. O saldo inicial representa a posição **antes** dos lançamentos daquela data. Para evitar dupla contagem, só vincule registros ainda não incluídos no saldo inicial.
@@ -208,6 +212,8 @@ patrimônio líquido = soma dos ativos − soma dos passivos
 Data até o corte e igual/posterior à data inicial. Futuro, créditos e pendências sem baixa ficam fora. Conta com início futuro não entra na posição atual. Sem contas já iniciadas: Sem dados, sem zero inventado. Receitas/custos pagos de um turno podem ser vinculados à mesma conta; reserva de manutenção não entra. Custos adicionais continuam vindo de despesas/lançamentos originais. Registros sem conta permanecem no Financeiro e um aviso informa posição patrimonial incompleta.
 
 Vínculo `accountId` é opcional em `deliveryShifts`, `expenses` e `financialRecords`; `liabilityAccountId` opcional em saídas/pendências reduz uma dívida somente após pagamento. Legados sem vínculo não são migrados ou adivinhados. Corrigir saldo inicial recalcula a posição histórica. Após vínculos, tipo e data inicial ficam protegidos. Investimentos não recebem cotações/rendimentos automáticos; correções de valor são explícitas. A reserva financeira é uma conta com dinheiro e permanece distinta da reserva estimada do delivery.
+
+Contas sem vínculos podem ser excluídas após confirmação. Contas referenciadas por lançamentos, turnos, planejamentos ou transferências permanecem protegidas para evitar saldos órfãos; transferências realizadas são canceladas (não removidas), preservando identidade e histórico.
 
 `AccountTransfer` conecta duas contas de ativos existentes, com valor, data e ID estável. A data deve ser igual/posterior ao início das duas contas. Não cria `financialRecords`, não entra em renda/despesa e conserva patrimônio total. Transferência é imutável; cancelamento marca `voidedAt`, excluindo seu efeito sem perder identidade. Saldo negativo ou pagamento que supere o passivo recebe aviso para conferir vínculos, sem presumir limite bancário.
 

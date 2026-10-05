@@ -6,15 +6,15 @@ type StoredTheme = 'system' | 'light' | 'dark'
 
 const expectedTokens = {
   light: {
-    background: '#f0f7f6',
+    background: '#f4f8ff',
     card: '#fff',
-    foreground: '#134e4a',
-    primary: '#0d9488',
-    accent: '#ea580c',
-    muted: '#e8f1f4',
-    mutedForeground: '#475569',
+    foreground: '#172554',
+    primary: '#1d4ed8',
+    accent: '#315d85',
+    muted: '#eef4fc',
+    mutedForeground: '#435472',
     destructive: '#dc2626',
-    focus: '#0d9488',
+    focus: '#1d4ed8',
   },
   dark: {
     background: '#0f172a',
@@ -211,13 +211,15 @@ test('apagar dados confirmados remove também a preferência local do lembrete',
   await cancelClick
   expect(await page.evaluate(() => localStorage.getItem('ritmo:daily-reminder:v1'))).not.toBeNull()
 
+  const reloaded = page.waitForEvent('load')
   const confirmed = page.waitForEvent('dialog')
   const confirmClick = page.getByRole('button', { name: 'Apagar todos os dados' }).click()
   await (await confirmed).accept()
   await confirmClick
+  await reloaded
 
   await expect.poll(() => page.evaluate(() => localStorage.getItem('ritmo:daily-reminder:v1'))).toBeNull()
-  await expect.poll(() => storedTheme(page)).toBe('dark')
+  await expect.poll(() => storedTheme(page)).toBe('light')
   await goToTab(page, 'Ajustes')
   await expect(page.getByRole('switch', { name: 'Ativar lembrete diário' })).toHaveAttribute('aria-checked', 'false')
 })
@@ -240,7 +242,7 @@ test('exibe somente Claro e Escuro e aplica e persiste cada tema sem Salvar ajus
     return document.documentElement.dataset.theme
   })).toBe('light')
   await expect(lightButton).toHaveAttribute('aria-pressed', 'true')
-  await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#F0F7F6')
+  await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#F4F8FF')
   await expect(status).toHaveText('Aparência clara salva neste aparelho.')
   expect(await storedTheme(page)).toBe('light')
 
@@ -257,6 +259,31 @@ test('exibe somente Claro e Escuro e aplica e persiste cada tema sem Salvar ajus
   await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#0F172A')
   await expect(page.getByRole('status', { name: 'Status da aparência' })).toHaveText('Aparência escura salva neste aparelho.')
   expect(await storedTheme(page)).toBe('dark')
+})
+
+test('mostra o visual Azul claro escolhido sem gradientes no modo Claro', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await openSeededApp(page, 'light')
+
+  await expect(page.locator('body')).toHaveCSS('background-color', 'rgb(244, 248, 255)')
+  await expect(page.locator('body')).toHaveCSS('background-image', 'none')
+  await expect(page.locator('.today-header')).toHaveCSS('background-color', 'rgb(255, 255, 255)')
+  await expect(page.locator('.today-header')).toHaveCSS('background-image', 'none')
+  await expect(page.locator('html')).toHaveCSS('--ink', '#172554')
+  await expect(page.locator('html')).toHaveCSS('--primary', '#1d4ed8')
+  expect(await page.locator('.today-header h1').evaluate((heading) => getComputedStyle(heading).fontFamily)).not.toContain('Georgia')
+  await page.screenshot({ path: test.info().outputPath('today-blue-light-390.png'), fullPage: true, animations: 'disabled' })
+
+  await goToTab(page, 'Ajustes')
+  await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#F4F8FF')
+})
+
+test('mostra o fundo Azul claro antes do aplicativo carregar', async ({ page }) => {
+  await page.route('**/*.js', (route) => route.fulfill({ status: 200, contentType: 'text/javascript', body: '' }))
+  await page.goto('/')
+
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
+  await expect(page.locator('body')).toHaveCSS('background-color', 'rgb(244, 248, 255)')
 })
 
 test('salvar atividades e horários não restaura a aparência anterior', async ({ page }) => {
@@ -345,7 +372,12 @@ for (const { theme, width } of [
       }
     })
     expect(visualState).toMatchObject({ theme, ...expectedTokens[theme] })
-    expect(visualState.bodyBackground).toContain('radial-gradient')
+    if (theme === 'light') {
+      expect(visualState.bodyBackground).toBe('none')
+      expect(visualState.headerBackground).toBe('none')
+    } else {
+      expect(visualState.bodyBackground).toContain('radial-gradient')
+    }
     expect(visualState.bodyBackground).not.toContain('url(')
     expect(visualState.headerBackground).not.toContain('url(')
 

@@ -67,16 +67,30 @@ test('exporta um backup JSON válido e restaura os dados pela interface', async 
   await expect(page.getByRole('button', { name: `Concluir ${strengthActivity}` })).toBeVisible()
 
   await goToTab(page, 'Ajustes')
-  page.once('dialog', async (dialog) => {
-    expect(dialog.type()).toBe('confirm')
-    await dialog.accept()
-  })
-  const reloaded = page.waitForEvent('load')
-  await page.locator('input[type="file"][accept*="json"]').setInputFiles({
+  const backupFile = {
     name: download.suggestedFilename(),
     mimeType: 'application/json',
     buffer: backupBuffer,
-  })
+  }
+  const fileInput = page.locator('input[type="file"][accept*="json"]')
+  await fileInput.setInputFiles(backupFile)
+
+  const preview = page.getByRole('region', { name: 'Prévia do backup' })
+  await expect(preview).toBeVisible()
+  await expect(preview).toBeFocused()
+  await expect(preview.getByRole('listitem').filter({ hasText: 'Medidas corporais' })).toContainText('1 registro')
+  await preview.getByRole('button', { name: 'Cancelar importação' }).click()
+  await expect(preview).not.toBeVisible()
+  await expect(fileInput).toBeFocused()
+  await goToTab(page, 'Hoje')
+  await page.getByRole('region', { name: 'Ao longo do dia' }).getByRole('button', { name: 'Ver dia inteiro' }).click()
+  await expect(page.getByRole('button', { name: `Concluir ${strengthActivity}` })).toBeVisible()
+
+  await goToTab(page, 'Ajustes')
+  await fileInput.setInputFiles(backupFile)
+  const confirmedPreview = page.getByRole('region', { name: 'Prévia do backup' })
+  const reloaded = page.waitForEvent('load')
+  await confirmedPreview.getByRole('button', { name: 'Substituir dados por este backup' }).click()
   await reloaded
 
   await expect(page.getByRole('heading', { name: 'Um dia de cada vez.', exact: true })).toBeVisible()

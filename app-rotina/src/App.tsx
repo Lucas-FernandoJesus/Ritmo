@@ -96,7 +96,7 @@ function App() {
   const [loadError, setLoadError] = useState(false)
   const [savingIds, setSavingIds] = useState<string[]>([])
   const [message, setMessage] = useState('')
-  const { financialRecords, financialGoals, categoryBudgets, financePlanning, hydrateFinance, saveFinancialRecord, saveFinancialGoal, saveCategoryBudget, removeFinancialPlan, financeOperations } = useFinanceState(dateKey, setMessage)
+  const { financialRecords, financialGoals, categoryBudgets, financePlanning, hydrateFinance, saveFinancialRecord, deleteFinancialRecord, saveFinancialGoal, saveCategoryBudget, removeFinancialPlan, financeOperations } = useFinanceState(dateKey, setMessage)
   const [online, setOnline] = useState(navigator.onLine)
   const [storagePersistence, setStoragePersistence] = useState<StoragePersistence>('checking')
 
@@ -247,6 +247,15 @@ function App() {
     } catch (error) { setMessage(readableError(error, 'Não foi possível salvar o estudo.')); return false }
   }
 
+  async function deleteStudyLog(id: string) {
+    try {
+      await repository.deleteStudyLog(id)
+      setStudyLogs((current) => current.filter((log) => log.id !== id))
+      setMessage('Registro de estudo excluído.')
+      return true
+    } catch (error) { setMessage(readableError(error, 'Não foi possível excluir o estudo.')); return false }
+  }
+
   async function saveLinkedExpense(item: Expense) {
     try {
       await repository.saveExpense(item)
@@ -257,6 +266,15 @@ function App() {
     } catch (error) { setMessage(readableError(error, 'Não foi possível salvar a despesa.')); return false }
   }
 
+  async function deleteLinkedExpense(id: string) {
+    try {
+      await repository.deleteExpense(id)
+      setExpenses((current) => current.filter((expense) => expense.id !== id))
+      setMessage('Despesa financeira excluída.')
+      return true
+    } catch (error) { setMessage(readableError(error, 'Não foi possível excluir a despesa.')); return false }
+  }
+
   async function saveLinkedShift(item: DeliveryShift) {
     try {
       await repository.saveDeliveryShift(item)
@@ -265,6 +283,15 @@ function App() {
       if (!deliveryShifts.some((existing) => existing.id === item.id)) await offerLinkedCompletion(item.localDate, { kind: 'delivery', startTime: item.startTime, endTime: item.endTime })
       return true
     } catch (error) { setMessage(readableError(error, 'Não foi possível salvar o turno.')); return false }
+  }
+
+  async function deleteDeliveryShift(id: string) {
+    try {
+      await repository.deleteDeliveryShift(id)
+      setDeliveryShifts((current) => current.filter((shift) => shift.id !== id))
+      setMessage('Turno de delivery excluído.')
+      return true
+    } catch (error) { setMessage(readableError(error, 'Não foi possível excluir o turno.')); return false }
   }
 
   async function changeMode(next: RoutineMode) {
@@ -334,6 +361,15 @@ function App() {
     } catch (error) { setMessage(readableError(error, 'Não foi possível salvar a medida.')); return false }
   }
 
+  async function deleteBodyMeasurement(id: string) {
+    try {
+      await repository.deleteBodyMeasurement(id)
+      setBodyMeasurements((current) => current.filter((item) => item.id !== id))
+      setMessage('Medida corporal excluída.')
+      return true
+    } catch (error) { setMessage(readableError(error, 'Não foi possível excluir a medida.')); return false }
+  }
+
   async function saveMealLog(next: MealLog) {
     try {
       await repository.saveMealLog(next)
@@ -341,6 +377,15 @@ function App() {
       setMessage('Refeição salva neste aparelho.')
       return true
     } catch (error) { setMessage(readableError(error, 'Não foi possível salvar a refeição.')); return false }
+  }
+
+  async function deleteMealLog(id: string) {
+    try {
+      await repository.deleteMealLog(id)
+      setMealLogs((current) => current.filter((item) => item.id !== id))
+      setMessage('Registro de refeição excluído.')
+      return true
+    } catch (error) { setMessage(readableError(error, 'Não foi possível excluir a refeição.')); return false }
   }
 
   function focusContent() {
@@ -413,12 +458,12 @@ function App() {
           {tab === 'hoje' && <TodayView key={dateKey} now={now} items={todayItems} mode={mode} modeSaving={modeSaving} onMode={changeMode} states={todayStates} savingIds={savingIds} dateKey={dateKey} checkIn={todayCheckIn} safety={safety} weeklySummary={weeklySummary} previousWeeklySummary={previousWeeklySummary} todaySummary={todaySummary} onCheckIn={saveCheckIn} onToggle={toggleCompletion} onSkip={toggleSkipped} onOpen={(item) => openActivity(item, now.getDay())} />}
           {tab === 'semana' && <WeekView settings={settings} selectedDay={selectedWeekDay} todayDay={now.getDay()} onSelectedDay={setSelectedWeekDay} onOpen={openActivity} completed={todayCompleted} onToggle={toggleCompletion} />}
           {tab === 'treinos' && <TrainingHubView trainingWeek={clampTrainingWeek(settings.trainingWeek)} mode={mode} onTrainingWeek={changeTrainingWeek} onOpenTraining={openWorkout} />}
-          {tab === 'nutricao' && <NutritionView today={dateKey} measurements={bodyMeasurements} mealLogs={mealLogs} snapshots={dailySnapshots} completions={completions} shifts={deliveryShifts} expenses={expenses} records={financialRecords} onSaveMeasurement={saveBodyMeasurement} onSaveMeal={saveMealLog} />}
-          {tab === 'financeiro' && <FinanceView planning={financePlanning} operations={financeOperations} today={dateKey} shifts={deliveryShifts} expenses={expenses} records={financialRecords} goals={financialGoals} budgets={categoryBudgets} registrationRequest={financeRegistration} onGoal={saveFinancialGoal} onBudget={saveCategoryBudget} onDeleteGoal={(id) => removeFinancialPlan("goal", id)} onDeleteBudget={(id) => removeFinancialPlan("budget", id)} onSave={saveFinancialRecord} onExpense={saveLinkedExpense} onDelivery={(id) => { setDeliverySelection((current) => ({ id, revision: current.revision + 1 })); navigateTab('registros') }} />}
+          {tab === 'nutricao' && <NutritionView today={dateKey} measurements={bodyMeasurements} mealLogs={mealLogs} snapshots={dailySnapshots} completions={completions} shifts={deliveryShifts} expenses={expenses} records={financialRecords} onSaveMeasurement={saveBodyMeasurement} onSaveMeal={saveMealLog} onDeleteMeasurement={deleteBodyMeasurement} onDeleteMeal={deleteMealLog} />}
+          {tab === 'financeiro' && <FinanceView planning={financePlanning} operations={financeOperations} today={dateKey} shifts={deliveryShifts} expenses={expenses} records={financialRecords} goals={financialGoals} budgets={categoryBudgets} registrationRequest={financeRegistration} onGoal={saveFinancialGoal} onBudget={saveCategoryBudget} onDeleteGoal={(id) => removeFinancialPlan("goal", id)} onDeleteBudget={(id) => removeFinancialPlan("budget", id)} onSave={saveFinancialRecord} onExpense={saveLinkedExpense} onDeleteMovement={(source, id) => source === 'financial' ? deleteFinancialRecord(id) : deleteLinkedExpense(id)} onDelivery={(id) => { setDeliverySelection((current) => ({ id, revision: current.revision + 1 })); navigateTab('registros') }} />}
           {tab === 'progresso' && <ProgressView planning={financePlanning} today={dateKey} snapshots={dailySnapshots} completions={completions} studyLogs={studyLogs} deliveryShifts={deliveryShifts} expenses={expenses} financialRecords={financialRecords} financialGoals={financialGoals} categoryBudgets={categoryBudgets} onFinance={() => navigateTab('financeiro')} progress={progress} weeklySummary={weeklySummary} previousWeeklySummary={previousWeeklySummary} onToggle={async (item) => { try { await repository.saveProgress(item); setProgress((v) => [...v.filter((p) => p.id !== item.id), item]) } catch (error) { setMessage(readableError(error, 'Não foi possível salvar o progresso.')) } }} />}
           {tab === 'ajustes' && <SettingsView settings={settings} persistence={storagePersistence} appearanceSaving={appearanceSaving} appearanceFeedback={appearanceFeedback} onAppearance={changeAppearance} onSettings={async (next) => { const synchronizedNext: AppSettings = { ...next, theme: effectiveTheme(settings.theme), appearanceVersion: 2 }; const snapshotPlan = prepareWeekSnapshots(dailySnapshots, dateKey, synchronizedNext.preferredMode, synchronizedNext, dateKey); try { await repository.saveSettingsAndDailySnapshots(synchronizedNext, snapshotPlan.changed); setSettings(synchronizedNext); setMode(synchronizedNext.preferredMode); setDailySnapshots(snapshotPlan.all); setMessage('Ajustes salvos.') } catch (error) { setMessage(readableError(error, 'Não foi possível salvar os ajustes.')) } }} onMessage={setMessage} onImported={() => window.location.reload()} onCleared={() => window.location.reload()} />}
         </>}
-        {recordsVisited && <div hidden={(tab !== 'registros' && tab !== 'estudos') || !!trainingSelection}><RecordsView accounts={financePlanning.accounts} deliverySelection={deliverySelection} kind={tab === 'estudos' ? 'estudo' : 'delivery'} onExpenseRegistration={() => { setFinanceRegistration((current) => ({ intent: 'saida', revision: (current?.revision ?? 0) + 1 })); navigateTab('financeiro') }} dateKey={dateKey} shifts={deliveryShifts} expenses={expenses} financialRecords={financialRecords} studyLogs={studyLogs} onShift={saveLinkedShift} onStudy={saveLinkedStudy} /></div>}
+        {recordsVisited && <div hidden={(tab !== 'registros' && tab !== 'estudos') || !!trainingSelection}><RecordsView accounts={financePlanning.accounts} deliverySelection={deliverySelection} kind={tab === 'estudos' ? 'estudo' : 'delivery'} onExpenseRegistration={() => { setFinanceRegistration((current) => ({ intent: 'saida', revision: (current?.revision ?? 0) + 1 })); navigateTab('financeiro') }} dateKey={dateKey} shifts={deliveryShifts} expenses={expenses} financialRecords={financialRecords} studyLogs={studyLogs} onShift={saveLinkedShift} onStudy={saveLinkedStudy} onDeleteShift={deleteDeliveryShift} onDeleteStudy={deleteStudyLog} /></div>}
         </Suspense>
       </main>
 

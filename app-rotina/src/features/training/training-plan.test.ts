@@ -138,6 +138,23 @@ describe('plano de evolução dos treinos', () => {
     expect(roundhouse?.attention.toLowerCase()).toContain('equilíbrio')
   })
 
+  it('distingue práticas com trecho visual conferido das apoiadas só em transcrição', () => {
+    const foundation = getMuayPractices(1, 'muay-mon', 'normal')
+    const development = getMuayPractices(5, 'muay-mon', 'normal')
+    const defense = getMuayPractices(9, 'muay-mon', 'normal')
+    const integration = getMuayPractices(16, 'muay-mon', 'normal')
+
+    expect(foundation.find((practice) => practice.id === 'base')?.sourceReview).toBe('visual')
+    expect(foundation.find((practice) => practice.id === 'directions')?.sourceReview).toBe('visual')
+    expect(foundation.find((practice) => practice.id === 'knee')?.sourceReview).toBe('visual')
+    expect(development.find((practice) => practice.id === 'jab')?.sourceReview).toBe('visual')
+    expect(development.find((practice) => practice.id === 'teep')?.sourceReview).toBe('visual')
+    expect(development.find((practice) => practice.id === 'layers')?.sourceReview).toBe('verbal')
+    expect(defense.find((practice) => practice.id === 'check')?.sourceReview).toBe('visual')
+    expect(defense.find((practice) => practice.id === 'exit')?.sourceReview).toBe('verbal')
+    expect(integration.find((practice) => practice.id === 'roundhouse')?.sourceReview).toBe('visual')
+  })
+
   it('recomenda repetir ou avançar somente a partir do registro explícito do usuário', () => {
     const pending = getMuayPracticeRecommendation('roundhouse', {
       base: 'confortavel', directions: 'confortavel', return: 'praticado', teep: 'confortavel',

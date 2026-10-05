@@ -87,7 +87,7 @@ export function MuayWorkoutView({ itemId, trainingWeek, mode, online, progress, 
           <p>{saving ? 'Salvando registro…' : currentStatus ? `Registro atual: ${muayProgressOptions.find((option) => option.value === currentStatus)?.label}.` : 'Ainda sem registro.'}</p>
           <div>{muayProgressOptions.map((option) => <button key={option.value} type="button" aria-pressed={currentStatus === option.value} onClick={async () => { setSavingPractice(practice.id); try { await onProgress(practice.id, option.value) } finally { setSavingPractice(null) } }}>{option.label}</button>)}</div>
         </fieldset>
-        <p className="workout-video-caption">{practice.videoTitle} · {practice.provider}. {practice.sourceReview === 'visual' ? 'A transcrição e o trecho visual revisado sustentam esta adaptação.' : 'O conteúdo verbal transcrito sustenta esta adaptação; a demonstração completa não foi revisada.'} O vídeo pode ter volume, intensidade ou técnicas fora do plano.</p>
+        <p className="workout-video-caption">{practice.videoTitle} · {practice.provider}. {practice.sourceReview === 'visual' ? 'Trechos pontuais vistos, junto à transcrição, sustentam elementos desta adaptação; a aula inteira não foi revisada.' : 'O conteúdo verbal transcrito sustenta esta adaptação; a demonstração completa não foi revisada.'} O vídeo pode ter volume, intensidade ou técnicas fora do plano.</p>
         <a className="workout-video-link secondary-button" href={practice.videoUrl} target="_blank" rel="noopener noreferrer" aria-label={`Ver aula sobre ${practice.title} no YouTube (abre em nova aba)`}>▶ Ver aula no YouTube <span aria-hidden="true">↗</span></a>
       </li>
     })}</ol>

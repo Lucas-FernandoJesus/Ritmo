@@ -53,10 +53,10 @@ function createWorker(options: { assetFailure?: boolean; responseOk?: boolean; b
 }
 
 describe('shell offline', () => {
-  it('usa a cor inicial escura atual e declara somente ícones existentes', () => {
-    expect(indexSource).toContain('<meta name="theme-color" content="#0F172A"')
-    expect(manifest.background_color).toBe('#0F172A')
-    expect(manifest.theme_color).toBe('#0F172A')
+  it('usa a cor inicial Azul claro e declara somente ícones existentes', () => {
+    expect(indexSource).toContain('<meta name="theme-color" content="#F4F8FF"')
+    expect(manifest.background_color).toBe('#F4F8FF')
+    expect(manifest.theme_color).toBe('#F4F8FF')
     for (const icon of manifest.icons) {
       expect(existsSync(new URL(`../../public/${icon.src}`, import.meta.url)), `Ícone ausente: ${icon.src}`).toBe(true)
     }

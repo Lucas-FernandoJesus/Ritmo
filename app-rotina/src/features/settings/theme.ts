@@ -8,5 +8,5 @@ export const deviceTheme = (): EffectiveTheme => window.matchMedia('(prefers-col
 export const applyDocumentTheme = (theme: EffectiveTheme) => {
   document.documentElement.dataset.theme = theme
   const themeColor = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]')
-  if (themeColor) themeColor.content = theme === 'light' ? '#F0F7F6' : '#0F172A'
+  if (themeColor) themeColor.content = theme === 'light' ? '#F4F8FF' : '#0F172A'
 }

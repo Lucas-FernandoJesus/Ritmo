@@ -1,4 +1,5 @@
-import { expect, goToTab, openAppOnTuesday, test } from './fixtures'
+import { expect, goToTab, openAppOnTuesday, restoreBackup, test } from './fixtures'
+import { readFile } from 'node:fs/promises'
 
 for (const theme of ['light', 'dark'] as const) test(`plano nutricional de consulta no tema ${theme}`, async ({ page }) => {
   await openAppOnTuesday(page)
@@ -70,6 +71,80 @@ test('registra o resultado de uma refeição e o recupera após recarregar', asy
   await expect(page.getByRole('heading', { name: 'Um dia de cada vez.', exact: true })).toBeVisible()
   await goToTab(page, 'Nutrição')
   await expect(page.getByRole('row', { name: /22\/09\/2026 Almoço Com proteína Frango, arroz e feijão/ })).toBeVisible()
+})
+
+test('cancela e confirma exclusões de medidas e refeições offline, responsivas e refletidas no backup', async ({ page, context }) => {
+  await openAppOnTuesday(page)
+  await goToTab(page, 'Nutrição')
+  const measurementForm = page.getByRole('form', { name: 'Registrar medidas' })
+  await measurementForm.getByLabel('Peso').fill('100')
+  await measurementForm.getByLabel('Cintura').fill('110')
+  await measurementForm.getByRole('button', { name: 'Salvar medida', exact: true }).click()
+  const measurement = page.getByRole('row', { name: /22\/09\/2026 100,0 kg 110,0 cm/ })
+  await expect(measurement).toBeVisible()
+
+  page.once('dialog', dialog => { void dialog.dismiss() })
+  await measurement.getByRole('button', { name: /Excluir medida/ }).click()
+  await expect(measurement).toBeVisible()
+
+  const mealForm = page.getByRole('form', { name: 'Registrar refeição' })
+  await mealForm.getByLabel('Refeição').selectOption('lunch')
+  await mealForm.getByRole('button', { name: 'Com proteína', exact: true }).click()
+  await mealForm.getByLabel('Observação').fill('Almoço removível')
+  await mealForm.getByRole('button', { name: 'Salvar refeição', exact: true }).click()
+  const meal = page.getByRole('row', { name: /22\/09\/2026 Almoço Com proteína Almoço removível/ })
+  await expect(meal).toBeVisible()
+
+  await goToTab(page, 'Ajustes')
+  const initialDownload = page.waitForEvent('download')
+  await page.getByRole('button', { name: 'Exportar backup JSON', exact: true }).click()
+  const initialBackup = await readFile((await (await initialDownload).path())!)
+  await page.evaluate(async () => navigator.serviceWorker.ready)
+  await expect.poll(() => page.evaluate(() => !!navigator.serviceWorker.controller)).toBe(true)
+  await context.setOffline(true)
+  await goToTab(page, 'Nutrição')
+  await page.setViewportSize({ width: 320, height: 740 })
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+  const deleteMeasure = page.getByRole('row', { name: /22\/09\/2026 100,0 kg 110,0 cm/ }).getByRole('button', { name: /Excluir medida/ })
+  const deleteMeal = page.getByRole('row', { name: /22\/09\/2026 Almoço Com proteína Almoço removível/ }).getByRole('button', { name: /Excluir refeição/ })
+  expect(await Promise.all([deleteMeasure, deleteMeal].map(button => button.evaluate(element => { const rect = element.getBoundingClientRect(); return rect.width >= 24 && rect.height >= 24 })))).toEqual([true, true])
+  page.once('dialog', dialog => { void dialog.dismiss() })
+  await deleteMeasure.click()
+  await expect(measurement).toBeVisible()
+  page.once('dialog', dialog => { void dialog.accept() })
+  await deleteMeasure.click()
+  await expect(measurement).toHaveCount(0)
+  await expect(measurementForm.getByLabel('Peso')).toHaveValue('')
+  page.once('dialog', dialog => { void dialog.accept() })
+  await deleteMeal.click()
+  await expect(meal).toHaveCount(0)
+  await expect(page.getByRole('region', { name: 'Resumo das refeições do dia' })).toContainText('Sem dados registrados para esta data.')
+
+  await page.reload()
+  await goToTab(page, 'Nutrição')
+  await expect(page.getByRole('row', { name: /22\/09\/2026 100,0 kg 110,0 cm/ })).toHaveCount(0)
+  await expect(page.getByRole('row', { name: /22\/09\/2026 Almoço Com proteína Almoço removível/ })).toHaveCount(0)
+
+  await goToTab(page, 'Ajustes')
+  const deletedDownload = page.waitForEvent('download')
+  await page.getByRole('button', { name: 'Exportar backup JSON', exact: true }).click()
+  const deletedBackup = await readFile((await (await deletedDownload).path())!)
+  const deleted = JSON.parse(deletedBackup.toString('utf8')) as { bodyMeasurements: unknown[]; mealLogs: unknown[] }
+  expect(deleted.bodyMeasurements).toEqual([])
+  expect(deleted.mealLogs).toEqual([])
+
+  await restoreBackup(page, { name: 'antes.json', mimeType: 'application/json', buffer: initialBackup })
+  await expect(page.getByRole('heading', { name: 'Um dia de cada vez.', exact: true })).toBeVisible()
+  await goToTab(page, 'Nutrição')
+  await expect(page.getByRole('row', { name: /22\/09\/2026 100,0 kg 110,0 cm/ })).toBeVisible()
+  await expect(page.getByRole('row', { name: /22\/09\/2026 Almoço Com proteína Almoço removível/ })).toBeVisible()
+
+  await goToTab(page, 'Ajustes')
+  await restoreBackup(page, { name: 'depois.json', mimeType: 'application/json', buffer: deletedBackup })
+  await expect(page.getByRole('heading', { name: 'Um dia de cada vez.', exact: true })).toBeVisible()
+  await goToTab(page, 'Nutrição')
+  await expect(page.getByRole('row', { name: /22\/09\/2026 100,0 kg 110,0 cm/ })).toHaveCount(0)
+  await expect(page.getByRole('row', { name: /22\/09\/2026 Almoço Com proteína Almoço removível/ })).toHaveCount(0)
 })
 
 test('resume duas semanas com registros existentes, sem duplicar gastos, após recarga offline', async ({ page }) => {

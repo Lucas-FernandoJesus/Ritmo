@@ -244,7 +244,7 @@ export function calculateDelivery(input: Pick<DeliveryShift, 'grossRevenue' | 'f
 }
 
 export function defaultSettings(): AppSettings {
-  return { id: 'settings', scheduleOverrides: {}, disabledActivities: [], preferredMode: 'normal', trainingWeek: 1, muayProgress: {}, theme: 'dark', appearanceVersion: 2, schemaVersion: SCHEMA_VERSION }
+  return { id: 'settings', scheduleOverrides: {}, disabledActivities: [], preferredMode: 'normal', trainingWeek: 1, muayProgress: {}, theme: 'light', appearanceVersion: 2, schemaVersion: SCHEMA_VERSION }
 }
 
 export function upgradeAppearance(settings: AppSettings): AppSettings {

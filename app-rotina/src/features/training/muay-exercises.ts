@@ -39,14 +39,14 @@ const shared = {
 // Os tempos e rounds da sessão vêm de training-plan.ts, não dos vídeos.
 const practices: Record<MuayPracticeId, MuayPractice> = {
   base: {
-    ...shared, id: 'base', title: 'Base, guarda e ritmo', objective: 'Encontrar uma posição estável antes de se mover.', level: 'fundamento', prerequisites: [],
+    ...shared, sourceReview: 'visual', id: 'base', title: 'Base, guarda e ritmo', objective: 'Encontrar uma posição estável antes de se mover.', level: 'fundamento', prerequisites: [],
     instructions: 'Deixe espaço confortável entre os pés, destrave os joelhos, mantenha as mãos em guarda e faça pequenos ajustes de peso sem prender a respiração.',
     attention: 'Observe se os pés ficam próximos demais, os joelhos travam ou as mãos descem.',
     qualityCriteria: ['Joelhos destravados e pés separados durante toda a repetição.', 'Guarda retorna ao rosto sem prender a respiração.'],
     videoTitle: 'Primeira aula de Muay Thai', videoUrl: 'https://www.youtube.com/watch?v=BRJy0lhOKt4&t=60s', provider: 'Spring Sia',
   },
   directions: {
-    ...shared, id: 'directions', title: 'Passos em quatro direções', objective: 'Mover-se sem perder a base.', level: 'fundamento', prerequisites: ['base'],
+    ...shared, sourceReview: 'visual', id: 'directions', title: 'Passos em quatro direções', objective: 'Mover-se sem perder a base.', level: 'fundamento', prerequisites: ['base'],
     instructions: 'Dê um passo curto para frente, para trás ou para um lado e reajuste o outro pé. Volte à base antes de mudar a direção.',
     attention: 'Evite cruzar ou arrastar os pés e mantenha o olhar à frente.',
     qualityCriteria: ['Os pés não cruzam nem encostam durante a troca de direção.', 'A largura da base reaparece antes do próximo passo.'],
@@ -60,21 +60,21 @@ const practices: Record<MuayPracticeId, MuayPractice> = {
     videoTitle: 'Trabalho de pés para iniciantes', videoUrl: 'https://www.youtube.com/watch?v=qHBYtdR4xHg&t=595s', provider: 'GMAU',
   },
   knee: {
-    ...shared, id: 'knee', title: 'Joelhada controlada no ar', objective: 'Praticar equilíbrio e retorno à base.', level: 'fundamento', prerequisites: ['base'],
+    ...shared, sourceReview: 'visual', id: 'knee', title: 'Joelhada controlada no ar', objective: 'Praticar equilíbrio e retorno à base.', level: 'fundamento', prerequisites: ['base'],
     instructions: 'Eleve um joelho até uma altura confortável, baixe com controle e reencontre a base. Alterne os lados sem contato.',
     attention: 'Observe se o tronco cai, o apoio fica instável ou a respiração é presa.',
     qualityCriteria: ['O tronco permanece alto e a perna de apoio estável.', 'O pé retorna à base sem bater no chão nem exigir passo de correção.'],
     videoTitle: 'Muay Thai para iniciantes — joelhadas', videoUrl: 'https://www.youtube.com/watch?v=QrcEYNzuZQg&t=180s', provider: 'Martial Spirit',
   },
   jab: {
-    ...shared, id: 'jab', title: 'Golpe reto leve e volta à guarda', objective: 'Coordenar braço, passo e retorno à guarda.', level: 'desenvolvimento', prerequisites: ['base', 'return'],
+    ...shared, sourceReview: 'visual', id: 'jab', title: 'Golpe reto leve e volta à guarda', objective: 'Coordenar braço, passo e retorno à guarda.', level: 'desenvolvimento', prerequisites: ['base', 'return'],
     instructions: 'Se o braço estiver confortável, faça um golpe reto leve no ar, recolha a mão e volte à base. Se não estiver, pratique só o deslocamento.',
     attention: 'Não acelere nem faça grande volume. Observe tensão no ombro e qualquer mudança de sintomas.',
     qualityCriteria: ['A mão retorna à guarda pelo mesmo caminho e sem travar o cotovelo.', 'O golpe leve não muda a condição habitual do braço durante ou após a sessão.'],
     videoTitle: 'Sombra de Muay Thai — parte 1', videoUrl: 'https://www.youtube.com/watch?v=s3uW3XSOdvA&t=300s', provider: 'Martial Spirit',
   },
   teep: {
-    ...shared, id: 'teep', title: 'Teep no ar e recuperação', objective: 'Elevar e recolher a perna mantendo equilíbrio.', level: 'desenvolvimento', prerequisites: ['base', 'return'],
+    ...shared, sourceReview: 'visual', id: 'teep', title: 'Teep no ar e recuperação', objective: 'Elevar e recolher a perna mantendo equilíbrio.', level: 'desenvolvimento', prerequisites: ['base', 'return'],
     instructions: 'Comece com a perna da frente em altura confortável, recolha e pouse na base. Experimente a de trás apenas se o retorno estiver estável.',
     attention: 'Evite cair para frente ou para trás e abandonar a guarda.',
     qualityCriteria: ['O joelho recolhe antes de o pé voltar ao chão.', 'A postura e a guarda permanecem organizadas no pouso.'],

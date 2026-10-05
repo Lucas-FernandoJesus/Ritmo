@@ -28,6 +28,15 @@ export function useFinanceState(today: string, onMessage: (message: string) => v
     } catch (error) { onMessage(readableError(error, 'Não foi possível salvar a movimentação.')); return false }
   }
 
+  async function deleteFinancialRecord(id: string) {
+    try {
+      await repository.deleteFinancialRecord(id)
+      setFinancialRecords((current) => current.filter((record) => record.id !== id))
+      onMessage('Movimentação financeira excluída.')
+      return true
+    } catch (error) { onMessage(readableError(error, 'Não foi possível excluir a movimentação.')); return false }
+  }
+
   async function saveFinancialGoal(item: FinancialGoal) {
     try {
       await repository.saveFinancialGoal(item)
@@ -68,12 +77,15 @@ export function useFinanceState(today: string, onMessage: (message: string) => v
 
   const financeOperations = {
     onRecurring: (plan: Parameters<typeof repository.saveRecurringPlan>[0]) => saveFinanceOperation(() => repository.saveRecurringPlan(plan), 'Recorrência salva.'),
+    onDeleteRecurring: (id: string) => saveFinanceOperation(() => repository.deleteRecurringPlan(id), 'Recorrência excluída.'),
     onInstallment: (plan: Parameters<typeof repository.saveInstallmentPlan>[0]) => saveFinanceOperation(() => repository.saveInstallmentPlan(plan), 'Parcelamento salvo.'),
+    onDeleteInstallment: (id: string) => saveFinanceOperation(() => repository.deleteInstallmentPlan(id), 'Parcelamento excluído.'),
     onAccount: (account: Parameters<typeof repository.saveAssetAccount>[0]) => saveFinanceOperation(() => repository.saveAssetAccount(account), 'Conta patrimonial salva.'),
+    onDeleteAccount: (id: string) => saveFinanceOperation(() => repository.deleteAssetAccount(id), 'Conta patrimonial excluída.'),
     onTransfer: (transfer: Parameters<typeof repository.saveAccountTransfer>[0]) => saveFinanceOperation(() => repository.saveAccountTransfer(transfer), 'Transferência salva sem alterar entradas ou saídas.'),
     onConfirm: (ref: Parameters<typeof repository.confirmOccurrence>[0], date: string) => saveFinanceOperation(() => repository.confirmOccurrence(ref, date), 'Ocorrência confirmada uma única vez.'),
     onSettle: (record: FinancialRecord) => saveFinancialRecord(settleFinancialRecord(record, today, new Date().toISOString())),
   }
 
-  return { financialRecords, financialGoals, categoryBudgets, financePlanning, hydrateFinance, saveFinancialRecord, saveFinancialGoal, saveCategoryBudget, removeFinancialPlan, financeOperations }
+  return { financialRecords, financialGoals, categoryBudgets, financePlanning, hydrateFinance, saveFinancialRecord, deleteFinancialRecord, saveFinancialGoal, saveCategoryBudget, removeFinancialPlan, financeOperations }
 }

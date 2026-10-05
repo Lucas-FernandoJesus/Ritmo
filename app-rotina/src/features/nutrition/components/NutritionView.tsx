@@ -41,6 +41,8 @@ type NutritionViewProps = {
   records: readonly FinancialRecord[]
   onSaveMeasurement: (measurement: BodyMeasurement) => Promise<boolean>
   onSaveMeal: (meal: MealLog) => Promise<boolean>
+  onDeleteMeasurement: (id: string) => Promise<boolean>
+  onDeleteMeal: (id: string) => Promise<boolean>
 }
 
 const formatDecimal = (value: number) => value.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
@@ -58,7 +60,7 @@ function WeightLine({ measurements }: { measurements: readonly BodyMeasurement[]
   </svg>
 }
 
-export function NutritionView({ today, measurements, mealLogs, snapshots, completions, shifts, expenses, records, onSaveMeasurement, onSaveMeal }: NutritionViewProps) {
+export function NutritionView({ today, measurements, mealLogs, snapshots, completions, shifts, expenses, records, onSaveMeasurement, onSaveMeal, onDeleteMeasurement, onDeleteMeal }: NutritionViewProps) {
   const todayMeasurement = measurements.find((item) => item.localDate === today)
   const [localDate, setLocalDate] = useState(today)
   const [weight, setWeight] = useState(todayMeasurement ? String(todayMeasurement.weightKg) : '')
@@ -70,6 +72,7 @@ export function NutritionView({ today, measurements, mealLogs, snapshots, comple
   const [mealOutcome, setMealOutcome] = useState<MealOutcome>(initialMeal?.outcome ?? 'with-protein')
   const [mealNote, setMealNote] = useState(initialMeal?.note ?? '')
   const [savingMeal, setSavingMeal] = useState(false)
+  const [deleting, setDeleting] = useState<string | null>(null)
   const existing = measurements.find((item) => item.localDate === localDate)
   const orderedMeasurements = useMemo(() => [...measurements].sort((a, b) => b.localDate.localeCompare(a.localDate)), [measurements])
   const trend = useMemo(() => summarizeBodyTrend(measurements, today), [measurements, today])
@@ -103,6 +106,14 @@ export function NutritionView({ today, measurements, mealLogs, snapshots, comple
     setSaving(false)
   }
 
+  async function removeMeasurement(item: BodyMeasurement) {
+    if (saving || deleting || !window.confirm(`Excluir a medida de ${formatDate(item.localDate)}? Ela será removida do histórico e dos resumos corporais. Esta ação não pode ser desfeita.`)) return
+    setDeleting(item.id)
+    try {
+      if (await onDeleteMeasurement(item.id) && localDate === item.localDate) { setWeight(''); setWaist('') }
+    } finally { setDeleting(null) }
+  }
+
   function loadMeal(nextDate: string, nextSlot: MealSlot) {
     const saved = mealLogs.find((item) => item.localDate === nextDate && item.meal === nextSlot)
     setMealDate(nextDate)
@@ -127,6 +138,15 @@ export function NutritionView({ today, measurements, mealLogs, snapshots, comple
     setSavingMeal(true)
     await onSaveMeal(meal)
     setSavingMeal(false)
+  }
+
+  async function removeMeal(item: MealLog) {
+    const label = mealSlots.find((slot) => slot.value === item.meal)?.label ?? item.meal
+    if (savingMeal || deleting || !window.confirm(`Excluir ${label.toLocaleLowerCase('pt-BR')} de ${formatDate(item.localDate)}? O resumo das refeições será atualizado. Esta ação não pode ser desfeita.`)) return
+    setDeleting(item.id)
+    try {
+      if (await onDeleteMeal(item.id) && mealDate === item.localDate && mealSlot === item.meal) { setMealOutcome('with-protein'); setMealNote('') }
+    } finally { setDeleting(null) }
   }
 
   return <div className="nutrition-view">
@@ -188,8 +208,8 @@ export function NutritionView({ today, measurements, mealLogs, snapshots, comple
           ? <p className="measurement-empty">Seu primeiro registro aparecerá aqui.</p>
           : <div className="measurement-table-scroll" tabIndex={0} role="region" aria-label="Histórico de medidas">
             <table className="measurement-table">
-              <thead><tr><th>Data</th><th>Peso</th><th>Cintura</th></tr></thead>
-              <tbody>{orderedMeasurements.slice(0, 8).map((item) => <tr key={item.id}><td>{formatDate(item.localDate)}</td><td>{formatDecimal(item.weightKg)} kg</td><td>{item.waistCm === undefined ? '—' : `${formatDecimal(item.waistCm)} cm`}</td></tr>)}</tbody>
+              <thead><tr><th>Data</th><th>Peso</th><th>Cintura</th><th>Ações</th></tr></thead>
+              <tbody>{orderedMeasurements.slice(0, 8).map((item) => <tr key={item.id}><td>{formatDate(item.localDate)}</td><td>{formatDecimal(item.weightKg)} kg</td><td>{item.waistCm === undefined ? '—' : `${formatDecimal(item.waistCm)} cm`}</td><td><button type="button" className="text-button" aria-label={`Excluir medida de ${formatDate(item.localDate)}`} disabled={!!deleting || saving} onClick={() => void removeMeasurement(item)}>{deleting === item.id ? 'Excluindo…' : 'Excluir'}</button></td></tr>)}</tbody>
             </table>
           </div>}
       </div>
@@ -247,8 +267,8 @@ export function NutritionView({ today, measurements, mealLogs, snapshots, comple
           ? <p className="measurement-empty">As refeições registradas aparecerão aqui.</p>
           : <div className="measurement-table-scroll" tabIndex={0} role="region" aria-label="Histórico de refeições">
             <table className="measurement-table meal-log-table">
-              <thead><tr><th>Data</th><th>Refeição</th><th>Resultado</th><th>Observação</th></tr></thead>
-              <tbody>{orderedMealLogs.slice(0, 12).map((item) => <tr key={item.id}><td>{formatDate(item.localDate)}</td><td>{mealSlots.find((slot) => slot.value === item.meal)?.label}</td><td>{mealOutcomeLabels[item.outcome]}</td><td>{item.note ?? '—'}</td></tr>)}</tbody>
+              <thead><tr><th>Data</th><th>Refeição</th><th>Resultado</th><th>Observação</th><th>Ações</th></tr></thead>
+              <tbody>{orderedMealLogs.slice(0, 12).map((item) => { const label = mealSlots.find((slot) => slot.value === item.meal)?.label ?? item.meal; return <tr key={item.id}><td>{formatDate(item.localDate)}</td><td>{label}</td><td>{mealOutcomeLabels[item.outcome]}</td><td>{item.note ?? '—'}</td><td><button type="button" className="text-button" aria-label={`Excluir refeição ${label} de ${formatDate(item.localDate)}`} disabled={!!deleting || savingMeal} onClick={() => void removeMeal(item)}>{deleting === item.id ? 'Excluindo…' : 'Excluir'}</button></td></tr> })}</tbody>
             </table>
           </div>}
       </div>

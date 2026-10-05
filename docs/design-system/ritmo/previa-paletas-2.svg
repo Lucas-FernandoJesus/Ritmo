@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="644" viewBox="0 0 980 644" role="img" aria-labelledby="title desc">
+  <title id="title">Quatro novas opções de aparência clara para o Ritmo</title>
+  <desc id="desc">Miniaturas da tela Hoje em azul claro, verde natural, lavanda suave e areia quente. Cada miniatura usa majoritariamente um fundo claro, um cartão branco, texto escuro e um botão colorido.</desc>
+  <rect width="980" height="644" fill="#FFFFFF"/>
+  <g font-family="Segoe UI, Arial, sans-serif">
+    <g>
+      <text x="24" y="34" fill="#172554" font-size="20" font-weight="700">4. Azul claro</text>
+      <rect x="24" y="50" width="454" height="252" rx="12" fill="#F4F8FF" stroke="#DCE6F6"/>
+      <text x="48" y="89" fill="#172554" font-size="26" font-weight="700">Hoje</text>
+      <text x="48" y="115" fill="#435472" font-size="14">Sua rotina, sem distrações</text>
+      <rect x="48" y="135" width="406" height="112" rx="9" fill="#FFFFFF" stroke="#DCE6F6"/>
+      <rect x="48" y="135" width="5" height="112" rx="2" fill="#1D4ED8"/>
+      <text x="68" y="166" fill="#435472" font-size="14">Próxima atividade</text>
+      <text x="68" y="196" fill="#172554" font-size="18" font-weight="650">Treino de Muay Thai</text>
+      <rect x="339" y="204" width="95" height="31" rx="6" fill="#1D4ED8"/>
+      <text x="365" y="225" fill="#FFFFFF" font-size="14" font-weight="600">Abrir</text>
+      <text x="48" y="277" fill="#435472" font-size="13">Fundo #F4F8FF</text>
+      <text x="325" y="277" fill="#1D4ED8" font-size="13" font-weight="700">Ação #1D4ED8</text>
+    </g>
+
+    <g>
+      <text x="502" y="34" fill="#243228" font-size="20" font-weight="700">5. Verde natural</text>
+      <rect x="502" y="50" width="454" height="252" rx="12" fill="#F6F9F4" stroke="#DCE6DB"/>
+      <text x="526" y="89" fill="#243228" font-size="26" font-weight="700">Hoje</text>
+      <text x="526" y="115" fill="#4A5C4E" font-size="14">Sua rotina, sem distrações</text>
+      <rect x="526" y="135" width="406" height="112" rx="9" fill="#FFFFFF" stroke="#DCE6DB"/>
+      <rect x="526" y="135" width="5" height="112" rx="2" fill="#3F6B4F"/>
+      <text x="546" y="166" fill="#4A5C4E" font-size="14">Próxima atividade</text>
+      <text x="546" y="196" fill="#243228" font-size="18" font-weight="650">Treino de Muay Thai</text>
+      <rect x="817" y="204" width="95" height="31" rx="6" fill="#3F6B4F"/>
+      <text x="843" y="225" fill="#FFFFFF" font-size="14" font-weight="600">Abrir</text>
+      <text x="526" y="277" fill="#4A5C4E" font-size="13">Fundo #F6F9F4</text>
+      <text x="803" y="277" fill="#3F6B4F" font-size="13" font-weight="700">Ação #3F6B4F</text>
+    </g>
+
+    <g>
+      <text x="24" y="356" fill="#29243A" font-size="20" font-weight="700">6. Lavanda suave</text>
+      <rect x="24" y="372" width="454" height="252" rx="12" fill="#F8F7FC" stroke="#E7E2F1"/>
+      <text x="48" y="411" fill="#29243A" font-size="26" font-weight="700">Hoje</text>
+      <text x="48" y="437" fill="#554F68" font-size="14">Sua rotina, sem distrações</text>
+      <rect x="48" y="457" width="406" height="112" rx="9" fill="#FFFFFF" stroke="#E7E2F1"/>
+      <rect x="48" y="457" width="5" height="112" rx="2" fill="#6146A6"/>
+      <text x="68" y="488" fill="#554F68" font-size="14">Próxima atividade</text>
+      <text x="68" y="518" fill="#29243A" font-size="18" font-weight="650">Treino de Muay Thai</text>
+      <rect x="339" y="526" width="95" height="31" rx="6" fill="#6146A6"/>
+      <text x="365" y="547" fill="#FFFFFF" font-size="14" font-weight="600">Abrir</text>
+      <text x="48" y="599" fill="#554F68" font-size="13">Fundo #F8F7FC</text>
+      <text x="325" y="599" fill="#6146A6" font-size="13" font-weight="700">Ação #6146A6</text>
+    </g>
+
+    <g>
+      <text x="502" y="356" fill="#332C23" font-size="20" font-weight="700">7. Areia quente</text>
+      <rect x="502" y="372" width="454" height="252" rx="12" fill="#F9F7F2" stroke="#E8E0D5"/>
+      <text x="526" y="411" fill="#332C23" font-size="26" font-weight="700">Hoje</text>
+      <text x="526" y="437" fill="#605447" font-size="14">Sua rotina, sem distrações</text>
+      <rect x="526" y="457" width="406" height="112" rx="9" fill="#FFFFFF" stroke="#E8E0D5"/>
+      <rect x="526" y="457" width="5" height="112" rx="2" fill="#9A3412"/>
+      <text x="546" y="488" fill="#605447" font-size="14">Próxima atividade</text>
+      <text x="546" y="518" fill="#332C23" font-size="18" font-weight="650">Treino de Muay Thai</text>
+      <rect x="817" y="526" width="95" height="31" rx="6" fill="#9A3412"/>
+      <text x="843" y="547" fill="#FFFFFF" font-size="14" font-weight="600">Abrir</text>
+      <text x="526" y="599" fill="#605447" font-size="13">Fundo #F9F7F2</text>
+      <text x="803" y="599" fill="#9A3412" font-size="13" font-weight="700">Ação #9A3412</text>
+    </g>
+  </g>
+</svg>

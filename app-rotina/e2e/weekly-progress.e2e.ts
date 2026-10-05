@@ -1,4 +1,5 @@
-import { expect, goToTab, openAppAt, openAppOnTuesday, test } from './fixtures'
+import { expect, goToTab, openAppAt, openAppOnTuesday, restoreBackup, test } from './fixtures'
+import { readFile } from 'node:fs/promises'
 
 const fridayRequired = [
   'Acordar, banheiro e água',
@@ -177,6 +178,55 @@ test('corrige um estudo existente sem criar outra sessão', async ({ page }) => 
   }))
   expect(logs).toHaveLength(1)
   expect(logs[0].minutes).toBe(45)
+})
+
+test('cancela e confirma a exclusão de estudos offline, responsiva e refletida no backup', async ({ page, context }) => {
+  await openAppOnTuesday(page)
+  await goToTab(page, 'Estudos')
+  await page.getByLabel('Minutos').fill('20')
+  await page.getByLabel('Conteúdo').fill('Leitura para remover')
+  await page.getByRole('button', { name: 'Salvar registro', exact: true }).click()
+  const log = page.getByText('Inglês: Leitura para remover', { exact: true })
+  await expect(log).toBeVisible()
+
+  page.once('dialog', dialog => { void dialog.dismiss() })
+  await page.getByRole('button', { name: /Excluir estudo/ }).click()
+  await expect(log).toBeVisible()
+
+  await goToTab(page, 'Ajustes')
+  const initialDownload = page.waitForEvent('download')
+  await page.getByRole('button', { name: 'Exportar backup JSON', exact: true }).click()
+  const initialBackup = await readFile((await (await initialDownload).path())!)
+  await page.evaluate(async () => navigator.serviceWorker.ready)
+  await expect.poll(() => page.evaluate(() => !!navigator.serviceWorker.controller)).toBe(true)
+  await context.setOffline(true)
+  await goToTab(page, 'Estudos')
+  await page.setViewportSize({ width: 320, height: 740 })
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+  const deleteStudy = page.getByRole('button', { name: /Excluir estudo/ })
+  expect(await deleteStudy.evaluate(element => { const rect = element.getBoundingClientRect(); return rect.width >= 24 && rect.height >= 24 })).toBe(true)
+  page.once('dialog', dialog => { void dialog.accept() })
+  await deleteStudy.click()
+  await expect(log).toHaveCount(0)
+  await page.reload()
+  await goToTab(page, 'Estudos')
+  await expect(page.getByText('Inglês: Leitura para remover', { exact: true })).toHaveCount(0)
+
+  await goToTab(page, 'Ajustes')
+  const deletedDownload = page.waitForEvent('download')
+  await page.getByRole('button', { name: 'Exportar backup JSON', exact: true }).click()
+  const deletedBackup = await readFile((await (await deletedDownload).path())!)
+  expect((JSON.parse(deletedBackup.toString('utf8')) as { studyLogs: unknown[] }).studyLogs).toEqual([])
+
+  await restoreBackup(page, { name: 'antes.json', mimeType: 'application/json', buffer: initialBackup })
+  await expect(page.getByRole('heading', { name: 'Um dia de cada vez.', exact: true })).toBeVisible()
+  await goToTab(page, 'Estudos')
+  await expect(page.getByText('Inglês: Leitura para remover', { exact: true })).toBeVisible()
+  await goToTab(page, 'Ajustes')
+  await restoreBackup(page, { name: 'depois.json', mimeType: 'application/json', buffer: deletedBackup })
+  await expect(page.getByRole('heading', { name: 'Um dia de cada vez.', exact: true })).toBeVisible()
+  await goToTab(page, 'Estudos')
+  await expect(page.getByText('Inglês: Leitura para remover', { exact: true })).toHaveCount(0)
 })
 
 test('oferece a conclusão da atividade financeira aplicável', async ({ page }) => {

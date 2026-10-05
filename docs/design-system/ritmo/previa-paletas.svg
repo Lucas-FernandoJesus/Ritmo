@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="930" height="350" viewBox="0 0 930 350" role="img" aria-labelledby="title desc">
+  <title id="title">Três opções de cores claras para o Ritmo</title>
+  <desc id="desc">Cada quadrado mostra, de cima para baixo, fundo, superfície, texto e ação principal das opções Neutro essencial, Papel limpo e Alto contraste discreto.</desc>
+  <rect width="930" height="350" fill="#FFFFFF"/>
+  <g font-family="Segoe UI, Arial, sans-serif">
+    <text x="35" y="34" fill="#17212B" font-size="20" font-weight="700">1. Neutro essencial</text>
+    <text x="345" y="34" fill="#252923" font-size="20" font-weight="700">2. Papel limpo</text>
+    <text x="655" y="34" fill="#111827" font-size="20" font-weight="700">3. Alto contraste</text>
+
+    <rect x="35" y="56" width="240" height="240" fill="#F7F8FA"/>
+    <rect x="35" y="116" width="240" height="60" fill="#FFFFFF"/>
+    <rect x="35" y="176" width="240" height="60" fill="#17212B"/>
+    <rect x="35" y="236" width="240" height="60" fill="#315D85"/>
+    <rect x="35.5" y="56.5" width="239" height="239" fill="none" stroke="#BBC3CC"/>
+    <text x="51" y="92" fill="#17212B" font-size="15">Fundo  #F7F8FA</text>
+    <text x="51" y="152" fill="#17212B" font-size="15">Superfície  #FFFFFF</text>
+    <text x="51" y="212" fill="#FFFFFF" font-size="15">Texto  #17212B</text>
+    <text x="51" y="272" fill="#FFFFFF" font-size="15">Ação  #315D85</text>
+
+    <rect x="345" y="56" width="240" height="240" fill="#FAFAF7"/>
+    <rect x="345" y="116" width="240" height="60" fill="#FFFFFF"/>
+    <rect x="345" y="176" width="240" height="60" fill="#252923"/>
+    <rect x="345" y="236" width="240" height="60" fill="#355B49"/>
+    <rect x="345.5" y="56.5" width="239" height="239" fill="none" stroke="#C8C9C3"/>
+    <text x="361" y="92" fill="#252923" font-size="15">Fundo  #FAFAF7</text>
+    <text x="361" y="152" fill="#252923" font-size="15">Superfície  #FFFFFF</text>
+    <text x="361" y="212" fill="#FFFFFF" font-size="15">Texto  #252923</text>
+    <text x="361" y="272" fill="#FFFFFF" font-size="15">Ação  #355B49</text>
+
+    <rect x="655" y="56" width="240" height="240" fill="#FFFFFF"/>
+    <rect x="655" y="116" width="240" height="60" fill="#F3F4F6"/>
+    <rect x="655" y="176" width="240" height="60" fill="#111827"/>
+    <rect x="655" y="236" width="240" height="60" fill="#374151"/>
+    <rect x="655.5" y="56.5" width="239" height="239" fill="none" stroke="#BFC4CC"/>
+    <text x="671" y="92" fill="#111827" font-size="15">Fundo  #FFFFFF</text>
+    <text x="671" y="152" fill="#111827" font-size="15">Superfície  #F3F4F6</text>
+    <text x="671" y="212" fill="#FFFFFF" font-size="15">Texto  #111827</text>
+    <text x="671" y="272" fill="#FFFFFF" font-size="15">Ação  #374151</text>
+
+    <text x="35" y="324" fill="#4B5563" font-size="14">Amostras de cor; a interface do aplicativo ainda não foi alterada.</text>
+  </g>
+</svg>
