@@ -338,7 +338,7 @@ for (const theme of ['light', 'dark'] as const) test(`visão anual de gastos rec
 
   for (const width of [320, 390, 768, 1440]) {
     await page.setViewportSize({ width, height: width === 768 ? 560 : 844 })
-    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+    await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width)
     const targets = await annual.locator('button').evaluateAll(elements => elements.map(element => ({ width: element.getBoundingClientRect().width, height: element.getBoundingClientRect().height })))
     expect(targets.every(target => target.width >= 44 && target.height >= 44)).toBe(true)
     if (width === 390 || width === 1440) await page.screenshot({ path: testInfo.outputPath(`gastos-recorrentes-${theme}-${width}.png`), fullPage: true })

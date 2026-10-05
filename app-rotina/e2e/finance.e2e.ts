@@ -379,7 +379,7 @@ for (const theme of ['light', 'dark'] as const) {
     await expect(page.getByRole('region', { name: 'Gráfico temporal de Saldo acumulado no período' })).toBeVisible()
     for (const width of [320, 390, 768, 1440]) {
       await page.setViewportSize({ width, height: 844 })
-      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+      await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width)
       const controls = await page.locator('.finance-filters select').evaluateAll((elements) => elements.map((element) => ({ width: element.getBoundingClientRect().width, height: element.getBoundingClientRect().height })))
       expect(controls.every((control) => control.width >= 44 && control.height >= 44)).toBe(true)
       if (width === 390 || width === 1440) {
