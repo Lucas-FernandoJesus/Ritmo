@@ -1,0 +1,13 @@
+# Lo que produce la skill al correr: material de trabajo, nunca del repositorio.
+visto/
+*.mhtml
+*.wav
+*.m4a
+*.mp4
+*.mov
+*.vtt
+*.json3
+__pycache__/
+*.pyc
+.DS_Store
+Thumbs.db

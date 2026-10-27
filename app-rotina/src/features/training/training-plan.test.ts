@@ -122,6 +122,21 @@ describe('plano de evolução dos treinos', () => {
     }
   })
 
+  it('introduz uma resposta defensiva curta depois das práticas de combinação e saída', () => {
+    const beforeIntegration = getMuayPractices(16, 'muay-mon', 'normal')
+    const integration = getMuayPractices(17, 'muay-mon', 'normal')
+    const practice = integration.find((item) => item.title === 'Combinação curta e defesa em sombra')
+
+    expect(beforeIntegration.some((item) => item.title === 'Combinação curta e defesa em sombra')).toBe(false)
+    expect(practice).toBeDefined()
+    expect(practice?.prerequisites).toEqual(['layers', 'exit'])
+    expect(practice?.modality).toBe('sombra')
+    expect(practice?.videoUrl).toBe('https://www.youtube.com/watch?v=uFJSSYECov4&t=224s')
+    expect(getMuayPractices(17, 'muay-mon', 'reduzido').some((item) => item.title === 'Combinação curta e defesa em sombra')).toBe(false)
+    expect(getMuayPractices(17, 'muay-mon', 'minimo').some((item) => item.title === 'Combinação curta e defesa em sombra')).toBe(false)
+    expect(getMuayPractices(17, 'muay-fri', 'normal').some((item) => item.title === 'Combinação curta e defesa em sombra')).toBe(false)
+  })
+
   it('descreve nível, pré-requisitos e critérios observáveis nas práticas de Muay Thai', () => {
     const practices = getMuayPractices(20, 'muay-mon', 'normal')
     for (const practice of practices) {

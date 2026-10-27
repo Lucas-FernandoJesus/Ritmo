@@ -1,6 +1,6 @@
 # Transcrições de Muay Thai
 
-Coleta em 30/09/2026 dos 127 vídeos utilizáveis do [inventário](../inventario.md). Os arquivos `.md` preservam a fala com marcações de tempo; os `.json3` são as legendas originais baixadas do YouTube. Legendas automáticas podem errar termos. Não constituem inspeção visual da técnica.
+Coleta em 30/09/2026 dos 127 vídeos utilizáveis do [inventário](../inventario.md). Os arquivos `.md` desses vídeos preservam a fala com marcações de tempo; os `.json3` são as legendas baixadas do YouTube. Legendas automáticas podem errar termos e não constituem inspeção visual da técnica. As fontes complementares no fim deste índice têm resumos, sem transcrições integrais.
 
 **Cobertura:** 127 legendas salvas. Fontes sem conteúdo acessível foram retiradas do acervo por decisão do usuário em 01/10/2026.
 
@@ -135,3 +135,12 @@ A skill `youtube-transcribe` foi avaliada: seu fluxo de ASR por API exige `ASR_A
 | [MUAY THAI CLASS - Faking the Body Kicks (Shadow Boxing Combinations, Follow Along)](https://www.youtube.com/watch?v=QvXUiTpf744) | Legenda original | [Abrir](QvXUiTpf744.md) |
 | [Padholding for Roundhouse Kicks + Tips on How to Kick the Pads](https://www.youtube.com/watch?v=1mqSjniwaQY) | Legenda original | [Abrir](1mqSjniwaQY.md) |
 | [BEGINNER MUAY THAI WORKOUT \| 30 Min Shadowboxing Class (No Equipment)](https://www.youtube.com/watch?v=z37V3X6tPG4) | Legenda original | [Abrir](z37V3X6tPG4.md) |
+
+## Fontes complementares resumidas em 27/10/2026
+
+Estes dois vídeos foram recebidos fora das quatro playlists e **não alteram a cobertura de 127 vídeos**. As legendas em inglês foram consultadas pelo `yt-dlp` e resumidas em português; não armazenamos cópias integrais. As grades de storyboard foram revisadas: o vídeo de Sean Fagan mostra demonstrações de sombra; o segundo é principalmente uma montagem de anime e lutas, sem demonstração técnica contínua.
+
+| Vídeo | Origem/status | Texto |
+|---|---|---|
+| [10 Muay Thai Shadow Boxing Drills For Beginners](https://www.youtube.com/watch?v=uFJSSYECov4) — Sean "Muay Thai Guy" Fagan, 13:08 | Legendas e storyboard consultados | [Abrir resumo](uFJSSYECov4-resumo.md) |
+| [How To Learn Muay Thai At Home (BEGINNER’S FULL GUIDE)](https://www.youtube.com/watch?v=9CLhUfHOkn0) — Dark needle, 10:36 | Legendas e storyboard consultados; demonstração não confirmada | [Abrir resumo](9CLhUfHOkn0-resumo.md) |

@@ -1,0 +1,39 @@
+# Topics de GitHub para este repositorio. GitHub admite hasta 20.
+#
+# Medido el 19/10/2026 en la propia API de busqueda de GitHub, antes de elegir nada:
+#
+#   consulta                  repos    suelo del top 20   con "skill" en el nombre
+#   video skill               12402    ★147               13/20
+#   youtube skill              3627    ★64                15/20
+#   transcript skill           1460    ★9                 13/20
+#   whisper skill               818    ★14                11/20
+#   transcription skill         650    ★5                 11/20
+#   youtube transcript skill    318    ★5                 11/20
+#
+# O sea: "video skill" es inalcanzable con 0 estrellas, y "youtube transcript skill" se gana
+# con cinco. De ahi el nombre del repositorio y el orden de estos topics.
+#
+# Para aplicarlos:
+#   gh repo edit w-avw/youtube-transcript-skill \
+#     $(grep -v '^#' .github/topics.txt | grep -v '^$' | sed 's/^/--add-topic /' | tr '\n' ' ')
+
+youtube-transcript
+transcription
+transcript
+whisper
+faster-whisper
+claude-skill
+claude-skills
+claude-code
+agent-skills
+agent-skill
+skill
+video
+youtube
+yt-dlp
+ffmpeg
+speech-to-text
+subtitles
+video-analysis
+ai-agents
+anthropic

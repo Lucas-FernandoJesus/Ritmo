@@ -17,7 +17,8 @@ Todas as skills usadas ou consultadas no projeto estão reunidas nesta pasta. Ca
 | [youtube-report](youtube-report/SKILL.md) | Avaliada | Formatação de transcrições já obtidas; não foi usada como transcritor |
 | [youtube-transcribe](youtube-transcribe/SKILL.md) | Avaliada | Fluxo por API sem chave; legendas coletadas e ASR local testado como alternativa |
 | [skill-creator](skill-creator/SKILL.md) | Aplicada nesta etapa | Formato e organização desta coleção |
-| [skill-installer](skill-installer/SKILL.md) | Consultada nesta etapa | Conferência de critérios; nenhuma instalação remota ou global |
+| [skill-installer](skill-installer/SKILL.md) | Aplicada nesta instalação | Download do repositório GitHub e instalação local da skill |
+| [youtube-transcript-skill](youtube-transcript-skill/SKILL.md) | Instalada | Transcrição local com Whisper e extração de fotogramas de vídeos |
 
 A participação anterior está documentada em [Financeiro](../../docs/financeiro.md) e [pesquisa de Muay Thai](../../docs/muay-thai/pesquisa-e-plano.md). Esta coleção não afirma que workflows apenas avaliados foram executados.
 
@@ -26,8 +27,8 @@ A participação anterior está documentada em [Financeiro](../../docs/financeir
 - A partir da raiz, leia `.agents/skills/<nome>/SKILL.md` quando a tarefa corresponder à descrição. Prefira estas cópias locais para o trabalho no Ritmo.
 - Não carregue todas as skills de uma vez. Preserve referências e recursos ao mover ou atualizar uma skill.
 - [manifest.json](manifest.json) registra origem, participação e SHA-256 de cada arquivo. É o inventário desta coleção. O `skills-lock.json` na raiz conserva o registro anterior da ferramenta de instalação; ele não substitui o manifesto de cópias manuais.
-- As cópias globais, de sistema e de plugins existentes permanecem nos locais originais. A nova `muay-thai-professor` foi instalada também no diretório global de skills do Codex; ferramentas de transcrição foram instaladas apenas em pastas temporárias, sem credenciais adicionadas.
-- Cópias de skills não instalam suas ferramentas: `playwright-cli`, Poppler, bibliotecas PDF, `@oai/artifact-tool`, `yt-dlp`, `ffmpeg` e ambientes de plugins continuam sujeitos à disponibilidade e autorização na máquina.
+- As cópias globais, de sistema e de plugins existentes permanecem nos locais originais. A nova `muay-thai-professor` foi instalada também no diretório global de skills do Codex; `youtube-transcript-skill` está instalada localmente nesta coleção. `yt-dlp`, `ffmpeg`, `ffprobe` e `faster-whisper` estão disponíveis na máquina; o modelo Whisper será baixado pelo Hugging Face no primeiro uso.
+- Cópias de skills não instalam suas ferramentas: `playwright-cli`, Poppler, bibliotecas PDF, `@oai/artifact-tool` e ambientes de plugins continuam sujeitos à disponibilidade e autorização na máquina.
 - Metadados originais, inclusive campos específicos de outros agentes e o nome `Spreadsheets`, foram preservados. Essa preservação não garante que ferramentas exclusivas de um plugin estejam disponíveis fora dele.
 - Atualize uma skill de forma explícita, conferindo a origem e a licença; depois regenere seus hashes no manifesto. A coleção não se atualiza automaticamente.
 

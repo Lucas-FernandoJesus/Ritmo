@@ -251,8 +251,8 @@
       "name": "skill-installer",
       "path": "skill-installer",
       "entrypoint": "skill-installer/SKILL.md",
-      "status": "consultada-nesta-etapa",
-      "usage": "Criterios de instalacao; nenhum download executado",
+      "status": "aplicada-nesta-instalacao",
+      "usage": "Instalacao local de youtube-transcript-skill a partir do GitHub",
       "evidence": ".agents/skills/README.md",
       "origin": {
         "kind": "codex-system-snapshot",
@@ -923,6 +923,35 @@
           "sha256": "e01eafda48a11c2ee66eb72e72d734b05f1c21c2decf666f7718d100c35d1067",
           "bytes": 2302
         }
+      ]
+    },
+    {
+      "name": "youtube-transcript-skill",
+      "path": "youtube-transcript-skill",
+      "entrypoint": "youtube-transcript-skill/SKILL.md",
+      "status": "instalada",
+      "usage": "Transcricao local com Whisper e extracao de fotogramas de videos",
+      "evidence": "docs/muay-thai/pesquisa-e-plano.md",
+      "origin": {
+        "kind": "github-repository",
+        "location": "https://github.com/w-avw/youtube-transcript-skill",
+        "ref": "main"
+      },
+      "files": [
+        { "path": ".gitattributes", "sha256": "7c69f8cc4b5a26b15a531807f907504fbc0655a83364c39a442f4a114b557e0e", "bytes": 128 },
+        { "path": ".gitignore", "sha256": "f3e47a4dfdf4bb1d1969b996cfcb12c5c85173b265d314ab400c9290a457a608", "bytes": 173 },
+        { "path": "LICENSE", "sha256": "5a279daf12e56918b516a28a39fe1c575cb1f4d69ab5c46af003599a39707502", "bytes": 1071 },
+        { "path": "README.md", "sha256": "e04ca0c7152f74ba0dff8fc83b1306fcd61ee8723c34b8ee4162921060ad1b07", "bytes": 7461 },
+        { "path": "SKILL.md", "sha256": "8a54bba5dd5122fd3a945cda9ad4aba3ce2a19bedc65f3c91521cc44d48ab99a", "bytes": 9248 },
+        { "path": ".github/topics.txt", "sha256": "3fedb95f644728bc238f54313b52c0b05611e6c23c427deaa6eebcb5286bb283", "bytes": 1196 },
+        { "path": "assets/icon-128.png", "sha256": "271ca571f29e5b63176137bf613add808a0d00bd5fd66b0a80d7fe4bb555b6db", "bytes": 6518 },
+        { "path": "assets/icon-256.png", "sha256": "0a27528b57786d6d2b3e28e389a32095b2ffd073da63e51f0d665efe98dd5b4f", "bytes": 16047 },
+        { "path": "assets/icon-48.png", "sha256": "05d01db54b33bca24b00d825b17ca6df580da7fdb42f280379db4df60e7f7bf8", "bytes": 1944 },
+        { "path": "assets/icon-tamanos.png", "sha256": "2e0f5fca158989e94a364a45ed00f8fddb1b8c3263df9f5b8b4443b597e609d8", "bytes": 70816 },
+        { "path": "assets/icon.png", "sha256": "257cfa8cfbfcfe291aa7abe2dcf607cb6af24e597fb9e0b90917c5a590d3af8a", "bytes": 50811 },
+        { "path": "assets/icon.svg", "sha256": "fa0930380b83fb14824b672f4bf7e0035d065779cc5d6c934e41d212a01c9b83", "bytes": 2513 },
+        { "path": "references/trampas-medidas.md", "sha256": "8e44419a583efa96205bd34d693f826ac5bc2bb33836463d6425d7d198f46820", "bytes": 4673 },
+        { "path": "scripts/ver_video.py", "sha256": "3f0920bd0947fb1ac154d13be86cb691c320f05378276a25d080cf580d016ba3", "bytes": 12634 }
       ]
     }
   ]

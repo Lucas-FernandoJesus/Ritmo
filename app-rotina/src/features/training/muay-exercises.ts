@@ -1,4 +1,4 @@
-export type MuayPracticeId = 'base' | 'directions' | 'return' | 'knee' | 'jab' | 'teep' | 'layers' | 'check' | 'exit' | 'roundhouse' | 'shadow'
+export type MuayPracticeId = 'base' | 'directions' | 'return' | 'knee' | 'jab' | 'teep' | 'layers' | 'check' | 'exit' | 'roundhouse' | 'shadow' | 'strike-defense'
 export type MuayProgressStatus = 'praticado' | 'confortavel' | 'repetir'
 export type MuayProgressMap = Partial<Record<MuayPracticeId, MuayProgressStatus>>
 export type MuayPracticeLevel = 'fundamento' | 'desenvolvimento' | 'integração'
@@ -117,6 +117,15 @@ const practices: Record<MuayPracticeId, MuayPractice> = {
     qualityCriteria: ['A sequência usa no máximo três ações já marcadas como confortáveis.', 'Toda repetição termina em base e guarda antes de recomeçar.'],
     videoTitle: 'Combinações por camadas', videoUrl: 'https://www.youtube.com/watch?v=Cn5Z0bOhr1M', provider: 'Spring Sia',
   },
+  'strike-defense': {
+    ...shared, sourceReview: 'visual', id: 'strike-defense', title: 'Combinação curta e defesa em sombra', objective: 'Acrescentar uma resposta defensiva planejada depois de uma combinação conhecida.', level: 'integração', prerequisites: ['layers', 'exit'],
+    instructions: 'Escolha uma combinação curta já confortável. Termine com uma resposta sem contato: mantenha a guarda e dê um passo curto para trás ou para o lado. Recupere a base e pause antes de repetir.',
+    attention: 'Não simule capturar chutes nem use contato ou potência. Se incluir o braço esquerdo, mantenha o golpe leve no ar e substitua por deslocamento se houver desconforto.',
+    qualityCriteria: ['A guarda permanece organizada durante a resposta defensiva.', 'A saída mantém os pés descruzados e termina equilibrada, permitindo uma pausa.', 'A sequência continua controlada e não piora os sintomas durante ou após a sessão.'],
+    repeatWhen: 'Simplifique para combinação curta → guarda → base se perder equilíbrio, cruzar os pés ou não conseguir pausar estável.',
+    advanceWhen: 'Varie a saída somente após marcar esta prática confortável em sessões separadas, sem piora no dia seguinte; não avance automaticamente para velocidade, contato ou contragolpes.',
+    videoTitle: '10 Muay Thai Shadow Boxing Drills For Beginners — Strike & Defend', videoUrl: 'https://www.youtube.com/watch?v=uFJSSYECov4&t=224s', provider: 'Sean “Muay Thai Guy” Fagan',
+  },
 }
 
 const byBlock: readonly (readonly MuayPracticeId[])[] = [
@@ -124,7 +133,7 @@ const byBlock: readonly (readonly MuayPracticeId[])[] = [
   ['base', 'return', 'jab', 'teep', 'layers'],
   ['directions', 'layers', 'check', 'exit'],
   ['directions', 'knee', 'check', 'exit', 'roundhouse'],
-  ['return', 'layers', 'exit', 'roundhouse', 'shadow'],
+  ['return', 'layers', 'exit', 'roundhouse', 'shadow', 'strike-defense'],
   ['base', 'directions', 'roundhouse', 'shadow'],
 ]
 

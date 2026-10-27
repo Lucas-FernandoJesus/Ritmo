@@ -1,0 +1,4 @@
+# Finales de linea LF dentro del repositorio, para que no suba CRLF desde Windows.
+* text=auto eol=lf
+*.png binary
+*.jpg binary

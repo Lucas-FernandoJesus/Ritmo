@@ -178,3 +178,17 @@ Canal: Spring Sia. 36 posições utilizáveis.
 ## Vídeo adicional
 
 - [BEGINNER MUAY THAI WORKOUT | 30 Min Shadowboxing Class (No Equipment)](https://www.youtube.com/watch?v=z37V3X6tPG4) — Sean "Muay Thai Guy" Fagan; **V**. Não consta das quatro playlists.
+
+## Fontes complementares recebidas em 27/10/2026
+
+Estas fontes foram consultadas para comparar fundamentos e planos domésticos. Não fazem parte das quatro playlists inventariadas acima e não alteram a contagem de vídeos com legenda salva.
+
+| Fonte | Conteúdo acessível | Estado e uso |
+|---|---|---|
+| [10 exercícios de boxe sombra de Muay Thai para iniciantes](https://www.youtube.com/watch?v=uFJSSYECov4) — Sean "Muay Thai Guy" Fagan, 13:08 | Legendas em inglês consultadas e 18 grades de storyboard revisadas. | [Resumo](./transcricoes/uFJSSYECov4-resumo.md). As grades confirmam demonstrações solo; detalhes técnicos finos permanecem limitados pela amostragem. |
+| [O trabalho de pés no Muay Thai: uma explicação](https://muaythai.com/pt-br/o-trabalho-de-pes-no-muay-thai-uma-explicacao/) | Texto acessível sobre postura, avanço/recuo/deslocamento lateral, ritmo e erros de base. | Leitura textual; comparar com a progressão de passos e recuperação de base já implementada. |
+| [Treinamento de Muay Thai – O básico](https://muaythai.com/pt-br/treinamento-de-muay-thai-o-basico/) | Texto sobre postura/guarda, jab-direto, chutes, joelhos e cotovelos. | Leitura textual; usar como panorama, sem importar afirmações promocionais, técnicas de contato ou progressões sem contexto. |
+| [Exercícios de Muay Thai: Explicações](https://muaythai.com/pt-br/exercicios-de-muay-thai-explicacoes/) | Taxonomia de sombra, corda, pads, saco, sparring, clinch, defesas, equilíbrio, reação, condicionamento, passos e combinações. | Leitura textual; serve para distinguir modalidades e pré-requisitos, não como prescrição de volume. |
+| [Muay Thai at home: three sessions](https://www.muaythaiatlas.com/guides/training/muay-thai-at-home/) | Três sessões domésticas distintas: sombra, saco opcional e condicionamento; inclui preparação do espaço e ressalvas de equipamento. | Leitura textual; estrutura útil, mas os rounds de 3 minutos, o volume, o esforço e o uso do saco não substituem o plano vigente do Ritmo. |
+| [Your First Month of Muay Thai: A Week-by-Week Training Plan](https://www.muaythaiatlas.com/guides/beginners/first-month-training-plan/) | Plano para quem entrou recentemente numa academia: postura/passos, guarda/chutes, combinações e contato condicionado ao treinador. | Leitura textual; heurísticas de foco único e progressão por fundamentos são úteis. Frequência, kit, sparring e calendário são específicos a iniciantes e academias do Reino Unido. |
+| [How To Learn Muay Thai At Home (Beginner’s Full Guide)](https://www.youtube.com/watch?v=9CLhUfHOkn0) — Dark needle, 10:36 | Legendas em inglês consultadas e 15 grades de storyboard revisadas. | [Resumo](./transcricoes/9CLhUfHOkn0-resumo.md). A montagem não demonstra de forma contínua a técnica narrada; não usada para prescrição. |

@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img"
+     aria-label="Un fotograma con un triangulo, una onda de audio, y debajo las lineas de una transcripcion">
+  <!-- Icono propio para youtube-transcript-skill. Idea: lo que hace la skill, en una figura.
+       Arriba, un FOTOGRAMA (el marco con el triangulo de reproducir) — la parte que se mira.
+       Abajo, tres LINEAS de texto que salen de el, cada vez mas cortas — la transcripcion que
+       baja del fotograma. Nada de marcas ni personajes de nadie: solo formas. -->
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#818cf8"/>
+      <stop offset="0.55" stop-color="#6366f1"/>
+      <stop offset="1" stop-color="#4338ca"/>
+    </linearGradient>
+    <linearGradient id="t" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#e5e7eb"/>
+      <stop offset="1" stop-color="#9ca3af"/>
+    </linearGradient>
+  </defs>
+
+  <!-- el fondo: cuadrado redondeado, para que se vea igual de bien en claro y en oscuro -->
+  <rect x="26" y="26" width="460" height="460" rx="104" fill="#111113"/>
+  <rect x="26" y="26" width="460" height="460" rx="104" fill="none" stroke="#2a2a30" stroke-width="6"/>
+
+  <!-- el fotograma -->
+  <rect x="104" y="106" width="304" height="186" rx="34" fill="url(#g)"/>
+  <!-- las perforaciones del lado, que lo dicen «pelicula» sin dibujar una camara -->
+  <g fill="#111113" opacity="0.32">
+    <rect x="124" y="130" width="22" height="26" rx="8"/>
+    <rect x="124" y="186" width="22" height="26" rx="8"/>
+    <rect x="124" y="242" width="22" height="26" rx="8"/>
+  </g>
+  <!-- el triangulo de reproducir, con las puntas redondeadas -->
+  <path d="M186 158 L252 196 a10 10 0 0 1 0 17 L186 251 a11 11 0 0 1 -17 -9 v-75 a11 11 0 0 1 17 -9 z"
+        fill="#fff"/>
+  <!-- la onda del audio, que es lo que se transcribe -->
+  <g fill="#fff" opacity="0.92">
+    <rect x="282" y="178" width="17" height="42" rx="8"/>
+    <rect x="314" y="156" width="17" height="86" rx="8"/>
+    <rect x="346" y="172" width="17" height="54" rx="8"/>
+  </g>
+
+  <!-- la transcripcion que baja del fotograma -->
+  <g fill="url(#t)">
+    <rect x="104" y="332" width="304" height="26" rx="13"/>
+    <rect x="104" y="378" width="230" height="26" rx="13"/>
+    <rect x="104" y="424" width="146" height="26" rx="13"/>
+  </g>
+  <!-- la marca de tiempo: el punto que ata el texto al fotograma -->
+  <circle cx="371" cy="391" r="13" fill="#818cf8"/>
+</svg>
